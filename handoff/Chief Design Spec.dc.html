@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0B0D0C; }
+</style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:32px;padding:64px 64px 0;align-items:flex-start;font-family:'Instrument Sans',system-ui,sans-serif">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:720px">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.14em;color:#6F7871">TURN 2 · LIGHT MODE + ALL-CLEAR STATE</div>
+    <div style="font-size:15px;line-height:1.55;color:#A6AEA7">Same tokens, same components — <a href="#2a" style="color:#8FC1B7">2a</a> Home in light mode (paper-warm, never pure white), <a href="#2b" style="color:#8FC1B7">2b</a> the all-clear Home: the narrative becomes the reward, done work becomes receipts.</div>
+  </div>
+  <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+    <!-- ===== 2a LIGHT HOME ===== -->
+    <div id="2a" style="position:relative;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><a href="#2a" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871;text-decoration:none;border:1px solid rgba(236,240,236,0.14);border-radius:6px;padding:3px 8px">2a</a><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;color:#6F7871">HOME · LIGHT MODE</div></div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ false }}" width="{{ 390 }}" height="{{ 844 }}" hint-size="390px,844px">
+        <div data-screen-label="Home light" style="position:relative;height:100%;background:#F3F2ED;display:flex;flex-direction:column;font-family:'Instrument Sans',system-ui,sans-serif;color:#1C201D;overflow:hidden;box-sizing:border-box">
+          <div style="flex:1;overflow:hidden;padding:58px 16px 0;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#8A928B">FRI JUL 4 · 9:41 AM</div>
+              <div style="width:32px;height:32px;border-radius:999px;background:#E7E6E0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#565E58">J</div>
+            </div>
+            <div style="font-family:'Newsreader',Georgia,serif;font-size:20px;line-height:1.4;font-weight:500;color:#1C201D">Today is about closing Henderson. Kirill replied on the API bug 2h ago — <span style="color:#2C5F56">you’re unblocked.</span></div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#8A928B">TOP 3</div>
+              <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:7px 14px;background:#FCFCFA;border:1px solid rgba(28,32,29,0.10);border-radius:16px;box-sizing:border-box">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#2C5F56;width:14px;flex-shrink:0">1</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                  <div style="font-size:16px;font-weight:500;line-height:1.3">Send revised quote to Henderson</div>
+                  <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A928B"><span style="color:#9A6432">P1</span><span>·</span><span>Fri</span><span>·</span><span>high impact / low effort</span></div>
+                </div>
+                <svg width="7" height="12" viewBox="0 0 7 12" style="flex-shrink:0"><path d="M1 1l5 5-5 5" stroke="#8A928B" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:7px 14px;background:#FCFCFA;border:1px solid rgba(28,32,29,0.10);border-radius:16px;box-sizing:border-box">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#2C5F56;width:14px;flex-shrink:0">2</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                  <div style="font-size:16px;font-weight:500;line-height:1.3">Review Kirill’s API fix</div>
+                  <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A928B"><span style="color:#9A6432">P1</span><span>·</span><span style="color:#3E7050">unblocked today</span></div>
+                </div>
+                <svg width="7" height="12" viewBox="0 0 7 12" style="flex-shrink:0"><path d="M1 1l5 5-5 5" stroke="#8A928B" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:7px 14px;background:#FCFCFA;border:1px solid rgba(28,32,29,0.10);border-radius:16px;box-sizing:border-box">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#2C5F56;width:14px;flex-shrink:0">3</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                  <div style="font-size:16px;font-weight:500;line-height:1.3">Fix UTM mapping table</div>
+                  <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A928B"><span>P2</span><span>·</span><span>Q3 attribution</span></div>
+                </div>
+                <svg width="7" height="12" viewBox="0 0 7 12" style="flex-shrink:0"><path d="M1 1l5 5-5 5" stroke="#8A928B" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#8A928B">PROPOSALS · 3</div>
+              <div style="background:#EDF1EF;border:1px solid rgba(44,95,86,0.25);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#2C5F56">UPDATE PROJECT</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8A928B">reversible</div>
+                </div>
+                <div style="font-size:16px;line-height:1.5;color:#1C201D">Mark <span style="font-weight:600">Q3 ad attribution</span> unblocked — API access restored.</div>
+                <div style="display:flex;gap:10px">
+                  <div style="flex:1.6;height:46px;border-radius:14px;background:#2F6157;color:#E9F2EF;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center">Approve</div>
+                  <div style="flex:1;height:46px;border-radius:14px;border:1px solid rgba(28,32,29,0.14);color:#565E58;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center">Dismiss</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#8A928B">WAITING ON</div>
+              <div style="display:flex;flex-direction:column;background:#FCFCFA;border:1px solid rgba(28,32,29,0.10);border-radius:16px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 14px;border-bottom:1px solid rgba(28,32,29,0.07);box-sizing:border-box">
+                  <div style="width:7px;height:7px;border-radius:999px;background:#3E7050;flex-shrink:0"></div>
+                  <div style="flex:1;font-size:15px;color:#1C201D">Kirill — <span style="font-weight:600;color:#3E7050">replied 2h ago</span></div>
+                  <div style="font-size:14px;font-weight:600;white-space:nowrap;flex-shrink:0;color:#2C5F56">review →</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 14px;box-sizing:border-box">
+                  <div style="width:7px;height:7px;border-radius:999px;background:#8A928B;flex-shrink:0"></div>
+                  <div style="flex:1;font-size:15px;color:#565E58">Dana Henderson — sign-off</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;flex-shrink:0;color:#8A928B">quiet 3d</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:8px 12px 0;flex-shrink:0">
+            <div style="display:flex;align-items:center;gap:12px;height:60px;padding:0 10px 0 12px;background:linear-gradient(180deg,#FBFBF8,#F0F0EA);border:1px solid rgba(44,95,86,0.35);border-radius:20px;box-shadow:0 10px 30px rgba(44,95,86,0.14);box-sizing:border-box">
+              <div style="position:relative;width:36px;height:36px;border-radius:12px;background:rgba(44,95,86,0.10);border:1px solid rgba(44,95,86,0.30);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#2C5F56;flex-shrink:0">C<div style="position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:999px;background:#2F6157;border:2px solid #FBFBF8"></div></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+                <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:16px;color:#1C201D;line-height:1.2">3 proposals waiting.</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#2C5F56">OLDEST 24 MIN · TAP TO REVIEW</div>
+              </div>
+              <div style="min-width:34px;height:34px;padding:0 4px;border-radius:999px;background:#2F6157;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#E9F2EF;flex-shrink:0;box-sizing:border-box">3</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 30px;flex-shrink:0">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4.5l8 7V20h-5.5v-5h-5v5H4v-8.5z" stroke="#1C201D" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#1C201D">HOME</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 5.5h16v13H4z" stroke="#8A928B" stroke-width="1.7" stroke-linejoin="round"></path><path d="M4 13h4.5c.4 1.8 1.8 3 3.5 3s3.1-1.2 3.5-3H20" stroke="#8A928B" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#8A928B">INBOX</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;margin-top:-8px"><div style="width:48px;height:48px;border-radius:999px;background:#2F6157;border:1px solid rgba(44,95,86,0.45);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:22px;font-weight:500;color:#E9F2EF;box-shadow:0 6px 16px rgba(44,95,86,0.25)">C</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3.5 7.5h5l2 2h10v9.5h-17V7.5z" stroke="#8A928B" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#8A928B">PROJECTS</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" stroke="#8A928B" stroke-width="1.7"></rect><path d="M8 12.5l3 3 5.5-6" stroke="#8A928B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#8A928B">TASKS</div></div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ===== 2b ALL-CLEAR HOME ===== -->
+    <div id="2b" style="position:relative;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><a href="#2b" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871;text-decoration:none;border:1px solid rgba(236,240,236,0.14);border-radius:6px;padding:3px 8px">2b</a><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;color:#6F7871">HOME · ALL CLEAR — THE REWARD STATE</div></div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 390 }}" height="{{ 844 }}" hint-size="390px,844px">
+        <div data-screen-label="Home all clear" style="position:relative;height:100%;background:#131513;display:flex;flex-direction:column;font-family:'Instrument Sans',system-ui,sans-serif;color:#ECEFEA;overflow:hidden;box-sizing:border-box">
+          <div style="flex:1;overflow:hidden;padding:58px 16px 0;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">FRI JUL 4 · 11:26 AM</div>
+              <div style="width:32px;height:32px;border-radius:999px;background:#222724;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#A6AEA7">J</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px;padding:24px 0 8px">
+              <div style="width:44px;height:44px;border-radius:999px;background:rgba(140,190,147,0.12);border:1px solid rgba(140,190,147,0.3);display:flex;align-items:center;justify-content:center"><svg width="18" height="14" viewBox="0 0 18 14" fill="none"><path d="M1.5 7.5l5 5L16.5 1.5" stroke="#8CBE93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <div style="font-family:'Newsreader',Georgia,serif;font-size:24px;line-height:1.42;font-weight:500;color:#ECEFEA">Nothing needs you until 2 PM. The Henderson quote went out at 9:12 — <span style="color:#8FC1B7">I’ll flag you when Dana replies.</span></div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">DONE TODAY · 3</div>
+              <div style="display:flex;flex-direction:column;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;min-height:50px;padding:6px 14px;border-bottom:1px solid rgba(236,240,236,0.06);box-sizing:border-box">
+                  <div style="width:20px;height:20px;border-radius:6px;background:#33635A;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="10" height="8" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5 10 1" stroke="#E3F0EC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                  <div style="flex:1;font-size:15px;color:#A6AEA7;min-width:0">Send revised quote to Henderson</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;flex-shrink:0;color:#6F7871">9:12 AM</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;min-height:50px;padding:6px 14px;border-bottom:1px solid rgba(236,240,236,0.06);box-sizing:border-box">
+                  <div style="width:20px;height:20px;border-radius:6px;background:#33635A;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="10" height="8" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5 10 1" stroke="#E3F0EC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                  <div style="flex:1;font-size:15px;color:#A6AEA7;min-width:0">Review Kirill’s API fix</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;flex-shrink:0;color:#6F7871">10:05 AM</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;min-height:50px;padding:6px 14px;box-sizing:border-box">
+                  <div style="width:20px;height:20px;border-radius:6px;background:#33635A;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="10" height="8" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5 10 1" stroke="#E3F0EC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                  <div style="flex:1;font-size:15px;color:#A6AEA7;min-width:0">Fix UTM mapping table</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;flex-shrink:0;color:#6F7871">11:14 AM</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">WAITING ON · CHIEF IS WATCHING</div>
+              <div style="display:flex;flex-direction:column;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 14px;border-bottom:1px solid rgba(236,240,236,0.06);box-sizing:border-box">
+                  <div style="width:7px;height:7px;border-radius:999px;background:#6F7871;flex-shrink:0"></div>
+                  <div style="flex:1;font-size:15px;color:#A6AEA7">Dana Henderson — quote reply</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;flex-shrink:0;color:#6F7871">sent 9:12</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 14px;box-sizing:border-box">
+                  <div style="width:7px;height:7px;border-radius:999px;background:#D29962;flex-shrink:0"></div>
+                  <div style="flex:1;font-size:15px;color:#A6AEA7">Meta support — API access</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;flex-shrink:0;color:#D29962">day 6</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:8px 12px 0;flex-shrink:0">
+            <div style="display:flex;align-items:center;gap:12px;height:60px;padding:0 10px 0 12px;background:linear-gradient(180deg,#232826,#1C201D);border:1px solid rgba(236,240,236,0.10);border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.35);box-sizing:border-box">
+              <div style="width:36px;height:36px;border-radius:12px;background:rgba(84,140,128,0.14);border:1px solid rgba(143,193,183,0.25);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#8FC1B7;flex-shrink:0">C</div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+                <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:16px;color:#ECEFEA;line-height:1.2">All clear.</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">ASK CHIEF</div>
+              </div>
+              <div style="width:34px;height:34px;border-radius:999px;border:1px solid rgba(236,240,236,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6l5-5 5 5" stroke="#A6AEA7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 30px;flex-shrink:0">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4.5l8 7V20h-5.5v-5h-5v5H4v-8.5z" stroke="#ECEFEA" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#ECEFEA">HOME</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 5.5h16v13H4z" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path><path d="M4 13h4.5c.4 1.8 1.8 3 3.5 3s3.1-1.2 3.5-3H20" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">INBOX</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;margin-top:-8px"><div style="width:48px;height:48px;border-radius:999px;background:#33635A;border:1px solid rgba(143,193,183,0.45);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:22px;font-weight:500;color:#E3F0EC;box-shadow:0 6px 16px rgba(0,0,0,0.4)">C</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3.5 7.5h5l2 2h10v9.5h-17V7.5z" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">PROJECTS</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" stroke="#6F7871" stroke-width="1.7"></rect><path d="M8 12.5l3 3 5.5-6" stroke="#6F7871" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">TASKS</div></div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:48px;padding:64px;align-items:flex-start;font-family:'Instrument Sans',system-ui,sans-serif">
+
+  <!-- ============ INTRO ============ -->
+  <div style="display:flex;flex-direction:column;gap:10px;max-width:720px">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.14em;color:#6F7871">CHIEF · DESIGN SYSTEM + SCREENS · V1</div>
+    <div style="font-family:'Newsreader',Georgia,serif;font-size:44px;font-weight:500;color:#ECEFEA;line-height:1.1">Chief — a chief of staff in your pocket.</div>
+    <div style="font-size:16px;line-height:1.55;color:#A6AEA7;max-width:640px">Warm charcoal, desaturated teal, serif voice. The Chief bar is the signature element; everything else stays quiet. Teal = Chief speaking &amp; reversible actions. Copper = irreversible, deliberate. Jump to: <a href="#1a" style="color:#8FC1B7">1a system</a> · <a href="#1b" style="color:#8FC1B7">1b components</a> · <a href="#1c" style="color:#8FC1B7">1c screens</a> · <a href="#1d" style="color:#8FC1B7">1d desktop</a></div>
+  </div>
+
+  <!-- ============ 1a DESIGN SYSTEM ============ -->
+  <div id="1a" style="position:relative;background:#111412;border:1px solid rgba(236,240,236,0.08);border-radius:24px;padding:48px;display:flex;flex-direction:column;gap:40px;width:1240px;box-sizing:border-box">
+    <a href="#1a" style="position:absolute;top:20px;right:24px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871;text-decoration:none;border:1px solid rgba(236,240,236,0.14);border-radius:6px;padding:3px 8px">1a</a>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-family:'Newsreader',Georgia,serif;font-size:28px;font-weight:500;color:#ECEFEA">Foundations</div>
+      <div style="font-size:14px;color:#6F7871">Color tokens (dark primary + light), type scale, spacing, radii, core components.</div>
+    </div>
+
+    <!-- COLOR TOKENS -->
+    <div style="display:flex;gap:40px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8FC1B7">DARK (PRIMARY)</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#131513;border:1px solid rgba(236,240,236,0.12)"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">bg<br>#131513</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#1A1D1B;border:1px solid rgba(236,240,236,0.12)"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">surface<br>#1A1D1B</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#222724;border:1px solid rgba(236,240,236,0.12)"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">raised<br>#222724</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#ECEFEA"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">ink<br>#ECEFEA</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#A6AEA7"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">ink-2<br>#A6AEA7</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#6F7871"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">ink-3<br>#6F7871</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#8FC1B7"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">teal<br>#8FC1B7</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#33635A"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">teal-fill<br>#33635A</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#D29962"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">copper<br>#D29962</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#8CBE93"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">ok<br>#8CBE93</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#CE8577"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">danger<br>#CE8577</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:rgba(236,240,236,0.08);border:1px solid rgba(236,240,236,0.12)"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6AEA7">hairline<br>ink @ 8%</div></div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">LIGHT</div>
+        <div style="background:#F3F2ED;border-radius:16px;padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#F3F2ED;border:1px solid rgba(28,32,29,0.14)"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#565E58">bg<br>#F3F2ED</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#FCFCFA;border:1px solid rgba(28,32,29,0.10)"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#565E58">surface<br>#FCFCFA</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#1C201D"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#565E58">ink<br>#1C201D</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#565E58"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#565E58">ink-2<br>#565E58</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#2C5F56"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#565E58">teal<br>#2C5F56</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#9A6432"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#565E58">copper<br>#9A6432</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#77A683"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#565E58">ok<br>#77A683</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="height:56px;border-radius:10px;background:#B4584A"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#565E58">danger<br>#B4584A</div></div>
+        </div>
+        <div style="font-size:13px;line-height:1.5;color:#6F7871">Same hue positions in both modes — teal stays desaturated, copper stays warm. Light mode is paper-warm, never pure white page bg.</div>
+      </div>
+    </div>
+
+    <!-- TYPE -->
+    <div style="display:flex;gap:40px">
+      <div style="flex:1.4;display:flex;flex-direction:column;gap:18px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8FC1B7">TYPE — INSTRUMENT SANS (UI) · NEWSREADER (CHIEF'S VOICE) · IBM PLEX MONO (META)</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:baseline;gap:20px"><div style="width:210px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">narrative · serif 21/30 · 500</div><div style="font-family:'Newsreader',Georgia,serif;font-size:21px;line-height:30px;font-weight:500;color:#ECEFEA">Today is about closing Henderson.</div></div>
+          <div style="display:flex;align-items:baseline;gap:20px"><div style="width:210px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">title · sans 17/22 · 600</div><div style="font-size:17px;line-height:22px;font-weight:600;color:#ECEFEA">Send revised quote to Henderson</div></div>
+          <div style="display:flex;align-items:baseline;gap:20px"><div style="width:210px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">body · sans 16/24 · 400</div><div style="font-size:16px;line-height:24px;color:#ECEFEA">Dana asked for tile labor broken out separately.</div></div>
+          <div style="display:flex;align-items:baseline;gap:20px"><div style="width:210px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">label · sans 14/18 · 500</div><div style="font-size:14px;line-height:18px;font-weight:500;color:#A6AEA7">Waiting on</div></div>
+          <div style="display:flex;align-items:baseline;gap:20px"><div style="width:210px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">meta · mono 12/16 · 400</div><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:16px;color:#A6AEA7">P1 · due Fri · Henderson remodel</div></div>
+          <div style="display:flex;align-items:baseline;gap:20px"><div style="width:210px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">micro · mono 11/14 caps · 500</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:14px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#8FC1B7">CREATE TASK</div></div>
+        </div>
+        <div style="font-size:13px;line-height:1.5;color:#6F7871;max-width:560px">Rule: serif only when Chief speaks (narrative, bar status, chat replies). Everything the user owns or acts on is sans. Mono is reserved for machine facts: priorities, dates, counts, action labels.</div>
+      </div>
+      <!-- SPACING + RADII -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8FC1B7">SPACING — 4PX BASE</div>
+          <div style="display:flex;align-items:flex-end;gap:10px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:4px;height:4px;background:#33635A;border-radius:2px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">4</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:8px;height:8px;background:#33635A;border-radius:2px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">8</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:12px;height:12px;background:#33635A;border-radius:3px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">12</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:16px;height:16px;background:#33635A;border-radius:4px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">16</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:20px;height:20px;background:#33635A;border-radius:4px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">20</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:24px;height:24px;background:#33635A;border-radius:5px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">24</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:32px;height:32px;background:#33635A;border-radius:6px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">32</div></div>
+          </div>
+          <div style="font-size:13px;color:#6F7871">Screen gutter 16 · card padding 16–20 · section gap 28.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8FC1B7">RADII</div>
+          <div style="display:flex;gap:14px;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:52px;height:36px;border:1.5px solid #8FC1B7;border-radius:6px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">6 chip</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:52px;height:40px;border:1.5px solid #8FC1B7;border-radius:12px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">12 control</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:60px;height:44px;border:1.5px solid #8FC1B7;border-radius:16px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">16 card</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:68px;height:48px;border:1.5px solid #8FC1B7;border-radius:24px 24px 0 0;border-bottom:none"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">24 sheet</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:68px;height:40px;border:1.5px solid #8FC1B7;border-radius:999px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">pill</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8FC1B7">CORE CONTROLS — 48PX PRIMARY, 44PX MIN</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <div style="height:48px;padding:0 24px;border-radius:14px;background:#33635A;color:#E3F0EC;font-size:16px;font-weight:600;display:flex;align-items:center">Approve</div>
+            <div style="height:48px;padding:0 20px;border-radius:14px;border:1px solid rgba(236,240,236,0.14);color:#A6AEA7;font-size:16px;font-weight:500;display:flex;align-items:center">Dismiss</div>
+            <div style="height:48px;padding:0 16px;border-radius:14px;color:#CE8577;font-size:16px;font-weight:500;display:flex;align-items:center">Delete</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <div style="height:26px;padding:0 9px;border-radius:6px;background:rgba(210,153,98,0.14);color:#D29962;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.06em;display:flex;align-items:center">P1</div>
+            <div style="height:26px;padding:0 9px;border-radius:6px;background:rgba(236,240,236,0.07);color:#A6AEA7;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.06em;display:flex;align-items:center">P2</div>
+            <div style="height:26px;padding:0 9px;border-radius:6px;background:rgba(143,193,183,0.13);color:#8FC1B7;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.06em;display:flex;align-items:center">ACTIVE</div>
+            <div style="height:26px;padding:0 9px;border-radius:6px;background:rgba(236,240,236,0.07);color:#6F7871;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.06em;display:flex;align-items:center">PAUSED</div>
+            <div style="height:26px;padding:0 9px;border-radius:6px;background:rgba(140,190,147,0.13);color:#8CBE93;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.06em;display:flex;align-items:center">UNBLOCKED</div>
+          </div>
+          <div style="height:52px;border-radius:16px;border:1px solid rgba(236,240,236,0.14);background:#1A1D1B;display:flex;align-items:center;padding:0 16px;color:#6F7871;font-size:16px;max-width:340px">Ask Chief anything…</div>
+          <div style="font-size:13px;color:#6F7871">Focus state: 2px teal outline, 2px offset — never removed.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 1b COMPONENTS ============ -->
+  <div id="1b" style="position:relative;background:#111412;border:1px solid rgba(236,240,236,0.08);border-radius:24px;padding:48px;display:flex;flex-direction:column;gap:36px;width:1240px;box-sizing:border-box">
+    <a href="#1b" style="position:absolute;top:20px;right:24px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871;text-decoration:none;border:1px solid rgba(236,240,236,0.14);border-radius:6px;padding:3px 8px">1b</a>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-family:'Newsreader',Georgia,serif;font-size:28px;font-weight:500;color:#ECEFEA">Components</div>
+      <div style="font-size:14px;color:#6F7871">The Chief bar (signature) · the proposal card (both tiers, all states) · task row · project state block.</div>
+    </div>
+
+    <div style="display:flex;gap:48px">
+      <!-- CHIEF BAR COLUMN -->
+      <div style="width:400px;display:flex;flex-direction:column;gap:20px;flex-shrink:0">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8FC1B7">CHIEF BAR — SIGNATURE ELEMENT</div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">1 · collapsed, all clear</div>
+          <div style="display:flex;align-items:center;gap:12px;height:60px;padding:0 10px 0 12px;background:linear-gradient(180deg,#232826,#1C201D);border:1px solid rgba(236,240,236,0.10);border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.35)">
+            <div style="width:36px;height:36px;border-radius:12px;background:rgba(84,140,128,0.14);border:1px solid rgba(143,193,183,0.25);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#8FC1B7;flex-shrink:0">C</div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+              <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:16px;color:#ECEFEA;line-height:1.2">All clear.</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">ASK CHIEF</div>
+            </div>
+            <div style="width:34px;height:34px;border-radius:999px;border:1px solid rgba(236,240,236,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6l5-5 5 5" stroke="#A6AEA7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">2 · collapsed, proposals pending — teal edge + count, no badge-red panic</div>
+          <div style="display:flex;align-items:center;gap:12px;height:60px;padding:0 10px 0 12px;background:linear-gradient(180deg,#243029,#1C221E);border:1px solid rgba(143,193,183,0.38);border-radius:20px;box-shadow:0 10px 30px rgba(51,99,90,0.30), 0 8px 24px rgba(0,0,0,0.35)">
+            <div style="position:relative;width:36px;height:36px;border-radius:12px;background:rgba(84,140,128,0.22);border:1px solid rgba(143,193,183,0.4);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#A9D4CA;flex-shrink:0">C<div style="position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:999px;background:#8FC1B7;border:2px solid #1C221E"></div></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+              <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:16px;color:#ECEFEA;line-height:1.2">3 proposals waiting.</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#8FC1B7">OLDEST 24 MIN · TAP TO REVIEW</div>
+            </div>
+            <div style="min-width:34px;height:34px;padding:0 4px;border-radius:999px;background:#33635A;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#E3F0EC;flex-shrink:0;box-sizing:border-box">3</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">3 · expanded — sheet takes over (see screen <a href="#1c" style="color:#8FC1B7">1c</a>); bar becomes the sheet's grabber/header</div>
+          <div style="border-radius:24px 24px 0 0;background:#1D211E;border:1px solid rgba(236,240,236,0.12);border-bottom:none;padding:10px 16px 14px;display:flex;flex-direction:column;gap:10px">
+            <div style="width:40px;height:4px;border-radius:999px;background:rgba(236,240,236,0.2);margin:0 auto"></div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:36px;height:36px;border-radius:12px;background:rgba(84,140,128,0.14);border:1px solid rgba(143,193,183,0.25);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#8FC1B7">C</div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">LOOKING AT</div>
+                <div style="font-size:15px;font-weight:600;color:#ECEFEA">Re: Q3 invoice — Kirill</div>
+              </div>
+              <div style="width:34px;height:34px;border-radius:999px;border:1px solid rgba(236,240,236,0.14);display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="#A6AEA7" stroke-width="1.7" stroke-linecap="round"></path></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:13px;line-height:1.55;color:#6F7871">Intent: the bar is Chief's only permanent presence — one serif sentence, one count. Pending state raises the teal edge-light; it never bounces, badges red, or animates on loop. Reduced-motion: glow is static.</div>
+
+        <div style="height:1px;background:rgba(236,240,236,0.08);margin:8px 0"></div>
+
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8FC1B7">TASK ROW</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 14px;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;box-sizing:border-box">
+            <div style="width:22px;height:22px;border:1.5px solid #6F7871;border-radius:7px;flex-shrink:0"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+              <div style="font-size:16px;font-weight:500;color:#ECEFEA;line-height:1.3">Send revised quote to Henderson</div>
+              <div style="display:flex;align-items:center;gap:8px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871"><span style="color:#D29962">P1</span><span>·</span><span>due Fri</span><span>·</span><span>Henderson remodel</span></div>
+            </div>
+            <svg width="7" height="12" viewBox="0 0 7 12" style="flex-shrink:0"><path d="M1 1l5 5-5 5" stroke="#6F7871" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 14px;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;box-sizing:border-box">
+            <div style="width:22px;height:22px;border-radius:7px;background:#33635A;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5 10 1" stroke="#E3F0EC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+              <div style="font-size:16px;font-weight:500;color:#6F7871;line-height:1.3;text-decoration:line-through;text-decoration-color:rgba(111,120,113,0.5)">Fix UTM mapping table</div>
+              <div style="display:flex;align-items:center;gap:8px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871"><span>P2</span><span>·</span><span>done 3:12 PM</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8FC1B7;margin-top:8px">PROJECT STATE BLOCK</div>
+        <div style="background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;padding:18px 16px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">CURRENT STATE</div>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 1.5l3 3L5 12l-3.7.7L2 9l7.5-7.5z" stroke="#6F7871" stroke-width="1.4" stroke-linejoin="round"></path></svg>
+          </div>
+          <div style="font-size:16px;line-height:1.55;color:#ECEFEA">Quote v2 sent Jun 30. Dana asked for tile labor broken out and confirmation the vanity lead time holds for an Aug 10 start. Revised quote is drafted — needs final labor numbers.</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(210,153,98,0.09);border:1px solid rgba(210,153,98,0.22);border-radius:12px">
+            <div style="width:6px;height:6px;border-radius:999px;background:#D29962;flex-shrink:0"></div>
+            <div style="flex:1;font-size:13.5px;white-space:nowrap;color:#D29962">Verified 12 days ago</div>
+            <div style="font-size:13.5px;font-weight:600;white-space:nowrap;flex-shrink:0;color:#ECEFEA">Ask Chief to refresh →</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROPOSAL CARD COLUMN -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:20px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;color:#8FC1B7">PROPOSAL CARD — CHIEF PROPOSES, YOU APPROVE</div>
+        <div style="display:flex;gap:20px">
+          <div style="flex:1;display:flex;flex-direction:column;gap:16px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">standard tier · pending — reversible, one tap</div>
+            <div style="background:#1C211E;border:1px solid rgba(143,193,183,0.22);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#8FC1B7">CREATE TASK</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">reversible</div>
+              </div>
+              <div style="font-size:16px;line-height:1.5;color:#ECEFEA">Add <span style="font-weight:600">“Send revised quote to Henderson”</span> — P1, due Fri, project: Henderson remodel.</div>
+              <div style="display:flex;gap:10px">
+                <div style="flex:1.6;height:48px;border-radius:14px;background:#33635A;color:#E3F0EC;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center">Approve</div>
+                <div style="flex:1;height:48px;border-radius:14px;border:1px solid rgba(236,240,236,0.14);color:#A6AEA7;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center">Dismiss</div>
+              </div>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">executing</div>
+            <div style="background:#1C211E;border:1px solid rgba(143,193,183,0.16);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;opacity:0.92">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#8FC1B7">CREATE TASK</div>
+              </div>
+              <div style="font-size:16px;line-height:1.5;color:#A6AEA7">Add <span style="font-weight:600;color:#ECEFEA">“Send revised quote to Henderson”</span> — P1, due Fri.</div>
+              <div style="height:48px;border-radius:14px;background:rgba(51,99,90,0.25);display:flex;align-items:center;justify-content:center;gap:10px">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="rgba(143,193,183,0.25)" stroke-width="2"></circle><path d="M8 1.5A6.5 6.5 0 0114.5 8" stroke="#8FC1B7" stroke-width="2" stroke-linecap="round"></path></svg>
+                <span style="font-size:15px;font-weight:500;color:#8FC1B7">Creating task…</span>
+              </div>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">done — collapses to a receipt, undo stays</div>
+            <div style="background:#1A1D1B;border:1px solid rgba(140,190,147,0.22);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <div style="width:24px;height:24px;border-radius:999px;background:rgba(140,190,147,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="#8CBE93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <div style="flex:1;font-size:15px;color:#A6AEA7;line-height:1.4">Task created — <span style="color:#ECEFEA">Send revised quote to Henderson</span></div>
+              <div style="font-size:15px;font-weight:600;color:#8FC1B7;padding:10px 4px">Undo</div>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">dismissed</div>
+            <div style="background:transparent;border:1px dashed rgba(236,240,236,0.12);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <div style="flex:1;font-size:15px;color:#6F7871;line-height:1.4">Dismissed — Chief won’t re-suggest today</div>
+              <div style="font-size:15px;font-weight:500;color:#A6AEA7;padding:10px 4px">Restore</div>
+            </div>
+          </div>
+
+          <div style="flex:1;display:flex;flex-direction:column;gap:16px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">irreversible tier · copper frame, exact payload, slide to send</div>
+            <div style="background:#211D19;border:1px solid rgba(210,153,98,0.42);border-radius:16px;box-shadow:0 0 0 4px rgba(210,153,98,0.06);overflow:hidden;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(210,153,98,0.10);border-bottom:1px solid rgba(210,153,98,0.22)">
+                <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 0l6 6-6 6-6-6z" fill="#D29962"></path></svg>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#D29962">SEND EMAIL · IRREVERSIBLE</div>
+              </div>
+              <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+                <div style="font-size:16px;line-height:1.5;color:#ECEFEA">Reply to <span style="font-weight:600">Dana Henderson</span> with the revised quote — tile labor broken out, vanity lead time confirmed for Aug 10.</div>
+                <div style="border:1px solid rgba(236,240,236,0.10);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,0.18)">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">EXACT EMAIL · TAP TO EXPAND</div>
+                  <div style="font-size:14px;line-height:1.5;color:#A6AEA7">“Hi Dana — attached is the revised quote with tile labor as its own line. Vanity lead time is confirmed for…”</div>
+                </div>
+                <div style="position:relative;height:56px;border-radius:999px;background:rgba(210,153,98,0.10);border:1px solid rgba(210,153,98,0.35);display:flex;align-items:center">
+                  <div style="position:absolute;left:5px;width:46px;height:46px;border-radius:999px;background:#D29962;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4)"><svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M1 6h13M10 1.5L14.5 6 10 10.5" stroke="#211D19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                  <div style="width:100%;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.12em;color:#D29962;padding-left:32px">SLIDE TO SEND</div>
+                </div>
+                <div style="height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;color:#A6AEA7">Dismiss</div>
+              </div>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">batch · standard-tier only — irreversible never batches</div>
+            <div style="background:#1C211E;border:1px solid rgba(143,193,183,0.22);border-radius:16px;overflow:hidden;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(236,240,236,0.08)">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#8FC1B7">3 PROPOSALS · ALL REVERSIBLE</div>
+                <div style="height:38px;padding:0 16px;border-radius:12px;background:#33635A;color:#E3F0EC;font-size:14px;font-weight:600;display:flex;align-items:center">Approve all</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(236,240,236,0.06)">
+                <div style="flex:1;min-width:0"><div style="font-size:15px;color:#ECEFEA;line-height:1.35">Create task “Review Kirill’s API fix” — P1, today</div></div>
+                <div style="width:38px;height:38px;border-radius:12px;background:rgba(51,99,90,0.35);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1 5l3.7 3.7L12 1" stroke="#8FC1B7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                <div style="width:38px;height:38px;border-radius:12px;border:1px solid rgba(236,240,236,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1l-8 8" stroke="#6F7871" stroke-width="1.6" stroke-linecap="round"></path></svg></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(236,240,236,0.06)">
+                <div style="flex:1;min-width:0"><div style="font-size:15px;color:#ECEFEA;line-height:1.35">Move “Q3 ad attribution” → unblocked (API access granted)</div></div>
+                <div style="width:38px;height:38px;border-radius:12px;background:rgba(51,99,90,0.35);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1 5l3.7 3.7L12 1" stroke="#8FC1B7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                <div style="width:38px;height:38px;border-radius:12px;border:1px solid rgba(236,240,236,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1l-8 8" stroke="#6F7871" stroke-width="1.6" stroke-linecap="round"></path></svg></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 16px">
+                <div style="flex:1;min-width:0"><div style="font-size:15px;color:#ECEFEA;line-height:1.35">Save note to Henderson: “Dana wants tile labor split”</div></div>
+                <div style="width:38px;height:38px;border-radius:12px;background:rgba(51,99,90,0.35);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1 5l3.7 3.7L12 1" stroke="#8FC1B7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                <div style="width:38px;height:38px;border-radius:12px;border:1px solid rgba(236,240,236,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1l-8 8" stroke="#6F7871" stroke-width="1.6" stroke-linecap="round"></path></svg></div>
+              </div>
+            </div>
+
+            <div style="font-size:13px;line-height:1.55;color:#6F7871">Tier logic: teal border + Approve button = reversible, one tap, instant undo. Copper frame + banner + slide gesture = leaves your infrastructure (email, money, external APIs). The two must never be confusable at a glance — different hue, different border weight, different confirm physics.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 1c SCREENS ============ -->
+  <div id="1c" style="position:relative;display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <a href="#1c" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871;text-decoration:none;border:1px solid rgba(236,240,236,0.14);border-radius:6px;padding:3px 8px">1c</a>
+      <div style="font-family:'Newsreader',Georgia,serif;font-size:28px;font-weight:500;color:#ECEFEA">Screens — 390×844</div>
+    </div>
+    <div style="display:flex;gap:40px;align-items:flex-start">
+
+      <!-- ========== HOME ========== -->
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">HOME · FOCUS VIEW · BAR PENDING</div>
+        <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 390 }}" height="{{ 844 }}" hint-size="390px,844px">
+          <div data-screen-label="Home" style="position:relative;height:100%;background:#131513;display:flex;flex-direction:column;font-family:'Instrument Sans',system-ui,sans-serif;color:#ECEFEA;overflow:hidden;box-sizing:border-box">
+            <div style="flex:1;overflow:hidden;padding:58px 16px 0;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">FRI JUL 4 · 9:41 AM</div>
+                <div style="width:32px;height:32px;border-radius:999px;background:#222724;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#A6AEA7">J</div>
+              </div>
+              <div style="font-family:'Newsreader',Georgia,serif;font-size:20px;line-height:1.4;font-weight:500;color:#ECEFEA">Today is about closing Henderson. Kirill replied on the API bug 2h ago — <span style="color:#8FC1B7">you’re unblocked.</span></div>
+
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">TOP 3</div>
+                <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:7px 14px;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;box-sizing:border-box">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8FC1B7;width:14px;flex-shrink:0">1</div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                    <div style="font-size:16px;font-weight:500;line-height:1.3">Send revised quote to Henderson</div>
+                    <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871"><span style="color:#D29962">P1</span><span>·</span><span>Fri</span><span>·</span><span>high impact / low effort</span></div>
+                  </div>
+                  <svg width="7" height="12" viewBox="0 0 7 12" style="flex-shrink:0"><path d="M1 1l5 5-5 5" stroke="#6F7871" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:7px 14px;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;box-sizing:border-box">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8FC1B7;width:14px;flex-shrink:0">2</div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                    <div style="font-size:16px;font-weight:500;line-height:1.3">Review Kirill’s API fix</div>
+                    <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871"><span style="color:#D29962">P1</span><span>·</span><span style="color:#8CBE93">unblocked today</span></div>
+                  </div>
+                  <svg width="7" height="12" viewBox="0 0 7 12" style="flex-shrink:0"><path d="M1 1l5 5-5 5" stroke="#6F7871" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:7px 14px;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;box-sizing:border-box">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#8FC1B7;width:14px;flex-shrink:0">3</div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                    <div style="font-size:16px;font-weight:500;line-height:1.3">Fix UTM mapping table</div>
+                    <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871"><span>P2</span><span>·</span><span>Q3 attribution</span></div>
+                  </div>
+                  <svg width="7" height="12" viewBox="0 0 7 12" style="flex-shrink:0"><path d="M1 1l5 5-5 5" stroke="#6F7871" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">PROPOSALS · 3</div>
+                <div style="background:#1C211E;border:1px solid rgba(143,193,183,0.22);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#8FC1B7">UPDATE PROJECT</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">reversible</div>
+                  </div>
+                  <div style="font-size:16px;line-height:1.5;color:#ECEFEA">Mark <span style="font-weight:600">Q3 ad attribution</span> unblocked — API access restored.</div>
+                  <div style="display:flex;gap:10px">
+                    <div style="flex:1.6;height:46px;border-radius:14px;background:#33635A;color:#E3F0EC;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center">Approve</div>
+                    <div style="flex:1;height:46px;border-radius:14px;border:1px solid rgba(236,240,236,0.14);color:#A6AEA7;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center">Dismiss</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">WAITING ON</div>
+                <div style="display:flex;flex-direction:column;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;overflow:hidden">
+                  <div style="display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 14px;border-bottom:1px solid rgba(236,240,236,0.06);box-sizing:border-box">
+                    <div style="width:7px;height:7px;border-radius:999px;background:#8CBE93;flex-shrink:0"></div>
+                    <div style="flex:1;font-size:15px;color:#ECEFEA">Kirill — <span style="font-weight:600;color:#8CBE93">replied 2h ago</span></div>
+                    <div style="font-size:14px;font-weight:600;white-space:nowrap;flex-shrink:0;color:#8FC1B7">review →</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 14px;border-bottom:1px solid rgba(236,240,236,0.06);box-sizing:border-box">
+                    <div style="width:7px;height:7px;border-radius:999px;background:#6F7871;flex-shrink:0"></div>
+                    <div style="flex:1;font-size:15px;color:#A6AEA7">Dana Henderson — sign-off</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;flex-shrink:0;color:#6F7871">quiet 3d</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 14px;box-sizing:border-box">
+                    <div style="width:7px;height:7px;border-radius:999px;background:#D29962;flex-shrink:0"></div>
+                    <div style="flex:1;font-size:15px;color:#A6AEA7">Meta support — API access</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;flex-shrink:0;color:#D29962">day 6</div>
+                  </div>
+                </div>
+              </div>
+
+              
+            </div>
+
+            <div style="padding:8px 12px 0;flex-shrink:0">
+              <div style="display:flex;align-items:center;gap:12px;height:60px;padding:0 10px 0 12px;background:linear-gradient(180deg,#243029,#1C221E);border:1px solid rgba(143,193,183,0.38);border-radius:20px;box-shadow:0 10px 30px rgba(51,99,90,0.30);box-sizing:border-box">
+                <div style="position:relative;width:36px;height:36px;border-radius:12px;background:rgba(84,140,128,0.22);border:1px solid rgba(143,193,183,0.4);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#A9D4CA;flex-shrink:0">C<div style="position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:999px;background:#8FC1B7;border:2px solid #1C221E"></div></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:16px;color:#ECEFEA;line-height:1.2">3 proposals waiting.</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#8FC1B7">OLDEST 24 MIN · TAP TO REVIEW</div>
+                </div>
+                <div style="min-width:34px;height:34px;padding:0 4px;border-radius:999px;background:#33635A;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#E3F0EC;flex-shrink:0;box-sizing:border-box">3</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 30px;flex-shrink:0">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4.5l8 7V20h-5.5v-5h-5v5H4v-8.5z" stroke="#ECEFEA" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#ECEFEA">HOME</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 5.5h16v13H4z" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path><path d="M4 13h4.5c.4 1.8 1.8 3 3.5 3s3.1-1.2 3.5-3H20" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">INBOX</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;margin-top:-8px"><div style="width:48px;height:48px;border-radius:999px;background:#33635A;border:1px solid rgba(143,193,183,0.45);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:22px;font-weight:500;color:#E3F0EC;box-shadow:0 6px 16px rgba(0,0,0,0.4)">C</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3.5 7.5h5l2 2h10v9.5h-17V7.5z" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">PROJECTS</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" stroke="#6F7871" stroke-width="1.7"></rect><path d="M8 12.5l3 3 5.5-6" stroke="#6F7871" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">TASKS</div></div>
+            </div>
+          </div>
+        </x-import>
+      </div>
+
+      <!-- ========== INBOX ========== -->
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">INBOX · TRIAGE, ONE AT A TIME · BAR IDLE</div>
+        <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 390 }}" height="{{ 844 }}" hint-size="390px,844px">
+          <div data-screen-label="Inbox" style="position:relative;height:100%;background:#131513;display:flex;flex-direction:column;font-family:'Instrument Sans',system-ui,sans-serif;color:#ECEFEA;overflow:hidden;box-sizing:border-box">
+            <div style="flex:1;overflow:hidden;padding:66px 16px 0;display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+                <div style="font-size:22px;font-weight:600">Inbox</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;color:#6F7871;border:1px solid rgba(236,240,236,0.12);border-radius:999px;padding:5px 10px;white-space:nowrap;flex-shrink:0">4 MORE</div>
+              </div>
+              <div style="flex:1;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:20px;padding:20px 18px;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:42px;height:42px;border-radius:999px;background:rgba(210,153,98,0.16);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#D29962;flex-shrink:0">DH</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:16px;font-weight:600">Dana Henderson</div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;color:#6F7871">TODAY 8:02 AM</div>
+                  </div>
+                </div>
+                <div style="font-size:18px;font-weight:600;line-height:1.35">Re: Revised quote — bathroom remodel</div>
+                <div style="height:1px;background:rgba(236,240,236,0.08)"></div>
+                <div style="flex:1;font-size:16px;line-height:1.6;color:#C6CCC7;overflow:hidden">
+                  <p style="margin:0 0 14px">Hi — the revised numbers look good overall. Two asks before we sign:</p>
+                  <p style="margin:0 0 14px">1. Can you break out the tile labor as a separate line item?<br>2. Does the vanity lead time still hold for an Aug 10 start?</p>
+                  <p style="margin:0 0 14px">If yes to both, we’re ready to move this week.</p>
+                  <p style="margin:0;color:#6F7871">— Dana</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(143,193,183,0.08);border:1px solid rgba(143,193,183,0.18);border-radius:12px">
+                  <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:14.5px;color:#8FC1B7;line-height:1.4">Chief: she’s ready to sign — this unblocks the quote task.</div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:4px">
+                <div style="height:52px;border-radius:16px;background:#33635A;color:#E3F0EC;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px"><span style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:17px">C</span>Ask Chief about this</div>
+                <div style="display:flex;gap:10px">
+                  <div style="flex:1;height:48px;border-radius:14px;border:1px solid rgba(236,240,236,0.14);color:#A6AEA7;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center">Archive</div>
+                  <div style="flex:1;height:48px;border-radius:14px;border:1px solid rgba(236,240,236,0.14);color:#ECEFEA;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center">Reply</div>
+                </div>
+              </div>
+            </div>
+            <div style="padding:8px 12px 0;flex-shrink:0">
+              <div style="display:flex;align-items:center;gap:12px;height:60px;padding:0 10px 0 12px;background:linear-gradient(180deg,#232826,#1C201D);border:1px solid rgba(236,240,236,0.10);border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.35);box-sizing:border-box">
+                <div style="width:36px;height:36px;border-radius:12px;background:rgba(84,140,128,0.14);border:1px solid rgba(143,193,183,0.25);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#8FC1B7;flex-shrink:0">C</div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:16px;color:#ECEFEA;line-height:1.2">All clear.</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">ASK CHIEF</div>
+                </div>
+                <div style="width:34px;height:34px;border-radius:999px;border:1px solid rgba(236,240,236,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6l5-5 5 5" stroke="#A6AEA7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 30px;flex-shrink:0">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4.5l8 7V20h-5.5v-5h-5v5H4v-8.5z" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">HOME</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 5.5h16v13H4z" stroke="#ECEFEA" stroke-width="1.7" stroke-linejoin="round"></path><path d="M4 13h4.5c.4 1.8 1.8 3 3.5 3s3.1-1.2 3.5-3H20" stroke="#ECEFEA" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#ECEFEA">INBOX</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;margin-top:-8px"><div style="width:48px;height:48px;border-radius:999px;background:#33635A;border:1px solid rgba(143,193,183,0.45);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:22px;font-weight:500;color:#E3F0EC;box-shadow:0 6px 16px rgba(0,0,0,0.4)">C</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3.5 7.5h5l2 2h10v9.5h-17V7.5z" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">PROJECTS</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" stroke="#6F7871" stroke-width="1.7"></rect><path d="M8 12.5l3 3 5.5-6" stroke="#6F7871" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">TASKS</div></div>
+            </div>
+          </div>
+        </x-import>
+      </div>
+
+      <!-- ========== PROJECT DETAIL ========== -->
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">PROJECT DETAIL · LIVING RECORD</div>
+        <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 390 }}" height="{{ 844 }}" hint-size="390px,844px">
+          <div data-screen-label="Project detail" style="position:relative;height:100%;background:#131513;display:flex;flex-direction:column;font-family:'Instrument Sans',system-ui,sans-serif;color:#ECEFEA;overflow:hidden;box-sizing:border-box">
+            <div style="flex:1;overflow:hidden;padding:58px 16px 0;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;gap:12px;padding-top:8px">
+                <div style="width:34px;height:34px;border-radius:999px;border:1px solid rgba(236,240,236,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M7 1L1 7l6 6" stroke="#A6AEA7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">PROJECT</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="font-size:22px;font-weight:600;line-height:1.25">Henderson bathroom remodel</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="height:26px;padding:0 9px;border-radius:6px;background:rgba(143,193,183,0.13);color:#8FC1B7;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.06em;display:flex;align-items:center">ACTIVE</div>
+                  <div style="font-size:14px;color:#A6AEA7">Goal: signed contract + deposit by Jul 11</div>
+                </div>
+              </div>
+
+              <div style="background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">CURRENT STATE</div>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.5 1.5l3 3L5 12l-3.7.7L2 9l7.5-7.5z" stroke="#6F7871" stroke-width="1.4" stroke-linejoin="round"></path></svg>
+                </div>
+                <div style="font-size:15px;line-height:1.5;color:#ECEFEA">Quote v2 sent Jun 30. Dana asked for tile labor broken out and vanity lead-time confirmation for Aug 10. Revised quote drafted — needs final labor numbers.</div>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(210,153,98,0.09);border:1px solid rgba(210,153,98,0.22);border-radius:12px">
+                  <div style="width:6px;height:6px;border-radius:999px;background:#D29962;flex-shrink:0"></div>
+                  <div style="flex:1;font-size:13px;white-space:nowrap;color:#D29962">Verified 12 days ago</div>
+                  <div style="font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;color:#ECEFEA">Ask Chief to refresh →</div>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">NEXT ACTION</div>
+                <div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:7px 14px;background:#1C211E;border:1px solid rgba(143,193,183,0.22);border-radius:16px;box-sizing:border-box">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M5.5 8.5l3-3M4 10l-1.5 1.5a2.5 2.5 0 01-3.5-3.5z" stroke="none"></path><path d="M6 8l2-2M4.5 10.5L3 12a2.4 2.4 0 11-3.4-3.4L3 7.2M9.5 6.8L11 5.3a2.4 2.4 0 10-3.4-3.4L6 3.5" stroke="#8FC1B7" stroke-width="1.4" stroke-linecap="round" transform="translate(1.5,0.5)"></path></svg>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                    <div style="font-size:16px;font-weight:500">Send revised quote to Henderson</div>
+                    <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871"><span style="color:#D29962">P1</span><span>·</span><span>due Fri</span><span>·</span><span style="color:#8FC1B7">linked task</span></div>
+                  </div>
+                  <svg width="7" height="12" viewBox="0 0 7 12" style="flex-shrink:0"><path d="M1 1l5 5-5 5" stroke="#6F7871" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px">
+                <div style="flex:1;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">WAITING ON</div>
+                  <div style="font-size:14.5px;line-height:1.4;color:#ECEFEA">Dana — sign-off <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">· quiet 3d</span></div>
+                </div>
+                <div style="flex:1;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">BLOCKERS</div>
+                  <div style="font-size:14.5px;line-height:1.4;color:#6F7871">None</div>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">TASKS · 3</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;white-space:nowrap;color:#6F7871">HOLD ⋮⋮ TO REORDER</div>
+                </div>
+                <div style="display:flex;flex-direction:column;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;overflow:hidden">
+                  <div style="display:flex;align-items:center;gap:11px;min-height:50px;padding:6px 14px 6px 10px;border-bottom:1px solid rgba(236,240,236,0.06);box-sizing:border-box">
+                    <div style="color:#4A524C;font-size:13px;letter-spacing:1px;flex-shrink:0">⋮⋮</div>
+                    <div style="width:20px;height:20px;border:1.5px solid #6F7871;border-radius:6px;flex-shrink:0"></div>
+                    <div style="flex:1;min-width:0;font-size:15px;font-weight:500">Send revised quote to Henderson</div>
+                    <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;flex-shrink:0"><span style="color:#D29962">P1</span><span style="color:#6F7871">Fri</span></div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:11px;min-height:50px;padding:6px 14px 6px 10px;border-bottom:1px solid rgba(236,240,236,0.06);box-sizing:border-box">
+                    <div style="color:#4A524C;font-size:13px;letter-spacing:1px;flex-shrink:0">⋮⋮</div>
+                    <div style="width:20px;height:20px;border:1.5px solid #6F7871;border-radius:6px;flex-shrink:0"></div>
+                    <div style="flex:1;min-width:0;font-size:15px;font-weight:500">Confirm vanity lead time with supplier</div>
+                    <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;flex-shrink:0"><span style="color:#A6AEA7">P2</span><span style="color:#6F7871">Mon</span></div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:11px;min-height:50px;padding:6px 14px 6px 10px;box-sizing:border-box">
+                    <div style="color:#4A524C;font-size:13px;letter-spacing:1px;flex-shrink:0">⋮⋮</div>
+                    <div style="width:20px;height:20px;border:1.5px solid #6F7871;border-radius:6px;flex-shrink:0"></div>
+                    <div style="flex:1;min-width:0;font-size:15px;font-weight:500;color:#A6AEA7">Collect deposit invoice</div>
+                    <div style="display:flex;gap:7px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;flex-shrink:0"><span style="color:#A6AEA7">P3</span><span style="color:#6F7871">waiting</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="padding:8px 12px 0;flex-shrink:0">
+              <div style="display:flex;align-items:center;gap:12px;height:60px;padding:0 10px 0 12px;background:linear-gradient(180deg,#232826,#1C201D);border:1px solid rgba(236,240,236,0.10);border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,0.35);box-sizing:border-box">
+                <div style="width:36px;height:36px;border-radius:12px;background:rgba(84,140,128,0.14);border:1px solid rgba(143,193,183,0.25);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#8FC1B7;flex-shrink:0">C</div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:16px;color:#ECEFEA;line-height:1.2">All clear.</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">ASK CHIEF</div>
+                </div>
+                <div style="width:34px;height:34px;border-radius:999px;border:1px solid rgba(236,240,236,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="7" viewBox="0 0 12 7" fill="none"><path d="M1 6l5-5 5 5" stroke="#A6AEA7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-around;padding:10px 8px 30px;flex-shrink:0">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4.5l8 7V20h-5.5v-5h-5v5H4v-8.5z" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">HOME</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 5.5h16v13H4z" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path><path d="M4 13h4.5c.4 1.8 1.8 3 3.5 3s3.1-1.2 3.5-3H20" stroke="#6F7871" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">INBOX</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;margin-top:-8px"><div style="width:48px;height:48px;border-radius:999px;background:#33635A;border:1px solid rgba(143,193,183,0.45);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:22px;font-weight:500;color:#E3F0EC;box-shadow:0 6px 16px rgba(0,0,0,0.4)">C</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3.5 7.5h5l2 2h10v9.5h-17V7.5z" stroke="#ECEFEA" stroke-width="1.7" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#ECEFEA">PROJECTS</div></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:60px;padding-top:4px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" stroke="#6F7871" stroke-width="1.7"></rect><path d="M8 12.5l3 3 5.5-6" stroke="#6F7871" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#6F7871">TASKS</div></div>
+            </div>
+          </div>
+        </x-import>
+      </div>
+
+      <!-- ========== CHIEF SHEET ========== -->
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">CHIEF SHEET · EXPANDED OVER INBOX · CONTEXT-AWARE</div>
+        <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 390 }}" height="{{ 844 }}" hint-size="390px,844px">
+          <div data-screen-label="Chief sheet" style="position:relative;height:100%;background:#131513;display:flex;flex-direction:column;font-family:'Instrument Sans',system-ui,sans-serif;color:#ECEFEA;overflow:hidden;box-sizing:border-box">
+            <div style="padding:66px 16px 0;opacity:0.35;filter:blur(1px)">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+                <div style="font-size:22px;font-weight:600">Inbox</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871;border:1px solid rgba(236,240,236,0.12);border-radius:999px;padding:5px 10px;white-space:nowrap;flex-shrink:0">4 MORE</div>
+              </div>
+            </div>
+            <div style="position:absolute;inset:0;background:rgba(8,10,9,0.5)"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;top:118px;background:#1D211E;border-radius:24px 24px 0 0;border:1px solid rgba(236,240,236,0.12);border-bottom:none;box-shadow:0 -20px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;overflow:hidden">
+              <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid rgba(236,240,236,0.08);flex-shrink:0">
+                <div style="width:40px;height:4px;border-radius:999px;background:rgba(236,240,236,0.2);margin:0 auto"></div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:36px;height:36px;border-radius:12px;background:rgba(84,140,128,0.14);border:1px solid rgba(143,193,183,0.25);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500;color:#8FC1B7;flex-shrink:0">C</div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">LOOKING AT</div>
+                    <div style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Re: Revised quote — Dana Henderson</div>
+                  </div>
+                  <div style="width:34px;height:34px;border-radius:999px;border:1px solid rgba(236,240,236,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="#A6AEA7" stroke-width="1.7" stroke-linecap="round"></path></svg></div>
+                </div>
+              </div>
+
+              <div style="flex:1;overflow:hidden;padding:18px 16px;display:flex;flex-direction:column;gap:18px">
+                <div style="align-self:flex-end;max-width:280px;background:rgba(84,140,128,0.18);border:1px solid rgba(143,193,183,0.2);border-radius:16px 16px 4px 16px;padding:12px 14px;font-size:15.5px;line-height:1.45">Draft the reply and set up whatever she needs to sign this week.</div>
+
+                <div style="display:flex;gap:12px">
+                  <div style="width:26px;height:26px;border-radius:9px;background:rgba(84,140,128,0.14);border:1px solid rgba(143,193,183,0.25);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:14px;color:#8FC1B7;flex-shrink:0;margin-top:2px">C</div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+                    <div style="font-family:'Newsreader',Georgia,serif;font-size:17.5px;line-height:1.5;color:#ECEFEA">Done. Tile labor is $2,840 from the v2 worksheet; the vanity supplier confirmed Aug 10 on Tuesday. Two steps: a task to track sign-off, and the reply itself.</div>
+
+                    <div style="background:#1A1D1B;border:1px solid rgba(140,190,147,0.22);border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:11px">
+                      <div style="width:22px;height:22px;border-radius:999px;background:rgba(140,190,147,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="9" viewBox="0 0 12 10" fill="none"><path d="M1 5l3.5 3.5L11 1" stroke="#8CBE93" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                      <div style="flex:1;font-size:14.5px;color:#A6AEA7;line-height:1.4">Task created — <span style="color:#ECEFEA">Track Henderson sign-off</span></div>
+                      <div style="font-size:14.5px;font-weight:600;color:#8FC1B7;padding:8px 2px">Undo</div>
+                    </div>
+
+                    <div style="background:#211D19;border:1px solid rgba(210,153,98,0.42);border-radius:16px;box-shadow:0 0 0 4px rgba(210,153,98,0.06);overflow:hidden;display:flex;flex-direction:column">
+                      <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(210,153,98,0.10);border-bottom:1px solid rgba(210,153,98,0.22)">
+                        <svg width="11" height="11" viewBox="0 0 12 12"><path d="M6 0l6 6-6 6-6-6z" fill="#D29962"></path></svg>
+                        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#D29962">SEND EMAIL · IRREVERSIBLE</div>
+                      </div>
+                      <div style="padding:14px;display:flex;flex-direction:column;gap:12px">
+                        <div style="font-size:15px;line-height:1.5;color:#ECEFEA">Reply to <span style="font-weight:600">Dana Henderson</span> — tile labor broken out, Aug 10 confirmed.</div>
+                        <div style="border:1px solid rgba(236,240,236,0.10);border-radius:12px;padding:11px 12px;display:flex;flex-direction:column;gap:5px;background:rgba(0,0,0,0.18)">
+                          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#6F7871">EXACT EMAIL · TAP TO EXPAND</div>
+                          <div style="font-size:13.5px;line-height:1.5;color:#A6AEA7">“Hi Dana — attached is the revised quote with tile labor as its own line ($2,840). Vanity lead time is confirmed…”</div>
+                        </div>
+                        <div style="position:relative;height:54px;border-radius:999px;background:rgba(210,153,98,0.10);border:1px solid rgba(210,153,98,0.35);display:flex;align-items:center">
+                          <div style="position:absolute;left:4px;width:46px;height:46px;border-radius:999px;background:#D29962;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4)"><svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M1 6h13M10 1.5L14.5 6 10 10.5" stroke="#211D19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+                          <div style="width:100%;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.12em;color:#D29962;padding-left:30px">SLIDE TO SEND</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="padding:12px 16px 34px;border-top:1px solid rgba(236,240,236,0.08);display:flex;gap:10px;flex-shrink:0">
+                <div style="flex:1;height:50px;border-radius:16px;border:1px solid rgba(236,240,236,0.14);background:#171A18;display:flex;align-items:center;padding:0 16px;color:#6F7871;font-size:16px">Ask Chief…</div>
+                <div style="width:50px;height:50px;border-radius:16px;background:#33635A;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 14V2M2.5 7.5L8 2l5.5 5.5" stroke="#E3F0EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              </div>
+            </div>
+          </div>
+        </x-import>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 1d DESKTOP HOME ============ -->
+  <div id="1d" style="position:relative;display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <a href="#1d" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871;text-decoration:none;border:1px solid rgba(236,240,236,0.14);border-radius:6px;padding:3px 8px">1d</a>
+      <div style="font-family:'Newsreader',Georgia,serif;font-size:28px;font-weight:500;color:#ECEFEA">Desktop Home — 1280 · Chief bar becomes a right-hand panel</div>
+    </div>
+    <div data-screen-label="Desktop Home" style="width:1280px;height:800px;background:#131513;border-radius:16px;border:1px solid rgba(236,240,236,0.10);overflow:hidden;display:flex;font-family:'Instrument Sans',system-ui,sans-serif;color:#ECEFEA;box-shadow:0 40px 80px rgba(0,0,0,0.3)">
+      <!-- left rail -->
+      <div style="width:220px;border-right:1px solid rgba(236,240,236,0.08);display:flex;flex-direction:column;padding:24px 14px;gap:6px;flex-shrink:0;box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 10px 20px">
+          <div style="width:30px;height:30px;border-radius:10px;background:rgba(84,140,128,0.14);border:1px solid rgba(143,193,183,0.25);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:16px;color:#8FC1B7">C</div>
+          <div style="font-family:'Newsreader',Georgia,serif;font-size:19px;font-weight:500">Chief</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:11px;height:42px;padding:0 12px;border-radius:12px;background:rgba(236,240,236,0.06);font-size:15px;font-weight:600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 11.5L12 4.5l8 7V20h-5.5v-5h-5v5H4v-8.5z" stroke="#ECEFEA" stroke-width="1.7" stroke-linejoin="round"></path></svg>Home</div>
+        <div style="display:flex;align-items:center;gap:11px;height:42px;padding:0 12px;border-radius:12px;font-size:15px;color:#A6AEA7"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 5.5h16v13H4z" stroke="#A6AEA7" stroke-width="1.7" stroke-linejoin="round"></path><path d="M4 13h4.5c.4 1.8 1.8 3 3.5 3s3.1-1.2 3.5-3H20" stroke="#A6AEA7" stroke-width="1.7" stroke-linejoin="round"></path></svg>Inbox <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6F7871">5</span></div>
+        <div style="display:flex;align-items:center;gap:11px;height:42px;padding:0 12px;border-radius:12px;font-size:15px;color:#A6AEA7"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3.5 7.5h5l2 2h10v9.5h-17V7.5z" stroke="#A6AEA7" stroke-width="1.7" stroke-linejoin="round"></path></svg>Projects</div>
+        <div style="display:flex;align-items:center;gap:11px;height:42px;padding:0 12px;border-radius:12px;font-size:15px;color:#A6AEA7"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" stroke="#A6AEA7" stroke-width="1.7"></rect><path d="M8 12.5l3 3 5.5-6" stroke="#A6AEA7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>Tasks</div>
+        <div style="margin-top:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#4A524C;padding:0 12px">SELF-HOSTED · SYNCED 9:41</div>
+      </div>
+      <!-- main -->
+      <div style="flex:1;padding:36px 40px;display:flex;flex-direction:column;gap:28px;overflow:hidden;min-width:0">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">FRI JUL 4 · 9:41 AM</div>
+        <div style="font-family:'Newsreader',Georgia,serif;font-size:27px;line-height:1.42;font-weight:500;max-width:620px">Today is about closing Henderson. Kirill replied on the API bug 2h ago — <span style="color:#8FC1B7">you’re unblocked.</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">TOP 3</div>
+          <div style="display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 18px;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;box-sizing:border-box">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#8FC1B7;width:16px">1</div>
+            <div style="flex:1;font-size:16.5px;font-weight:500">Send revised quote to Henderson</div>
+            <div style="display:flex;gap:8px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6F7871"><span style="color:#D29962">P1</span><span>·</span><span>due Fri</span><span>·</span><span>Henderson remodel</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 18px;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;box-sizing:border-box">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#8FC1B7;width:16px">2</div>
+            <div style="flex:1;font-size:16.5px;font-weight:500">Review Kirill’s API fix</div>
+            <div style="display:flex;gap:8px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6F7871"><span style="color:#D29962">P1</span><span>·</span><span style="color:#8CBE93">unblocked today</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 18px;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;box-sizing:border-box">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#8FC1B7;width:16px">3</div>
+            <div style="flex:1;font-size:16.5px;font-weight:500">Fix UTM mapping table</div>
+            <div style="display:flex;gap:8px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6F7871"><span>P2</span><span>·</span><span>Q3 attribution</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;white-space:nowrap;color:#6F7871">WAITING ON</div>
+          <div style="display:flex;gap:10px">
+            <div style="flex:1;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:999px;background:#8CBE93"></div><div style="font-size:15px;font-weight:600">Kirill</div></div><div style="font-size:13.5px;color:#8CBE93">replied 2h ago → review</div></div>
+            <div style="flex:1;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:999px;background:#6F7871"></div><div style="font-size:15px;font-weight:600;color:#A6AEA7">Dana Henderson</div></div><div style="font-size:13.5px;color:#6F7871">sign-off · quiet 3d</div></div>
+            <div style="flex:1;background:#1A1D1B;border:1px solid rgba(236,240,236,0.08);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:center;gap:8px"><div style="width:7px;height:7px;border-radius:999px;background:#D29962"></div><div style="font-size:15px;font-weight:600;color:#A6AEA7">Meta support</div></div><div style="font-size:13.5px;color:#D29962">API access · day 6</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- chief panel -->
+      <div style="width:360px;border-left:1px solid rgba(236,240,236,0.08);background:#161917;display:flex;flex-direction:column;flex-shrink:0;box-sizing:border-box">
+        <div style="padding:20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(236,240,236,0.08)">
+          <div style="position:relative;width:34px;height:34px;border-radius:11px;background:rgba(84,140,128,0.22);border:1px solid rgba(143,193,183,0.4);display:flex;align-items:center;justify-content:center;font-family:'Newsreader',Georgia,serif;font-size:17px;color:#A9D4CA">C<div style="position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:999px;background:#8FC1B7;border:2px solid #161917"></div></div>
+          <div style="flex:1"><div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:15.5px">3 proposals waiting.</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;white-space:nowrap;color:#8FC1B7">OLDEST 24 MIN</div></div>
+        </div>
+        <div style="flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+          <div style="background:#1C211E;border:1px solid rgba(143,193,183,0.22);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#8FC1B7">UPDATE PROJECT</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">reversible</div></div>
+            <div style="font-size:15px;line-height:1.5">Mark <span style="font-weight:600">Q3 ad attribution</span> unblocked — API access restored.</div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1.6;height:42px;border-radius:12px;background:#33635A;color:#E3F0EC;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center">Approve</div>
+              <div style="flex:1;height:42px;border-radius:12px;border:1px solid rgba(236,240,236,0.14);color:#A6AEA7;font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center">Dismiss</div>
+            </div>
+          </div>
+          <div style="background:#1C211E;border:1px solid rgba(143,193,183,0.22);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.1em;white-space:nowrap;font-weight:500;color:#8FC1B7">CREATE TASK</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6F7871">reversible</div></div>
+            <div style="font-size:15px;line-height:1.5">Add <span style="font-weight:600">“Review Kirill’s API fix”</span> — P1, today.</div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1.6;height:42px;border-radius:12px;background:#33635A;color:#E3F0EC;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center">Approve</div>
+              <div style="flex:1;height:42px;border-radius:12px;border:1px solid rgba(236,240,236,0.14);color:#A6AEA7;font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center">Dismiss</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:16px 16px 20px;border-top:1px solid rgba(236,240,236,0.08);display:flex;gap:8px">
+          <div style="flex:1;height:44px;border-radius:14px;border:1px solid rgba(236,240,236,0.14);background:#131513;display:flex;align-items:center;padding:0 14px;color:#6F7871;font-size:15px">Ask Chief…</div>
+          <div style="width:44px;height:44px;border-radius:14px;background:#33635A;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 14V2M2.5 7.5L8 2l5.5 5.5" stroke="#E3F0EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:#6F7871;max-width:720px;line-height:1.55">Desktop adaptation: bottom nav → left rail; the Chief bar unfolds into a persistent right panel (same header, same proposal cards, same composer) — no state or component changes, only placement.</div>
+  </div>
+
+</section>
+</x-dc>
+</body>
+</html>
