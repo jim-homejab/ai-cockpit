@@ -1,0 +1,183 @@
+@import "tailwindcss";
+
+/*
+ * Chief design tokens — source of truth: handoff/HANDOFF.md.
+ * Dark is the primary theme; light keeps the same hue positions, paper-warm
+ * (never pure white page bg).
+ *
+ * Semantic rule (law): teal = Chief + reversible · copper = irreversible /
+ * attention-aging · green = confirmation only · red = destructive only, text-level.
+ */
+
+:root {
+  --bg: #131513;
+  --surface: #1a1d1b;
+  --raised: #222724;
+  --ink: #ecefea;
+  --ink-2: #a6aea7;
+  --ink-3: #6f7871;
+  --hairline: rgba(236, 240, 236, 0.08);
+
+  --teal: #8fc1b7;
+  --teal-fill: #33635a;
+  --teal-on-fill: #e3f0ec;
+  --teal-dim: rgba(84, 140, 128, 0.14);
+  --teal-dim-strong: rgba(84, 140, 128, 0.22);
+  --teal-border: rgba(143, 193, 183, 0.25);
+  --teal-border-strong: rgba(143, 193, 183, 0.38);
+
+  --copper: #d29962;
+  --copper-fill: rgba(210, 153, 98, 0.11);
+  --copper-border: rgba(210, 153, 98, 0.32);
+
+  --ok: #8cbe93;
+  --danger: #ce8577;
+
+  /* Chief bar / surface effects */
+  --bar-gradient: linear-gradient(180deg, #232826, #1c201d);
+  --bar-gradient-pending: linear-gradient(180deg, #243029, #1c221e);
+  --bar-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --bar-shadow-pending: 0 10px 30px rgba(51, 99, 90, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f3f2ed;
+    --surface: #fcfcfa;
+    --raised: #ffffff;
+    --ink: #1c201d;
+    --ink-2: #565e58;
+    --ink-3: #8a918b;
+    --hairline: rgba(28, 32, 29, 0.1);
+
+    --teal: #2c5f56;
+    --teal-fill: #2c5f56;
+    --teal-on-fill: #ecf4f1;
+    --teal-dim: rgba(44, 95, 86, 0.1);
+    --teal-dim-strong: rgba(44, 95, 86, 0.16);
+    --teal-border: rgba(44, 95, 86, 0.28);
+    --teal-border-strong: rgba(44, 95, 86, 0.42);
+
+    --copper: #9a6432;
+    --copper-fill: rgba(154, 100, 50, 0.09);
+    --copper-border: rgba(154, 100, 50, 0.3);
+
+    --ok: #77a683;
+    --danger: #b4584a;
+
+    --bar-gradient: linear-gradient(180deg, #ffffff, #f8f7f3);
+    --bar-gradient-pending: linear-gradient(180deg, #f2f5f2, #eaefec);
+    --bar-shadow: 0 8px 24px rgba(28, 32, 29, 0.12);
+    --bar-shadow-pending: 0 10px 30px rgba(44, 95, 86, 0.18), 0 8px 24px rgba(28, 32, 29, 0.12);
+  }
+}
+
+@theme inline {
+  /* Colors → Tailwind utilities (bg-surface, text-ink-2, border-hairline, …) */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-hairline: var(--hairline);
+  --color-teal: var(--teal);
+  --color-teal-fill: var(--teal-fill);
+  --color-teal-on-fill: var(--teal-on-fill);
+  --color-teal-dim: var(--teal-dim);
+  --color-teal-dim-strong: var(--teal-dim-strong);
+  --color-teal-border: var(--teal-border);
+  --color-teal-border-strong: var(--teal-border-strong);
+  --color-copper: var(--copper);
+  --color-copper-fill: var(--copper-fill);
+  --color-copper-border: var(--copper-border);
+  --color-ok: var(--ok);
+  --color-danger: var(--danger);
+
+  /* Three voices, three typefaces (loaded via next/font in app/layout.tsx):
+     serif = Chief speaking · sans = user content · mono = machine facts */
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-instrument), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), monospace;
+
+  /* Radii: 6 chip · 12 control · 16 card · 20 Chief bar · 24 sheet top */
+  --radius-chip: 6px;
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-bar: 20px;
+  --radius-sheet: 24px;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Focus is 2px teal outline, 2px offset — never removed. */
+  :focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Type scale (HANDOFF.md):
+     narrative 21/30 serif 500 · title 17/22 sans 600 · body 16/24 sans 400 ·
+     label 14/18 sans 500 · meta 12/16 mono · micro 11/14 mono caps ls .1em */
+  .text-narrative {
+    font-family: var(--font-serif);
+    font-size: 21px;
+    line-height: 30px;
+    font-weight: 500;
+  }
+
+  .text-title {
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 22px;
+    font-weight: 600;
+  }
+
+  .text-body {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+  }
+
+  .text-label {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 18px;
+    font-weight: 500;
+  }
+
+  .text-meta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .text-micro {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Chief's voice: serif, usually italic. Never used for user-owned content. */
+  .chief-voice {
+    font-family: var(--font-serif);
+    font-style: italic;
+  }
+}

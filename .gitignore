@@ -10,6 +10,10 @@ out/
 dist/
 .vercel/
 
+# next / ts
+next-env.d.ts
+*.tsbuildinfo
+
 # misc
 .DS_Store
 *.log
