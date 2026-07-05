@@ -138,6 +138,45 @@ Claude-guided.
   deploy first is the only possible entry point, and the app sequences
   everything else itself with a visible checklist.
 
+## Design decisions from the walkthrough (feed Phase 6)
+
+### Auth screen must be swappable — watch "Sign in with Claude"
+Anthropic runs an OAuth program where users of approved apps (Cursor, Xcode…)
+authenticate with their claude.ai account and usage draws from their
+subscription credits. It is currently a curated partner program (not
+self-serve) and its policy shifted repeatedly through 2026 (ban → reinstate →
+per-user credit pools), so Chief cannot build on it yet. Design consequence:
+the API-key screen is ONE screen behind ONE auth abstraction, so if/when
+Sign-in-with-Claude opens to all developers it becomes a button swap. Until
+then: deep-link to the console key page, warn that billing setup is required,
+validate the key instantly on paste.
+
+### Updates ship as proposals
+Deploy-button users have a disconnected copy of the repo — updates don't flow.
+Mechanism: the template ships a GitHub Action that checks upstream releases
+and opens a PR in the user's own repo; merging auto-deploys via Vercel. Chief
+surfaces it as a proposal card ("An update to me is available — approve to
+merge") — the trust contract applied to the app's own evolution. Commitments
+this makes now: tag versioned releases from day one; migrations stay
+forward-only; the app runs pending migrations on boot.
+
+### Trust architecture (why a stranger should run this)
+Layered, most-verifiable first:
+1. **Structural guarantees** — outbound network allowlist in code (the app can
+   only talk to the user's Supabase, Anthropic, and Gmail; no phone-home is a
+   property, not a promise); keys never leave the user's infra; nothing sends
+   without an approved proposal; append-only journal.
+2. **Byte-diffability** — the user's clone vs. the public repo is one GitHub
+   compare link; nothing can be slipped into their copy silently.
+3. **Independent AI audit** — onboarding hands the user a canned prompt:
+   "paste this repo into any AI you trust, OUTSIDE this app, and ask it to
+   look for backdoors or data exfiltration." Independent because that model
+   isn't controlled by the app. The in-app Claude audit (live RLS-policy
+   check, env hygiene) is a convenience layer only — an audit run by the
+   thing being audited can never be the trust anchor.
+4. Credibility furniture: SECURITY.md, pinned lockfile, public CodeQL +
+   secret scanning.
+
 ## Phase 2+ (add entries as they appear)
 
 *(nothing yet)*
