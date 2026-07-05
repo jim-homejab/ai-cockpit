@@ -7,7 +7,7 @@ A self-hosted personal AI chief of staff. One user per deployment (your Vercel +
 1. **`BUILD-BRIEF.md`** — the master build brief: architecture, port map from `jim-homejab/Email-wrapper`, data model, security rules, and six build phases.
 2. **`handoff/`** — design source of truth from Claude Design (`HANDOFF.md` = tokens + intent, `Chief Design Spec.dc.html` = visual spec).
 
-## Getting started (Phase 1)
+## Getting started
 
 1. Create a Supabase project and run the files in `supabase/migrations/` in
    order (dashboard SQL editor or `supabase db push`).
@@ -17,7 +17,14 @@ A self-hosted personal AI chief of staff. One user per deployment (your Vercel +
 4. `npm install && npm run dev` → sign in at `http://localhost:3000`.
 
 Build phases completed so far: **1** (skeleton, design system, PWA shell,
-migrations, single-user auth).
+migrations, single-user auth) · **2** (core domain: projects with living
+current-state records, tasks with waiting status, settings, journal, contacts,
+communications log, knowledge base with hybrid search; Tasks & Projects
+screens).
+
+**Existing deployments:** after pulling Phase 2, run the new files in
+`supabase/migrations/` (anything newer than what you've applied) in the SQL
+editor.
 
 ## For Claude Code
 
