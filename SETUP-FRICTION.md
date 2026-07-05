@@ -9,6 +9,55 @@ including anything Jim hits deploying his own instance.
 Format per entry: what you have to do → why it's friction → what the concierge
 should do instead.
 
+## The day-0 gap (design principle, not a step)
+
+User #2 arrives at the GitHub repo with no Claude Code session and nobody
+walking them through it. A README full of steps is not onboarding — nobody
+reads past the first button. The rule that falls out:
+
+> **Everything before the app's first render must collapse into a "Deploy to
+> Vercel" button; everything after first render belongs to the in-app
+> concierge. Nothing may live in between.**
+
+Consequences for Phase 6:
+- README's quick start becomes ONE deploy button (Vercel deploy-button flow
+  clones the repo into the user's GitHub — no manual fork — prompts for env
+  vars, and can create the Supabase project + inject keys via the
+  Vercel×Supabase integration). That absorbs entries 1, 4, and 5 below.
+- The concierge must be reachable **pre-auth**: on boot the app detects
+  "setup incomplete" (missing env / empty schema / zero users) and renders
+  the setup flow instead of a dead login screen. First render IS onboarding.
+- Claude Code is the builder's tool; the concierge is the user's tool. The
+  manual walkthrough below is the dry-run that writes the concierge's script.
+
+### The refined funnel (v2 — Jim's corrections)
+
+1. **Landing site** (static brochure, separate from the app): what Chief is +
+   one Setup button + the API-key guide. It must stay static — the moment it
+   collects keys or provisions on the user's behalf we've built a hosted
+   service and broken the sovereign model. All automation lives in the
+   button's parameters and in the user's own deployed app.
+2. **The Setup button** is a parameterized Vercel deploy-button URL carrying
+   the Supabase integration: one authorization creates the GitHub copy, the
+   Vercel project, the Supabase project, and wires the env — automatically,
+   all on the user's own accounts.
+3. **First render = "paste your Anthropic API key."** The ONE dumb screen.
+   Claude is not removed from onboarding — Claude IS the concierge; this
+   screen is what unlocks it, so it comes first. Validate the key live with a
+   cheap ping. Design warning: acquiring the key (console.anthropic.com,
+   billing, credit card) is the most hostile step in the funnel and Claude
+   can't help until the key exists — this screen must be the best-crafted
+   static UI in the app: exact clicks, screenshots, "expect to add a payment
+   method," instant paste-box validation.
+4. **From screen 2 on, onboarding is a conversation.** Claude runs the
+   migrations, creates the auth account, connects Gmail, scrapes the user's
+   site, interviews for about-me/about-company — the setup endpoints ported
+   in Phase 6 become its tools.
+
+Net: exactly TWO manual human moments in the whole funnel — authorize the
+deploy button, and fetch an API key. Everything else is automated or
+Claude-guided.
+
 ## Phase 1 — Supabase + first sign-in
 
 ### 1. Create a Supabase project
@@ -23,6 +72,32 @@ should do instead.
 - **Concierge:** A setup screen that says exactly what to click, states the
   cost up front, recommends the region nearest the user's Vercel deployment,
   and says "the database password won't be needed — store it and move on."
+
+### 1a. The sign-up/sign-in identity trap (hit live by Jim)
+- **Manual:** Landed on the sign-*up* form, entered email + new password —
+  but that email already had a Supabase account created via GitHub OAuth, so
+  Supabase sent a "you already have an account" email instead of creating
+  one. Had to back out and use "Continue with GitHub" instead.
+- **Friction:** Nothing on the sign-up form checks "does this email already
+  exist?" until after you've invented and typed a password. And once in, the
+  dashboard shows whatever orgs that identity is a *member* of (a work org,
+  here), which reads as "my personal stuff lives inside my company's
+  account" — identity vs. org is invisible.
+- **Concierge:** The guide should say up front: "If you've EVER used GitHub
+  to sign in to Supabase, use Continue with GitHub — don't create a new
+  account." And explain the model in one line: *your login is an identity;
+  orgs are containers it can see — Chief gets its own free org, separate
+  from any work orgs you belong to.*
+
+### 1b. Helper tools can't reach the sovereign org (by design)
+- **Observed:** Claude's Supabase MCP connection (authorized by the work
+  account) cannot see the personal "Jim AI" org — so it couldn't run the
+  migration on the user's behalf, even mid-conversation.
+- **Insight, not a bug:** no outside assistant's credentials can touch the
+  user's sovereign instance. This is exactly why onboarding automation must
+  run AS the user — via the deploy button (their OAuth grants) and the in-app
+  concierge (their API key, their session) — never as a helper with its own
+  access. The concierge design is validated by its absence here.
 
 ### 2. Apply the migrations
 - **Manual:** Open the dashboard SQL editor and paste each file from
@@ -76,6 +151,69 @@ should do instead.
   don't know a PWA is installable at all.
 - **Concierge:** A one-time, dismissible install hint shown on first mobile
   visit, with per-platform instructions.
+
+### 7. Nothing tells you what order to do things in
+- **Manual:** Jim's first instinct was to preview the site before Supabase
+  existed. Reasonable — but the app can't render past login without a
+  database and a user, so the real order (Supabase → migrate → create user →
+  deploy → open site) is invisible until someone tells you.
+- **Friction:** The steps live in three different products (GitHub, Supabase,
+  Vercel) and no one of them knows about the others. There is no progress
+  indicator for "setting up Chief" as a whole.
+- **Concierge:** The deploy-button + pre-auth setup flow makes ordering moot:
+  deploy first is the only possible entry point, and the app sequences
+  everything else itself with a visible checklist.
+
+## Design decisions from the walkthrough (feed Phase 6)
+
+### Auth screen must be swappable — watch "Sign in with Claude"
+Anthropic runs an OAuth program where users of approved apps (Cursor, Xcode…)
+authenticate with their claude.ai account and usage draws from their
+subscription credits. It is currently a curated partner program (not
+self-serve) and its policy shifted repeatedly through 2026 (ban → reinstate →
+per-user credit pools), so Chief cannot build on it yet. Design consequence:
+the API-key screen is ONE screen behind ONE auth abstraction, so if/when
+Sign-in-with-Claude opens to all developers it becomes a button swap. Until
+then: deep-link to the console key page, warn that billing setup is required,
+validate the key instantly on paste.
+
+### Updates ship as proposals
+Deploy-button users have a disconnected copy of the repo — updates don't flow.
+Mechanism: the template ships a GitHub Action that checks upstream releases
+and opens a PR in the user's own repo; merging auto-deploys via Vercel. Chief
+surfaces it as a proposal card ("An update to me is available — approve to
+merge") — the trust contract applied to the app's own evolution. Commitments
+this makes now: tag versioned releases from day one; migrations stay
+forward-only; the app runs pending migrations on boot.
+
+### Trust architecture (why a stranger should run this)
+Layered, most-verifiable first:
+1. **Structural guarantees** — outbound network allowlist in code (the app can
+   only talk to the user's Supabase, Anthropic, and Gmail; no phone-home is a
+   property, not a promise); keys never leave the user's infra; nothing sends
+   without an approved proposal; append-only journal.
+2. **Byte-diffability** — the user's clone vs. the public repo is one GitHub
+   compare link; nothing can be slipped into their copy silently.
+3. **Independent AI audit** — onboarding hands the user a canned prompt:
+   "paste this repo into any AI you trust, OUTSIDE this app, and ask it to
+   look for backdoors or data exfiltration." Independent because that model
+   isn't controlled by the app. The in-app Claude audit (live RLS-policy
+   check, env hygiene) is a convenience layer only — an audit run by the
+   thing being audited can never be the trust anchor.
+4. Credibility furniture: SECURITY.md, pinned lockfile, public CodeQL +
+   secret scanning.
+
+## Walkthrough #1 result (2026-07-05)
+
+Jim completed the full manual path on a phone — Supabase org + project +
+migration + auth user, keys to Vercel, deploy, sign-in — in roughly an hour
+of elapsed time WITH an expert guide answering every question in real time.
+That guide is exactly what user #2 won't have; the funnel (deploy button →
+API key → concierge) replaces it. Detailed debrief deferred by decision:
+**Test #2 is the one that matters** — Jim re-runs as user #2 through the
+deploy-button funnel once the landing site exists (provisioning pass), and
+again after Phase 6 (full concierge pass). Entries above were logged live
+and stand as the spec.
 
 ## Phase 2+ (add entries as they appear)
 
