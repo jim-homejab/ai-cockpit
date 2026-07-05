@@ -19,15 +19,15 @@ export default function HomePage() {
       <div className="text-micro text-ink-3">{dateLine}</div>
       <p className="text-narrative text-ink">
         <span className="chief-voice">
-          Chief is being built. <span className="text-teal">The skeleton is up</span> — nav,
-          tokens, and the bar below are real.
+          Chief is being built. <span className="text-teal">Projects and tasks are live</span> —
+          the tabs below are real now.
         </span>
       </p>
       <div className="rounded-card border border-hairline bg-surface p-5">
         <div className="text-micro mb-2 text-ink-3">NEXT UP</div>
         <p className="text-body text-ink-2">
-          Projects, tasks, and the knowledge base land in Phase 2. The Chief loop — proposals
-          you approve — lands in Phase 3.
+          The Chief loop — proposals you approve — lands in Phase 3. This Home
+          becomes the ranked focus view in Phase 5.
         </p>
       </div>
     </div>
