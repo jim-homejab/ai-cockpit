@@ -73,6 +73,22 @@ Claude-guided.
   cost up front, recommends the region nearest the user's Vercel deployment,
   and says "the database password won't be needed — store it and move on."
 
+### 1a. The sign-up/sign-in identity trap (hit live by Jim)
+- **Manual:** Landed on the sign-*up* form, entered email + new password —
+  but that email already had a Supabase account created via GitHub OAuth, so
+  Supabase sent a "you already have an account" email instead of creating
+  one. Had to back out and use "Continue with GitHub" instead.
+- **Friction:** Nothing on the sign-up form checks "does this email already
+  exist?" until after you've invented and typed a password. And once in, the
+  dashboard shows whatever orgs that identity is a *member* of (a work org,
+  here), which reads as "my personal stuff lives inside my company's
+  account" — identity vs. org is invisible.
+- **Concierge:** The guide should say up front: "If you've EVER used GitHub
+  to sign in to Supabase, use Continue with GitHub — don't create a new
+  account." And explain the model in one line: *your login is an identity;
+  orgs are containers it can see — Chief gets its own free org, separate
+  from any work orgs you belong to.*
+
 ### 2. Apply the migrations
 - **Manual:** Open the dashboard SQL editor and paste each file from
   `supabase/migrations/` in filename order (or install the Supabase CLI, log
