@@ -12,7 +12,12 @@ import { createClient } from "@/lib/supabase/server";
 export type SettingKey =
   | "waiting.aging_days"
   | "focus.top_count"
-  | "chief.model";
+  | "chief.model"
+  | "mcp.chat_enabled"
+  | "actions.enabled"
+  | "web.fetch_enabled"
+  | "connectors.max_chief_tools"
+  | "mcp.servers";
 
 export type SettingDef = {
   key: SettingKey;
@@ -56,6 +61,56 @@ export const SETTING_DEFS: SettingDef[] = [
     default: "claude-opus-4-8",
     singleLine: true,
     placeholder: "claude-opus-4-8",
+  },
+  // --- Chief loop switches (Phase 3) --------------------------------------
+  // Two kill switches, both must be on for a write to execute: the master
+  // switch gates the whole Chief chat; the actions switch gates proposals +
+  // the executor. Sovereign single-user app, so both default ON — the user
+  // can flip them off from Config if they ever want a read-only Chief.
+  {
+    key: "mcp.chat_enabled",
+    label: "Chief — master switch",
+    description:
+      "Master kill switch for the Chief chat (and everything downstream of it). \"on\" or \"off\".",
+    default: "on",
+    singleLine: true,
+    placeholder: "on",
+  },
+  {
+    key: "actions.enabled",
+    label: "Chief — write actions",
+    description:
+      "Kill switch for write proposals and the action executor. When off, Chief is advice-only: it can read but never propose or execute a change. \"on\" or \"off\".",
+    default: "on",
+    singleLine: true,
+    placeholder: "on",
+  },
+  {
+    key: "web.fetch_enabled",
+    label: "Chief — web fetch",
+    description:
+      "Let Chief fetch URLs that appear in the conversation (Anthropic's server-side web_fetch tool, read-only). \"on\" or \"off\".",
+    default: "off",
+    singleLine: true,
+    placeholder: "off",
+  },
+  {
+    key: "connectors.max_chief_tools",
+    label: "Connectors — max tools per turn",
+    description:
+      "Cap on how many connector (MCP) tools are attached to a Chief turn, allocated round-robin across servers (reads first) so one tool-heavy server can't starve the rest.",
+    default: "150",
+    singleLine: true,
+    placeholder: "150",
+  },
+  {
+    key: "mcp.servers",
+    label: "Connectors — MCP servers",
+    description:
+      'JSON array of remote MCP servers Chief can use, e.g. [{"name": "github", "url": "https://…", "authorization_token": "…"}]. Every server is brokered: read-only tools run transparently; anything that writes becomes an approve/reject proposal.',
+    default: "",
+    rows: 6,
+    placeholder: '[{"name": "…", "url": "https://…"}]',
   },
 ];
 

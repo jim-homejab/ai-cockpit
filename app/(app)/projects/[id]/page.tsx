@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddTask from "@/app/components/AddTask";
+import ChiefPageSnapshot from "@/app/components/ChiefPageSnapshot";
 import StateCard from "@/app/components/StateCard";
 import StatusChip from "@/app/components/StatusChip";
 import TaskList from "@/app/components/TaskList";
@@ -39,6 +40,28 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="flex flex-col gap-4 pt-2">
+      {/* What Chief sees when opened from this screen. */}
+      <ChiefPageSnapshot
+        route={`/projects/${project.id}`}
+        label={`Project — ${project.name}`}
+        state={{
+          project: {
+            id: project.id,
+            name: project.name,
+            status: project.status,
+            summary: project.summary,
+            owner: project.owner,
+          },
+          state,
+          open_tasks: openTasks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            status: t.status,
+            priority: t.priority,
+            due_at: t.due_at,
+          })),
+        }}
+      />
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link

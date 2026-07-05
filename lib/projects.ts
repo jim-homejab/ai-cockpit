@@ -230,6 +230,18 @@ export async function upsertProjectState(
   return data as ProjectState;
 }
 
+// Remove a project's current-state record entirely. Used by the undo path when
+// an approved update_project_state CREATED the state row (undoing it means the
+// row shouldn't exist at all, not that its fields go null).
+export async function deleteProjectState(projectId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("project_state")
+    .delete()
+    .eq("project_id", projectId);
+  if (error) throw new Error(error.message);
+}
+
 // One projects read + one state read, joined in memory. Used by the Chief
 // context digest and the Projects page.
 export async function listProjectsWithState(

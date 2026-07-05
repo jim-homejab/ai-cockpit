@@ -1,22 +1,33 @@
+"use client";
+
 // The Chief bar — the product's signature element, global on every page,
-// docked above the bottom nav. Phase 1 ships it static: collapsed idle and
-// collapsed pending render to spec; the expanded sheet arrives with the Chief
-// loop (Phase 3). It never bounces, loops, or turns red.
+// docked above the bottom nav. Collapsed idle and collapsed pending render to
+// spec; tapping it opens the expanded sheet (ChiefSheet, via ChiefDock). It
+// never bounces, loops, or turns red.
 
 type ChiefBarProps = {
   /** Number of proposals waiting. 0 = idle ("All clear."). */
   pendingCount?: number;
   /** Mono status detail for the pending state, e.g. "OLDEST 24 MIN · TAP TO REVIEW". */
   pendingDetail?: string;
+  /** Opens the Chief sheet. */
+  onTap?: () => void;
 };
 
-export default function ChiefBar({ pendingCount = 0, pendingDetail }: ChiefBarProps) {
+export default function ChiefBar({
+  pendingCount = 0,
+  pendingDetail,
+  onTap,
+}: ChiefBarProps) {
   const pending = pendingCount > 0;
 
   return (
     <div className="px-3 pt-2">
-      <div
-        className="box-border flex h-[60px] items-center gap-3 rounded-bar border pl-3 pr-2.5"
+      <button
+        type="button"
+        onClick={onTap}
+        aria-label={pending ? `Open Chief — ${pendingCount} proposals waiting` : "Ask Chief"}
+        className="box-border flex h-[60px] w-full items-center gap-3 rounded-bar border pl-3 pr-2.5 text-left"
         style={{
           background: pending ? "var(--bar-gradient-pending)" : "var(--bar-gradient)",
           borderColor: pending ? "var(--teal-border-strong)" : "var(--hairline)",
@@ -80,7 +91,7 @@ export default function ChiefBar({ pendingCount = 0, pendingDetail }: ChiefBarPr
             </svg>
           </div>
         )}
-      </div>
+      </button>
     </div>
   );
 }
