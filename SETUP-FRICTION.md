@@ -217,4 +217,16 @@ and stand as the spec.
 
 ## Phase 2+ (add entries as they appear)
 
-*(nothing yet)*
+### 8. Phase 3 flips ANTHROPIC_API_KEY from optional to required (2026-07-05)
+The Chief loop ships and the app's core is now Claude — but walkthrough #1
+only put the Supabase keys into Vercel. Manual step for Jim (and every
+pre-funnel user): create a key at console.anthropic.com → Vercel project →
+Settings → Environment Variables → add `ANTHROPIC_API_KEY` → redeploy.
+Optionally `VOYAGE_API_KEY` for semantic memory search (the app degrades to
+full-text without it).
+**Funnel note:** this is THE moment the day-0 concierge is designed around —
+the API-key screen must catch a missing/invalid key at runtime with a
+friendly in-app screen ("paste your key here" → stored where? Vercel env
+needs a redeploy, so v1 funnel likely wants the key entered in-app and held
+in the DB instead of env — decide in Phase 6). Until then it's a raw Vercel
+env-var errand.
