@@ -42,6 +42,7 @@ const TASK_FIELDS = [
   "category",
   "delegateTo",
   "dueAt",
+  "waitingOnContactId",
   "projectId",
 ] as const;
 const PROJECT_FIELDS = ["name", "summary", "status", "owner"] as const;

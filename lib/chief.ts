@@ -395,10 +395,13 @@ export async function buildChiefSystemPrompt({
   if (contacts.length > 0) {
     sections.push(
       "--- THE USER'S CONTACTS ---",
-      "People the user has saved. Reference them by name when relevant.",
+      "People the user has saved. Reference them by name when relevant. When a task is WAITING on one of these people, link them: pass the contact's id as waiting_on_contact_id on create_task/update_task — that's what powers the Waiting-on strip (has this person replied?).",
       ...contacts
         .slice(0, 80)
-        .map((c) => `- ${c.name}${c.company ? ` (${c.company})` : ""}`),
+        .map(
+          (c) =>
+            `- ${c.name}${c.company ? ` (${c.company})` : ""} · id: ${c.id}`,
+        ),
       "--- END CONTACTS ---",
       "",
     );
