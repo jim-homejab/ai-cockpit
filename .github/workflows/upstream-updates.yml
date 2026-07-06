@@ -1,0 +1,77 @@
+# Updates-as-proposals: for CLONES/FORKS of Chief, this workflow checks the
+# upstream repo weekly and opens a PR in YOUR repo when upstream main has moved
+# — the trust contract applied to the app's own evolution: nothing lands until
+# you review and merge. It no-ops on the upstream repo itself.
+#
+# Security releases arrive the same way — merge promptly when a PR mentions one.
+
+name: Upstream updates
+
+on:
+  schedule:
+    - cron: "17 9 * * 1" # weekly, Monday 09:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  UPSTREAM: jim-homejab/ai-cockpit
+
+jobs:
+  check:
+    # Never run on the upstream repo itself.
+    if: github.repository != 'jim-homejab/ai-cockpit'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream "https://github.com/${UPSTREAM}.git"
+          git fetch upstream main
+
+      - name: Check for new commits
+        id: diff
+        run: |
+          BEHIND=$(git rev-list --count HEAD..upstream/main)
+          echo "behind=$BEHIND" >> "$GITHUB_OUTPUT"
+          echo "Behind upstream by $BEHIND commit(s)."
+
+      - name: Create update branch
+        if: steps.diff.outputs.behind != '0'
+        run: |
+          git config user.name "chief-updates[bot]"
+          git config user.email "noreply@github.com"
+          git checkout -B chief/upstream-update
+          # Merge (not rebase) so the user's own commits are preserved.
+          git merge --no-edit upstream/main || {
+            echo "MERGE_CONFLICT=1" >> "$GITHUB_ENV"
+            git merge --abort
+          }
+
+      - name: Push and open PR
+        if: steps.diff.outputs.behind != '0' && env.MERGE_CONFLICT != '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push -f origin chief/upstream-update
+          gh pr list --head chief/upstream-update --state open --json number \
+            --jq 'length' | grep -q '^0$' || exit 0
+          gh pr create \
+            --title "Chief update: ${{ steps.diff.outputs.behind }} new upstream commit(s)" \
+            --body "Upstream Chief has moved. Review the diff — new migrations are listed under \`supabase/migrations/\` and must be run after merging. Nothing changes until you merge this. Compare: https://github.com/${UPSTREAM}/compare/" \
+            --base main --head chief/upstream-update
+
+      - name: Open conflict issue instead
+        if: env.MERGE_CONFLICT == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue list --search "Upstream update conflict in:title" --state open --json number --jq 'length' | grep -q '^0$' || exit 0
+          gh issue create \
+            --title "Upstream update conflict" \
+            --body "An upstream Chief update couldn't be merged automatically because of local changes. Merge https://github.com/${UPSTREAM} main into your repo manually."
