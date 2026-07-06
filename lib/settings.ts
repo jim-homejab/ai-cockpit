@@ -63,7 +63,7 @@ export const SETTING_DEFS: SettingDef[] = [
     key: "chief.model",
     label: "Chief — model",
     description:
-      "The model Chief runs on. In the default (Anthropic) mode this is a Claude id like claude-opus-4-8. In AI Gateway mode it can be any gateway model id — e.g. anthropic/claude-opus-4.7 or openai/gpt-5 — a bare id is assumed to be Anthropic.",
+      "The model Chief runs on. Search the list to pick one, or type any id by hand. In the default (Anthropic) mode this is a Claude id like claude-opus-4-8. In AI Gateway mode it can be any gateway model id — e.g. anthropic/claude-opus-4.7 or openai/gpt-5 — a bare id is assumed to be Anthropic.",
     default: "claude-opus-4-8",
     singleLine: true,
     placeholder: "claude-opus-4-8",
