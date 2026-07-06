@@ -8,7 +8,7 @@
 // The Chief deployment passes its OWN webhook URL on deploy; Pipedream returns
 // a signing key the app stores to verify incoming event deliveries.
 
-import { authenticate, pdApiFetch, pdFetch, json } from "../lib/pd.js";
+import { authenticate, pdFetch, json } from "../lib/pd.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return json(res, 405, { error: "POST only" });
@@ -20,9 +20,11 @@ export default async function handler(req, res) {
     if (action === "list-components") {
       const app = String(req.body?.app ?? "").trim();
       if (!app) return json(res, 400, { error: "app required" });
-      // Trigger-type components for the app.
-      const data = await pdApiFetch(
-        `/components?app=${encodeURIComponent(app)}&component_type=trigger&limit=30`,
+      // Registry trigger (source) components for the app. This is the
+      // Connect-scoped endpoint (project + x-pd-environment), NOT the raw
+      // /v1/components path — that returned nothing for these app slugs.
+      const data = await pdFetch(
+        `/triggers?app=${encodeURIComponent(app)}&registry=public&limit=30`,
       );
       const components = (data.data ?? []).map((c) => ({
         id: c.key ?? c.id,
