@@ -269,6 +269,18 @@ const CHIEF_CAN_PROPOSE = [
   "- Ask questions one at a time, and only the ones that genuinely block a correct record — don't interrogate the user for things the source already answers.",
 ].join("\n");
 
+// Appended on a FIRST-RUN workspace (no projects, no tasks, no memory):
+// Chief doubles as the onboarding concierge. Everything still flows through
+// the proposal gate — setup IS the first demonstration of the trust contract.
+const CHIEF_SETUP = [
+  "SETUP MODE — this workspace is empty, so your first job is onboarding:",
+  "- Introduce yourself in one short line, then start a short interview: what they do, the 2–4 workstreams that matter right now, what's currently on their plate, and who they work with. ONE question at a time; keep it conversational.",
+  "- As real structure emerges, PROPOSE it: create_project for each workstream (with a one-line summary), create_task for the concrete to-dos they mention (filed under the right project), save_contact for the people they name, save_instruction when they state a durable preference, update_project_state once a project's picture is clear. Batch related proposals in one turn so they can Approve All.",
+  "- Approving your cards is how they learn the product: point out once — briefly — that nothing you suggest happens until they approve it, and that everything is undoable except sending email.",
+  "- Suggest connecting their email on the Inbox tab (an app password is the fast way) and glancing at Config when it's relevant — don't front-load a tour.",
+  "- Stop interviewing the moment they want to work; setup can continue any time.",
+].join("\n");
+
 // Appended when write actions are switched off: advice-only.
 const CHIEF_ADVICE_ONLY =
   "You can read and advise, but write actions are currently switched off, so you can't propose changes. When a change is warranted, tell the user exactly what to do (e.g. \"drop this to P3\", \"hand this to Ivan\").";
@@ -360,6 +372,16 @@ export async function buildChiefSystemPrompt({
     canPropose ? CHIEF_CAN_PROPOSE : CHIEF_ADVICE_ONLY,
     "",
   ];
+
+  // First-run workspace → Chief doubles as the onboarding concierge.
+  if (
+    canPropose &&
+    projects.length === 0 &&
+    tasks.length === 0 &&
+    kbDocs.length === 0
+  ) {
+    sections.push(CHIEF_SETUP, "");
+  }
 
   // Connected apps brokered in this turn. Read tools run transparently; write
   // tools (when writes are on) propose for approval — the same human-in-the-loop

@@ -2,6 +2,14 @@
 
 A self-hosted personal AI chief of staff. One user per deployment (your Vercel + your Supabase + your Anthropic key). Chief proposes; you approve.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjim-homejab%2Fai-cockpit&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,ANTHROPIC_API_KEY&envDescription=Your%20own%20Supabase%20project%20URL%20%2B%20anon%20key%2C%20and%20your%20Anthropic%20API%20key.&envLink=https%3A%2F%2Fgithub.com%2Fjim-homejab%2Fai-cockpit%2Fblob%2Fmain%2F.env.example)
+
+Deploying your own copy: click the button (it clones this repo into your
+GitHub and deploys to your Vercel), create a Supabase project + run the
+migrations + add your one auth user (steps below), fill in the three env
+vars, and sign in. Clones get updates as pull requests they review — see
+`.github/workflows/upstream-updates.yml`.
+
 ## Start here
 
 1. **`BUILD-BRIEF.md`** — the master build brief: architecture, port map from `jim-homejab/Email-wrapper`, data model, security rules, and six build phases.

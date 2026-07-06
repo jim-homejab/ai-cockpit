@@ -119,13 +119,14 @@ export default function HomeClient({ initial }: { initial: string }) {
         <div className="font-mono text-[11px] tracking-[0.12em] text-ink-3">
           {now || " "}
         </div>
-        <div
+        <Link
+          href="/config"
+          aria-label="Config"
           className="flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold text-ink-2"
           style={{ background: "var(--raised)" }}
-          aria-hidden="true"
         >
           {initial}
-        </div>
+        </Link>
       </div>
 
       {/* Chief's narrative */}
