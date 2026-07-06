@@ -425,19 +425,19 @@ export default function ConfigClient() {
                         onClick={() => void loadTools(serverName)}
                         className="shrink-0 font-mono text-[11px] tracking-[0.06em] text-teal"
                       >
-                        {expanded ? "HIDE" : "TOOLS"}
+                        TOOLS {expanded ? "▴" : "▾"}
                       </button>
                       <button
                         onClick={() => void loadTriggers(a.app)}
                         className="shrink-0 font-mono text-[11px] tracking-[0.06em] text-teal"
                       >
-                        {triggersFor === a.app ? "HIDE" : "NOTIFY"}
+                        NOTIFY {triggersFor === a.app ? "▴" : "▾"}
                       </button>
                       <button
                         onClick={() => void disconnectAccount(a.id)}
                         className="shrink-0 font-mono text-[11px] tracking-[0.06em] text-ink-3"
                       >
-                        OFF
+                        DISCONNECT
                       </button>
                     </div>
                     {triggersFor === a.app && (
