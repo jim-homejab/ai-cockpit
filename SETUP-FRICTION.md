@@ -254,3 +254,22 @@ THEIR OWN app so the screen is expected.
 chose real send, so the app's one send path is a direct Gmail REST call in
 the executor behind the slide-to-send card — the gmail.send scope exists for
 exactly one function call.
+
+### 9a. "There must be an easier way" — the Gmail-connect trade space (Jim, 2026-07-05)
+Why it's hard: gmail.modify/send are Google RESTRICTED scopes. A shared
+OAuth client (the 2-click SaaS experience) requires Google's restricted-scope
+verification + annual CASA security assessment — real money, months, and a
+central chokepoint. Per-user clients (current design) skip all of that
+because each user is the "developer" of their own app. The friction IS the
+price of sovereignty.
+Options, in order of fit:
+1. **Concierge-guided per-user client (v1 decision).** Phase 6 Chief walks
+   the user through the console with deep links, then verifies the
+   connection itself and pre-warns about the "Google hasn't verified this
+   app" screen. Same steps, near-zero confusion, sovereignty intact.
+2. **Shared verified client + tiny auth broker (the scale move).** True
+   2-click connect; costs Google verification/CASA and a small hosted
+   service that momentarily touches tokens before handing them to the
+   user's own instance. Revisit when user count justifies it.
+3. **Managed OAuth vendor (Pipedream/Nango).** Fastest, but a third party
+   sits in the token path — weakest fit for the trust story.

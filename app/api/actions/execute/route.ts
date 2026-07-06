@@ -171,6 +171,7 @@ export async function POST(req: Request) {
           category: opt(safeArgs.category) ?? null,
           delegateTo: opt(safeArgs.delegate_to) ?? null,
           dueAt: opt(safeArgs.due_at) ?? null,
+          waitingOnContactId: opt(safeArgs.waiting_on_contact_id) ?? null,
           projectId: opt(safeArgs.project_id) ?? null,
           source: "chief",
         });
@@ -231,6 +232,12 @@ export async function POST(req: Request) {
           set("delegateTo", opt(safeArgs.delegate_to), before.delegate_to);
         if (opt(safeArgs.due_at))
           set("dueAt", opt(safeArgs.due_at), before.due_at);
+        if (opt(safeArgs.waiting_on_contact_id))
+          set(
+            "waitingOnContactId",
+            opt(safeArgs.waiting_on_contact_id),
+            before.waiting_on_contact_id,
+          );
         if (opt(safeArgs.project_id))
           set("projectId", opt(safeArgs.project_id), before.project_id);
 

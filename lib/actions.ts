@@ -159,6 +159,9 @@ export const WRITE_ACTIONS: WriteAction[] = [
         category: str("Optional category/grouping label."),
         delegate_to: str("Optional person to delegate this to (a name)."),
         due_at: str("Optional due date, ISO 8601 (e.g. 2026-07-12)."),
+        waiting_on_contact_id: str(
+          "When status is \"waiting\": the id of the saved CONTACT being waited on (from the contacts list). Powers the Waiting-on strip.",
+        ),
         project_id: str(
           "Optional: the id of the project/workstream this task belongs to (from the CURRENT STATE: PROJECTS section). Set this when creating a task as a project's next action.",
         ),
@@ -200,6 +203,9 @@ export const WRITE_ACTIONS: WriteAction[] = [
         category: str("New category/grouping label."),
         delegate_to: str("Person to delegate this to (a name)."),
         due_at: str("New due date, ISO 8601 (e.g. 2026-07-12)."),
+        waiting_on_contact_id: str(
+          "When setting status to \"waiting\": the id of the saved CONTACT being waited on (from the contacts list). Powers the Waiting-on strip.",
+        ),
         project_id: str(
           "Move the task to this project/workstream (its id from the CURRENT STATE: PROJECTS section).",
         ),
