@@ -33,6 +33,12 @@ type Status = {
     instructions: number;
     contacts: number;
   };
+  updates?: {
+    provider: string | null;
+    repoOwner: string | null;
+    repoSlug: string | null;
+    enableUrl: string | null;
+  };
 };
 
 type KbDoc = { id: string; title: string; updated_at: string };
@@ -969,6 +975,53 @@ export default function ConfigClient() {
             </>
           ) : (
             <p className="text-[13.5px] text-ink-3">Loading…</p>
+          )}
+        </div>
+      </Section>
+
+      {/* Software updates */}
+      <Section label="SOFTWARE UPDATES">
+        <div className={card} style={cardStyle}>
+          <p className="text-[13.5px] leading-relaxed text-ink-2">
+            Chief improves over time. Updates arrive as pull requests in{" "}
+            <span className="text-ink">your own</span> repo — you review and
+            merge; merging auto-deploys. Nothing changes without your approval.
+          </p>
+          {status?.updates?.enableUrl ? (
+            <>
+              <p className="text-[13.5px] leading-relaxed text-ink-2">
+                The one-click deploy couldn&apos;t include the updater
+                (GitHub blocks it), so turn it on once: this commits the update
+                workflow into{" "}
+                <span className="font-mono text-[12px] text-ink">
+                  {status.updates.repoOwner}/{status.updates.repoSlug}
+                </span>{" "}
+                as you.
+              </p>
+              <a
+                href={status.updates.enableUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 items-center justify-center rounded-control px-4 text-[15px] font-medium"
+                style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
+              >
+                Enable auto-updates →
+              </a>
+              <p className="text-[12px] leading-relaxed text-ink-3">
+                On the GitHub page, scroll down and tap{" "}
+                <span className="text-ink-2">Commit changes</span>. Then, one
+                time, enable{" "}
+                <span className="text-ink-2">Allow GitHub Actions to create pull requests</span>{" "}
+                under Settings → Actions → General → Workflow permissions.
+              </p>
+            </>
+          ) : (
+            <p className="text-[12px] leading-relaxed text-ink-3">
+              Auto-update setup is available on a Vercel + GitHub deployment.
+              To update manually, merge upstream{" "}
+              <span className="font-mono">jim-homejab/ai-cockpit</span> into
+              your repo.
+            </p>
           )}
         </div>
       </Section>
