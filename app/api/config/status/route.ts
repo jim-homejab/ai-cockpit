@@ -11,6 +11,7 @@ import { listProjects } from "@/lib/projects";
 import { listTasks } from "@/lib/tasks";
 import { listKbDocuments, listInstructions } from "@/lib/kb/store";
 import { listContacts } from "@/lib/contacts";
+import { getUpdatesInfo } from "@/lib/updater-workflow";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,5 +52,6 @@ export async function GET() {
       instructions: instructions.length,
       contacts: contacts.length,
     },
+    updates: getUpdatesInfo(),
   });
 }
