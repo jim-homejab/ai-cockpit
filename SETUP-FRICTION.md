@@ -302,7 +302,7 @@ Jim chose the middle ground between full sovereignty and full SaaS:
   rests on unguessable per-customer externalUserIds. Hardening path: proxy
   MCP calls through the service. Documented in connect-service/README.
 
-### 11. The login-first pivot: should a hosted concierge run day-0? (proposed 2026-07-07 — DECISION PENDING)
+### 11. The login-first pivot: should a hosted concierge run day-0? (Jim, 2026-07-07 — REJECTED, staying with the v2 static-landing funnel)
 
 The question (Jim): require users to log into OUR app first, and have it
 concierge them through spinning up their sovereign instance — instead of the
@@ -365,3 +365,7 @@ everything else").
 **to** "the landing service may talk and verify, but may never hold a
 credential or provision on the user's behalf." The two-manual-moments
 invariant is unchanged — they just stop being unattended.
+
+**Decision (Jim, 2026-07-07): rejected.** Staying on the v2 funnel — static
+landing site + deploy button, concierge starts at first render. The v2 rule
+stands unamended.
