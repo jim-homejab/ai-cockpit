@@ -6,7 +6,7 @@
 // Chief settings (SETTING_DEFS rendered automatically), standing
 // instructions, memory, diagnostics, account.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useChief, SETUP_INTERVIEW_PROMPT } from "@/app/components/ChiefProvider";
 
@@ -84,6 +84,125 @@ function Dot({ ok }: { ok: boolean }) {
       style={{ background: ok ? "var(--ok)" : "var(--copper)" }}
       aria-hidden="true"
     />
+  );
+}
+
+type Model = { id: string; name: string };
+
+// Searchable model picker: a free-text input backed by a type-to-filter
+// dropdown of the models the configured provider actually serves (fetched from
+// /api/models). Stays free-text on purpose — gateway ids change constantly and
+// a brand-new model should be enterable by hand the moment it ships, so the
+// list is a convenience, never a constraint.
+function ModelCombobox({
+  value,
+  placeholder,
+  onChange,
+}: {
+  value: string;
+  placeholder?: string;
+  onChange: (v: string) => void;
+}) {
+  const [models, setModels] = useState<Model[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // Lazy-load the catalog the first time the field is opened.
+  const ensureLoaded = useCallback(async () => {
+    if (models !== null || loading) return;
+    setLoading(true);
+    try {
+      const body = (await fetch("/api/models")
+        .then((r) => r.json())
+        .catch(() => null)) as { models?: Model[] } | null;
+      setModels(body?.models ?? []);
+    } finally {
+      setLoading(false);
+    }
+  }, [models, loading]);
+
+  // Close on outside click.
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, [open]);
+
+  const q = value.trim().toLowerCase();
+  const matches = (models ?? []).filter(
+    (m) =>
+      !q ||
+      m.id.toLowerCase().includes(q) ||
+      m.name.toLowerCase().includes(q),
+  );
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <input
+        value={value}
+        placeholder={placeholder}
+        role="combobox"
+        aria-expanded={open}
+        autoComplete="off"
+        spellCheck={false}
+        onFocus={() => {
+          setOpen(true);
+          void ensureLoaded();
+        }}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        className={inputCls}
+        style={{ borderColor: "var(--hairline)" }}
+      />
+      {open && (
+        <div
+          className="absolute left-0 right-0 top-[calc(100%+4px)] z-20 max-h-64 overflow-y-auto rounded-control border py-1 shadow-lg"
+          style={{ borderColor: "var(--hairline)", background: "var(--surface)" }}
+        >
+          {loading && (
+            <div className="px-3 py-2 text-[13px] text-ink-3">Loading models…</div>
+          )}
+          {!loading && models !== null && models.length === 0 && (
+            <div className="px-3 py-2 text-[12.5px] leading-snug text-ink-3">
+              No catalog available — type the model id by hand.
+            </div>
+          )}
+          {!loading && matches.length === 0 && (models?.length ?? 0) > 0 && (
+            <div className="px-3 py-2 text-[13px] text-ink-3">
+              No match — press Save to use “{value}” as typed.
+            </div>
+          )}
+          {matches.map((m) => {
+            const selected = m.id === value;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => {
+                  onChange(m.id);
+                  setOpen(false);
+                }}
+                className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-[var(--teal-fill)]"
+                style={selected ? { background: "var(--teal-fill)" } : undefined}
+              >
+                <span className="font-mono text-[12.5px] text-ink">{m.id}</span>
+                {m.name && m.name !== m.id && (
+                  <span className="text-[11.5px] text-ink-3">{m.name}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -710,7 +829,15 @@ export default function ConfigClient() {
               <div className="text-[12.5px] leading-snug text-ink-3">
                 {d.description}
               </div>
-              {d.singleLine ? (
+              {d.key === "chief.model" ? (
+                <ModelCombobox
+                  value={settings[d.key] ?? ""}
+                  placeholder={d.placeholder}
+                  onChange={(v) =>
+                    setSettings((s) => ({ ...s, [d.key]: v }))
+                  }
+                />
+              ) : d.singleLine ? (
                 <input
                   value={settings[d.key] ?? ""}
                   placeholder={d.placeholder}
