@@ -213,7 +213,61 @@ function ModelCombobox({
   );
 }
 
-export default function ConfigClient() {
+// The config surface is split into a Setup landing + one page per concern so
+// each screen stays short and scannable. A single ConfigClient renders the
+// right sections for the active page (routes pass `section`); the shared
+// fetches run once per page load regardless.
+export type ConfigSection =
+  | "home"
+  | "ai"
+  | "connections"
+  | "chief"
+  | "memory"
+  | "account";
+
+const CONFIG_PAGES: { slug: ConfigSection; href: string; label: string }[] = [
+  { slug: "home", href: "/config", label: "Setup" },
+  { slug: "ai", href: "/config/ai", label: "AI & Usage" },
+  { slug: "connections", href: "/config/connections", label: "Connections" },
+  { slug: "chief", href: "/config/chief", label: "Chief" },
+  { slug: "memory", href: "/config/memory", label: "Memory" },
+  { slug: "account", href: "/config/account", label: "Account" },
+];
+
+// Horizontal, scrollable tab bar shared by every config page.
+function ConfigNav({ active }: { active: ConfigSection }) {
+  return (
+    <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {CONFIG_PAGES.map((p) => {
+        const on = p.slug === active;
+        return (
+          <Link
+            key={p.slug}
+            href={p.href}
+            className="shrink-0 rounded-chip border px-3 py-1.5 font-mono text-[11px] tracking-[0.06em]"
+            style={
+              on
+                ? {
+                    background: "var(--teal-fill)",
+                    color: "var(--teal-on-fill)",
+                    borderColor: "transparent",
+                  }
+                : { borderColor: "var(--hairline)", color: "var(--ink-3)" }
+            }
+          >
+            {p.label.toUpperCase()}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function ConfigClient({
+  section = "home",
+}: {
+  section?: ConfigSection;
+}) {
   const { openAndSend } = useChief();
   const [status, setStatus] = useState<Status | null>(null);
   const [defs, setDefs] = useState<SettingDef[]>([]);
@@ -529,14 +583,10 @@ export default function ConfigClient() {
 
   return (
     <div className="flex flex-col gap-6 pt-2 pb-8">
-      <div className="flex items-center justify-between">
-        <div className="text-micro text-ink-3">CONFIG</div>
-        <Link href="/" className="font-mono text-[11px] tracking-[0.08em] text-ink-3">
-          ← HOME
-        </Link>
-      </div>
+      <ConfigNav active={section} />
 
       {/* Setup: the on-demand concierge, plus the checklist until it's done. */}
+      {section === "home" && (
       <Section label="SETUP">
         <div className={card} style={cardStyle}>
           {status && !setupDone && (
@@ -571,8 +621,29 @@ export default function ConfigClient() {
           </p>
         </div>
       </Section>
+      )}
+
+      {/* Home landing: quick links into each config page. */}
+      {section === "home" && (
+        <Section label="SETTINGS">
+          <div className="grid grid-cols-1 gap-2">
+            {CONFIG_PAGES.filter((p) => p.slug !== "home").map((p) => (
+              <Link
+                key={p.slug}
+                href={p.href}
+                className="flex items-center justify-between rounded-card border px-4 py-3.5"
+                style={cardStyle}
+              >
+                <span className="text-[15px] font-medium text-ink">{p.label}</span>
+                <span className="text-[13px] font-semibold text-teal">open →</span>
+              </Link>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* Connections */}
+      {section === "connections" && (
       <Section label="CONNECTIONS">
         <div className={card} style={cardStyle}>
           <div className="flex items-center gap-3">
@@ -847,8 +918,10 @@ export default function ConfigClient() {
           )}
         </div>
       </Section>
+      )}
 
       {/* Chief settings */}
+      {section === "chief" && (
       <Section label="CHIEF SETTINGS">
         <div className={card} style={cardStyle}>
           {defs.map((d) => (
@@ -899,8 +972,11 @@ export default function ConfigClient() {
           </button>
         </div>
       </Section>
+      )}
 
-      {/* Standing instructions */}
+      {/* Memory & standing instructions */}
+      {section === "memory" && (
+      <>
       <Section label={`STANDING INSTRUCTIONS · ${instructions.length}`}>
         <div className={card} style={cardStyle}>
           {instructions.length === 0 && (
@@ -967,8 +1043,12 @@ export default function ConfigClient() {
           ))}
         </div>
       </Section>
+      </>
+      )}
 
-      {/* AI usage */}
+      {/* AI, keys & updates */}
+      {section === "ai" && (
+      <>
       <Section label="AI USAGE">
         <div className={card} style={cardStyle}>
           {usage?.available ? (
@@ -1134,8 +1214,11 @@ export default function ConfigClient() {
           )}
         </div>
       </Section>
+      </>
+      )}
 
       {/* Account */}
+      {section === "account" && (
       <Section label="ACCOUNT">
         <div className={card} style={cardStyle}>
           <div className="flex items-center gap-3">
@@ -1157,6 +1240,7 @@ export default function ConfigClient() {
           </div>
         </div>
       </Section>
+      )}
     </div>
   );
 }
