@@ -33,6 +33,7 @@ type Status = {
     instructions: number;
     contacts: number;
   };
+  ai?: { provider: string; ready: boolean };
   updates?: {
     provider: string | null;
     repoOwner: string | null;
@@ -229,15 +230,22 @@ export default function ConfigClient() {
     behind: boolean;
     releaseUrl: string;
   } | null>(null);
+  const [usage, setUsage] = useState<{
+    available: boolean;
+    balance?: string | number | null;
+    totalUsed?: string | number | null;
+    reason?: string;
+  } | null>(null);
 
   const refresh = useCallback(async () => {
-    const [s, st, ins, mem, con, up] = await Promise.all([
+    const [s, st, ins, mem, con, up, us] = await Promise.all([
       fetch("/api/settings").then((r) => r.json()).catch(() => null),
       fetch("/api/config/status").then((r) => r.json()).catch(() => null),
       fetch("/api/kb?kind=instruction").then((r) => r.json()).catch(() => null),
       fetch("/api/kb?kind=fact").then((r) => r.json()).catch(() => null),
       fetch("/api/connect").then((r) => r.json()).catch(() => null),
       fetch("/api/updates/status").then((r) => r.json()).catch(() => null),
+      fetch("/api/usage").then((r) => r.json()).catch(() => null),
     ]);
     if (s) {
       setDefs(s.defs ?? []);
@@ -248,6 +256,7 @@ export default function ConfigClient() {
     if (mem) setMemory(((mem.documents ?? []) as KbDoc[]).slice(0, 20));
     if (con) setConnect(con as ConnectStatus);
     if (up) setUpd(up);
+    if (us) setUsage(us);
   }, []);
 
   // --- Catalog search + per-account tool lists ------------------------------
@@ -502,7 +511,12 @@ export default function ConfigClient() {
 
   const setupItems = status
     ? [
-        { ok: status.env.anthropic, label: "Anthropic API key (Vercel env)" },
+        {
+          ok: status.ai?.ready ?? status.env.anthropic,
+          label: status.ai
+            ? `AI ready (${status.ai.provider})`
+            : "AI ready",
+        },
         { ok: status.mail.connected, label: "Email connected", href: "/inbox" },
         { ok: status.counts.projects > 0, label: "First project created" },
         {
@@ -951,6 +965,44 @@ export default function ConfigClient() {
               </button>
             </div>
           ))}
+        </div>
+      </Section>
+
+      {/* AI usage */}
+      <Section label="AI USAGE">
+        <div className={card} style={cardStyle}>
+          {usage?.available ? (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-[14px] text-ink-2">Credit balance</span>
+                <span className="font-mono text-[14px] text-ink">
+                  {usage.balance != null
+                    ? `$${Number(usage.balance).toFixed(2)}`
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[14px] text-ink-2">Spent to date</span>
+                <span className="font-mono text-[14px] text-ink">
+                  {usage.totalUsed != null
+                    ? `$${Number(usage.totalUsed).toFixed(2)}`
+                    : "—"}
+                </span>
+              </div>
+              <p className="text-[12px] leading-relaxed text-ink-3">
+                Vercel AI Gateway credits, on your own Vercel account. Top up or
+                manage in the Vercel dashboard.
+              </p>
+            </>
+          ) : (
+            <p className="text-[13px] leading-relaxed text-ink-2">
+              {usage?.reason === "not-gateway"
+                ? "Direct Anthropic mode — usage and billing live in your Anthropic console."
+                : usage?.reason === "no-credential"
+                  ? "No gateway credential detected yet."
+                  : "Usage unavailable right now."}
+            </p>
+          )}
         </div>
       </Section>
 

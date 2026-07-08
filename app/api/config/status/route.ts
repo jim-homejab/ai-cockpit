@@ -12,6 +12,7 @@ import { listTasks } from "@/lib/tasks";
 import { listKbDocuments, listInstructions } from "@/lib/kb/store";
 import { listContacts } from "@/lib/contacts";
 import { getUpdatesInfo } from "@/lib/updater-workflow";
+import { resolveAi, resolveProvider } from "@/lib/ai";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export async function GET() {
   const authed = await getAuthed();
   if (!authed) return unauthorized();
 
-  const [mail, google, projects, tasks, kb, instructions, contacts] =
+  const [mail, google, projects, tasks, kb, instructions, contacts, ai, provider] =
     await Promise.all([
       getMailAccount().catch(() => null),
       getGoogleConnection().catch(() => null),
@@ -29,6 +30,10 @@ export async function GET() {
       listKbDocuments().catch(() => []),
       listInstructions().catch(() => []),
       listContacts().catch(() => []),
+      // AI readiness is provider-aware: gateway (OIDC/key) OR a direct
+      // Anthropic key both count. resolveAi returns null when neither exists.
+      resolveAi().catch(() => null),
+      resolveProvider().catch(() => "gateway" as const),
     ]);
 
   const email = (await authed.supabase.auth.getUser()).data.user?.email ?? null;
@@ -52,6 +57,7 @@ export async function GET() {
       instructions: instructions.length,
       contacts: contacts.length,
     },
+    ai: { provider, ready: Boolean(ai) },
     updates: getUpdatesInfo(),
   });
 }
