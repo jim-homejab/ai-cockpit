@@ -24,7 +24,8 @@ export type SettingKey =
   | "connect.service_url"
   | "connect.api_key"
   | "connect.apps"
-  | "connect.tool_overrides";
+  | "connect.tool_overrides"
+  | "updates.enabled";
 
 export type SettingDef = {
   key: SettingKey;
@@ -193,6 +194,19 @@ export const SETTING_DEFS: SettingDef[] = [
     default: "",
     rows: 3,
     placeholder: '{"pipedream-asana": {"create-task": "off"}}',
+  },
+  // Set once the user completes the one-tap "Enable auto-updates" step
+  // (see lib/updater-workflow.ts). Gates the "Get this update" button so it
+  // never sends a user who hasn't enabled updates yet to GitHub's "create a
+  // new workflow" page. Not a user-facing knob — filtered out of the
+  // auto-rendered Chief settings list in ConfigClient.
+  {
+    key: "updates.enabled",
+    label: "Updates — auto-updates enabled",
+    description: "Internal flag; managed by the Software updates card.",
+    default: "off",
+    singleLine: true,
+    placeholder: "off",
   },
 ];
 
