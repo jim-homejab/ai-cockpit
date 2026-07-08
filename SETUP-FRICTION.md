@@ -802,3 +802,45 @@ problem; both were dropped.
 **Still open (unchanged from #24):** deploy button can't force a public repo
 (no visibility param), and the 60-day cron pause. Both are onboarding/concierge
 candidates, not blockers.
+
+### 26. Decision: the embedded AI must NOT build/deploy its own updates (2026-07-08)
+
+Recurring idea worth settling on the record: "Chief has AI embedded — if it can
+notify us of an update, can't the embedded Chief build the PR / apply the update
+itself?" **Decision: no.** Reasoning, so we don't relitigate it:
+
+- **"AI" is a red herring here.** Building the branch + PR is mechanical — the
+  updater workflow already does it with zero intelligence, and that half works.
+  The only things ever broken were *deploy* (fixed: public repo) and *reliable
+  PR-open* (fixed: user-opened compare link + best-effort workflow). Neither is
+  an intelligence problem, so an LLM adds nothing to the build step.
+- **Capability tiers, not smarts.** Detecting/notifying is **read-only** (reads
+  upstream's public release; no credential). Building/merging is a **repo-write**
+  action needing a stored GitHub token. "We can notify" never implied "we can
+  build" — different tier. The real proposal underneath "let Chief build it" is
+  just "store a repo-write token," and the AI is incidental to that.
+- **The hard line — never give the model a repo-write / code-deploy tool.**
+  Chief's runtime ingests UNTRUSTED content (emails, web, connector data). A
+  self-modification path reachable from that input is a prompt-injection route
+  to Chief rewriting and deploying its own code — the worst failure mode for a
+  self-hosted agent. This is exactly what BUILD-BRIEF's security rules and the
+  write gate forbid: the model reads and *proposes*; the only writes go through
+  `app/api/actions/execute` on explicit approval, and they touch the user's
+  DATA, never code or infra. Updates-as-approve-first-proposals also means a
+  human must review the code diff before merge; auto-build+merge would delete
+  that review. So the AI is never the actor for code/deploy.
+- **The only safe "one-tap" variant (shelved, not built):** a NON-AI Config
+  button using the user's OWN narrowly-scoped fine-grained PAT (single repo;
+  Pull requests: write, Contents: read) to *open* the PR — the user still
+  merges. Sidesteps injection (no model tool) and preserves review, but costs a
+  stored repo-write credential to manage and softens TRUST.md's "only you ever
+  touch your repo," to save ~1–2 clicks over the compare-link flow we already
+  ship. Marginal. If ever built: explicitly opt-in, off by default, never wired
+  to the model. Not worth it now.
+
+**Kept idea — where the embedded AI SHOULD help with updates:** on the review
+step, have Chief READ the public diff/release notes and explain the update in
+plain language ("changes X and Y, adds a migration to run, low risk") to help a
+non-technical user decide to merge. Read-only, touches nothing, honors the write
+gate — comprehension, not code-pushing. That's the right side of the line. Good
+Phase-6/concierge candidate.
