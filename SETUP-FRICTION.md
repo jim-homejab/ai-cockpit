@@ -757,3 +757,48 @@ clone vs. upstream" trivially easy.
 - **Private-repo path still exists for holdouts:** Vercel Pro, or merge updates
   locally (`git pull && git push`) so the tip commit is authored by the owner.
   Documented as the advanced/opt-out path; public is the recommended default.
+
+### 25. Public-clone fix PROVEN live, and the PR-auto-open step is unreliable (2026-07-08, v0.4.1)
+
+Ran the whole loop on Jim's real free-tier instance (`jimkeough/chief`, Hobby):
+made the repo public → detected "Update available — v0.4.0" → ran the updater →
+merged → **production deployed green** ("Chief/upstream update (#2)" → Ready on
+`main`). Entry 24's fix holds end to end: **a normal user on the free plan can
+now stay current.** No Pro, no token, no operator.
+
+**New finding — the auto-open-PR step can't be relied on.** Jim's `gh pr create`
+step failed *even though* "Allow GitHub Actions to create and approve pull
+requests" was already checked (screenshot-confirmed). The workflow's canned
+error blames that toggle, but it was on — so the real cause is something else
+(GitHub's Actions PR gate misfires; exact reason not diagnosable from the app,
+and the app can't read the private run logs anyway). Chasing the root cause is a
+dead end; the fix is to **not depend on the Action opening the PR.**
+
+The reliable half of the job is **pushing `chief/upstream-update`** — that
+always works. Opening the PR is the flaky part, and a PR the *user* opens is
+never gated (Jim confirmed this by hand: creating the PR from the compare page
+worked instantly). So v0.4.1:
+- **Workflow (`upstream-updates.yml` + embedded `UPDATER_WORKFLOW_YAML`)**:
+  `gh pr create` is now **best-effort** — on failure it emits a `::warning::`
+  (pointing at Chief's Review & merge link) instead of `exit 1`, so the run
+  stays green after the push. The push itself stays fatal (it's what we need).
+- **App**: the "Review & merge" button now targets a **compare/create-PR deep
+  link** (`getUpdatesInfo().createPrUrl` → `…/compare/main...chief/upstream-update?expand=1`)
+  rather than `/pulls`. That page shows the diff and a Create-PR button (or the
+  existing PR) — so it works whether or not the Action managed to open one. A
+  "Prepare it first" link (run the workflow) covers the case where the branch
+  hasn't been pushed yet.
+
+Net: updates no longer depend on the `gh pr create` step or the repo toggle at
+all. Push branch (auto) → app's Review & merge → Create PR → merge → deploy.
+
+**Also considered and rejected (Jim's brainstorm):** GitHub *runners* (change
+where a job runs, not the token's PR permission — wrong layer, and force users
+to host a machine) and *webhooks* (outbound notifications only; can't open a PR,
+and the version that could requires an operator-run service holding a repo
+credential — the exact phone-home we forbid). Neither addresses the deploy/PR
+problem; both were dropped.
+
+**Still open (unchanged from #24):** deploy button can't force a public repo
+(no visibility param), and the 60-day cron pause. Both are onboarding/concierge
+candidates, not blockers.

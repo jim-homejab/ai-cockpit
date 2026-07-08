@@ -42,6 +42,7 @@ type Status = {
     repoUrl: string | null;
     settingsUrl: string | null;
     runWorkflowUrl: string | null;
+    createPrUrl: string | null;
     reviewUrl: string | null;
   };
 };
@@ -1222,10 +1223,10 @@ export default function ConfigClient({
                     What&apos;s new
                   </a>
                 </span>
-                {updatesEnabled && status?.updates?.reviewUrl ? (
+                {updatesEnabled && status?.updates?.createPrUrl ? (
                   <>
                     <a
-                      href={status.updates.reviewUrl}
+                      href={status.updates.createPrUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex h-10 items-center justify-center rounded-control px-4 text-[14px] font-medium"
@@ -1234,8 +1235,10 @@ export default function ConfigClient({
                       Review &amp; merge →
                     </a>
                     <span className="text-[11.5px] leading-relaxed text-ink-3">
-                      Opens the update pull request in your repo — review the
-                      diff and merge; merging deploys it. Don&apos;t see one yet?{" "}
+                      Opens the update in your repo — review the diff, tap{" "}
+                      <span className="text-ink-2">Create pull request</span>{" "}
+                      (or open the one already waiting), then merge; merging
+                      deploys it. Nothing to review yet?{" "}
                       {status.updates.runWorkflowUrl ? (
                         <a
                           href={status.updates.runWorkflowUrl}
@@ -1243,7 +1246,7 @@ export default function ConfigClient({
                           rel="noopener noreferrer"
                           className="text-teal underline"
                         >
-                          Prepare it
+                          Prepare it first
                         </a>
                       ) : (
                         "run the updater"
