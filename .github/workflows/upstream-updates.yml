@@ -15,6 +15,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 env:
   UPSTREAM: jim-homejab/ai-cockpit
@@ -64,13 +65,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git push -f origin chief/upstream-update
+          git push -f origin chief/upstream-update || {
+            echo "::error::Push denied even though this workflow requests contents:write — an org policy may be capping GITHUB_TOKEN. Check Settings > Actions > General > Workflow permissions."
+            exit 1
+          }
           gh pr list --head chief/upstream-update --state open --json number \
             --jq 'length' | grep -q '^0$' || exit 0
           gh pr create \
             --title "Chief update: ${{ steps.diff.outputs.behind }} new upstream commit(s)" \
             --body "Upstream Chief has moved. Review the diff — new migrations are listed under \`supabase/migrations/\` and must be run after merging. Nothing changes until you merge this. Compare: https://github.com/${UPSTREAM}/compare/" \
-            --base main --head chief/upstream-update
+            --base main --head chief/upstream-update || {
+            echo "::error::Couldn't open the PR — this almost always means 'Allow GitHub Actions to create and approve pull requests' isn't checked under Settings > Actions > General > Workflow permissions (a hard gate the workflow file can't override). Check it, then re-run — the chief/upstream-update branch is already pushed."
+            exit 1
+          }
 
       - name: Open conflict issue instead
         if: env.MERGE_CONFLICT == '1'
@@ -80,4 +87,7 @@ jobs:
           gh issue list --search "Upstream update conflict in:title" --state open --json number --jq 'length' | grep -q '^0$' || exit 0
           gh issue create \
             --title "Upstream update conflict" \
-            --body "An upstream Chief update couldn't be merged automatically because of local changes. Merge https://github.com/${UPSTREAM} main into your repo manually."
+            --body "An upstream Chief update couldn't be merged automatically because of local changes. Merge https://github.com/${UPSTREAM} main into your repo manually." || {
+            echo "::error::Couldn't open the conflict issue — check that GitHub Actions has issue-write access under Settings > Actions > General > Workflow permissions."
+            exit 1
+          }

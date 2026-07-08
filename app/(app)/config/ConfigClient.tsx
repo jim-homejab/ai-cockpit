@@ -290,6 +290,7 @@ export default function ConfigClient({
     totalUsed?: string | number | null;
     reason?: string;
   } | null>(null);
+  const updatesEnabled = settings["updates.enabled"] === "on";
 
   const refresh = useCallback(async () => {
     const [s, st, ins, mem, con, up, us] = await Promise.all([
@@ -528,6 +529,18 @@ export default function ConfigClient({
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Optimistic, isolated write — fired the moment the user opens the GitHub
+  // "commit the workflow" link, independent of the batched Chief settings
+  // save so it never gets tangled up with unrelated pending edits.
+  const markUpdatesEnabled = async () => {
+    setSettings((s) => ({ ...s, "updates.enabled": "on" }));
+    await fetch("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings: { "updates.enabled": "on" } }),
+    }).catch(() => {});
+  };
 
   const saveSettings = async () => {
     setSaving(true);
@@ -924,7 +937,9 @@ export default function ConfigClient({
       {section === "chief" && (
       <Section label="CHIEF SETTINGS">
         <div className={card} style={cardStyle}>
-          {defs.map((d) => (
+          {defs
+            .filter((d) => d.key !== "updates.enabled")
+            .map((d) => (
             <div key={d.key} className="flex flex-col gap-1.5">
               <div className="text-[14px] font-medium text-ink">{d.label}</div>
               <div className="text-[12.5px] leading-snug text-ink-3">
@@ -1151,21 +1166,30 @@ export default function ConfigClient({
                     What&apos;s new
                   </a>
                 </span>
-                {status?.updates?.repoOwner && status?.updates?.repoSlug && (
-                  <a
-                    href={`https://github.com/${status.updates.repoOwner}/${status.updates.repoSlug}/actions/workflows/upstream-updates.yml`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-10 items-center justify-center rounded-control px-4 text-[14px] font-medium"
-                    style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
-                  >
-                    Get this update →
-                  </a>
+                {updatesEnabled &&
+                status?.updates?.repoOwner &&
+                status?.updates?.repoSlug ? (
+                  <>
+                    <a
+                      href={`https://github.com/${status.updates.repoOwner}/${status.updates.repoSlug}/actions/workflows/upstream-updates.yml`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-10 items-center justify-center rounded-control px-4 text-[14px] font-medium"
+                      style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
+                    >
+                      Get this update →
+                    </a>
+                    <span className="text-[11.5px] leading-relaxed text-ink-3">
+                      Opens the updater: tap <span className="text-ink-2">Run workflow</span> →
+                      it prepares a pull request in your repo → review the diff and merge.
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[11.5px] leading-relaxed text-ink-3">
+                    Turn on auto-updates below first — a one-time step that lets
+                    GitHub open this update as a pull request.
+                  </span>
                 )}
-                <span className="text-[11.5px] leading-relaxed text-ink-3">
-                  Opens the updater: tap <span className="text-ink-2">Run workflow</span> →
-                  it prepares a pull request in your repo → review the diff and merge.
-                </span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -1177,33 +1201,59 @@ export default function ConfigClient({
             ))}
 
           {status?.updates?.enableUrl ? (
-            <>
-              <p className="text-[13.5px] leading-relaxed text-ink-2">
-                The one-click deploy couldn&apos;t include the updater
-                (GitHub blocks it), so turn it on once: this commits the update
-                workflow into{" "}
-                <span className="font-mono text-[12px] text-ink">
-                  {status.updates.repoOwner}/{status.updates.repoSlug}
-                </span>{" "}
-                as you.
-              </p>
-              <a
-                href={status.updates.enableUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-11 items-center justify-center rounded-control px-4 text-[15px] font-medium"
-                style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
-              >
-                Enable auto-updates →
-              </a>
-              <p className="text-[12px] leading-relaxed text-ink-3">
-                On the GitHub page, scroll down and tap{" "}
-                <span className="text-ink-2">Commit changes</span>. Then, one
-                time, enable{" "}
-                <span className="text-ink-2">Allow GitHub Actions to create pull requests</span>{" "}
-                under Settings → Actions → General → Workflow permissions.
-              </p>
-            </>
+            updatesEnabled ? (
+              <div className="flex items-center gap-2">
+                <Dot ok={true} />
+                <span className="text-[13px] text-ink-2">
+                  Auto-updates enabled for{" "}
+                  <span className="font-mono text-[12px] text-ink">
+                    {status.updates.repoOwner}/{status.updates.repoSlug}
+                  </span>
+                  .{" "}
+                  <a
+                    href={status.updates.enableUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-teal underline"
+                  >
+                    Re-commit the workflow
+                  </a>
+                </span>
+              </div>
+            ) : (
+              <>
+                <p className="text-[13.5px] leading-relaxed text-ink-2">
+                  The one-click deploy couldn&apos;t include the updater
+                  (GitHub blocks it), so turn it on once: this commits the update
+                  workflow into{" "}
+                  <span className="font-mono text-[12px] text-ink">
+                    {status.updates.repoOwner}/{status.updates.repoSlug}
+                  </span>{" "}
+                  as you.
+                </p>
+                <a
+                  href={status.updates.enableUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={markUpdatesEnabled}
+                  className="inline-flex h-11 items-center justify-center rounded-control px-4 text-[15px] font-medium"
+                  style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
+                >
+                  Enable auto-updates →
+                </a>
+                <p className="text-[12px] leading-relaxed text-ink-3">
+                  On the GitHub page, scroll down and tap{" "}
+                  <span className="text-ink-2">Commit changes</span>. Then, one
+                  time, under Settings → Actions → General → Workflow
+                  permissions, check{" "}
+                  <span className="text-ink-2">
+                    Allow GitHub Actions to create and approve pull requests
+                  </span>
+                  . This one can&apos;t be granted by the workflow file itself —
+                  skip it and the updater&apos;s PR step fails.
+                </p>
+              </>
+            )
           ) : (
             <p className="text-[12px] leading-relaxed text-ink-3">
               Auto-update setup is available on a Vercel + GitHub deployment.
