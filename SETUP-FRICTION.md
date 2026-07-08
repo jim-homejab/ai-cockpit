@@ -757,3 +757,90 @@ clone vs. upstream" trivially easy.
 - **Private-repo path still exists for holdouts:** Vercel Pro, or merge updates
   locally (`git pull && git push`) so the tip commit is authored by the owner.
   Documented as the advanced/opt-out path; public is the recommended default.
+
+### 25. Public-clone fix PROVEN live, and the PR-auto-open step is unreliable (2026-07-08, v0.4.1)
+
+Ran the whole loop on Jim's real free-tier instance (`jimkeough/chief`, Hobby):
+made the repo public → detected "Update available — v0.4.0" → ran the updater →
+merged → **production deployed green** ("Chief/upstream update (#2)" → Ready on
+`main`). Entry 24's fix holds end to end: **a normal user on the free plan can
+now stay current.** No Pro, no token, no operator.
+
+**New finding — the auto-open-PR step can't be relied on.** Jim's `gh pr create`
+step failed *even though* "Allow GitHub Actions to create and approve pull
+requests" was already checked (screenshot-confirmed). The workflow's canned
+error blames that toggle, but it was on — so the real cause is something else
+(GitHub's Actions PR gate misfires; exact reason not diagnosable from the app,
+and the app can't read the private run logs anyway). Chasing the root cause is a
+dead end; the fix is to **not depend on the Action opening the PR.**
+
+The reliable half of the job is **pushing `chief/upstream-update`** — that
+always works. Opening the PR is the flaky part, and a PR the *user* opens is
+never gated (Jim confirmed this by hand: creating the PR from the compare page
+worked instantly). So v0.4.1:
+- **Workflow (`upstream-updates.yml` + embedded `UPDATER_WORKFLOW_YAML`)**:
+  `gh pr create` is now **best-effort** — on failure it emits a `::warning::`
+  (pointing at Chief's Review & merge link) instead of `exit 1`, so the run
+  stays green after the push. The push itself stays fatal (it's what we need).
+- **App**: the "Review & merge" button now targets a **compare/create-PR deep
+  link** (`getUpdatesInfo().createPrUrl` → `…/compare/main...chief/upstream-update?expand=1`)
+  rather than `/pulls`. That page shows the diff and a Create-PR button (or the
+  existing PR) — so it works whether or not the Action managed to open one. A
+  "Prepare it first" link (run the workflow) covers the case where the branch
+  hasn't been pushed yet.
+
+Net: updates no longer depend on the `gh pr create` step or the repo toggle at
+all. Push branch (auto) → app's Review & merge → Create PR → merge → deploy.
+
+**Also considered and rejected (Jim's brainstorm):** GitHub *runners* (change
+where a job runs, not the token's PR permission — wrong layer, and force users
+to host a machine) and *webhooks* (outbound notifications only; can't open a PR,
+and the version that could requires an operator-run service holding a repo
+credential — the exact phone-home we forbid). Neither addresses the deploy/PR
+problem; both were dropped.
+
+**Still open (unchanged from #24):** deploy button can't force a public repo
+(no visibility param), and the 60-day cron pause. Both are onboarding/concierge
+candidates, not blockers.
+
+### 26. Decision: the embedded AI must NOT build/deploy its own updates (2026-07-08)
+
+Recurring idea worth settling on the record: "Chief has AI embedded — if it can
+notify us of an update, can't the embedded Chief build the PR / apply the update
+itself?" **Decision: no.** Reasoning, so we don't relitigate it:
+
+- **"AI" is a red herring here.** Building the branch + PR is mechanical — the
+  updater workflow already does it with zero intelligence, and that half works.
+  The only things ever broken were *deploy* (fixed: public repo) and *reliable
+  PR-open* (fixed: user-opened compare link + best-effort workflow). Neither is
+  an intelligence problem, so an LLM adds nothing to the build step.
+- **Capability tiers, not smarts.** Detecting/notifying is **read-only** (reads
+  upstream's public release; no credential). Building/merging is a **repo-write**
+  action needing a stored GitHub token. "We can notify" never implied "we can
+  build" — different tier. The real proposal underneath "let Chief build it" is
+  just "store a repo-write token," and the AI is incidental to that.
+- **The hard line — never give the model a repo-write / code-deploy tool.**
+  Chief's runtime ingests UNTRUSTED content (emails, web, connector data). A
+  self-modification path reachable from that input is a prompt-injection route
+  to Chief rewriting and deploying its own code — the worst failure mode for a
+  self-hosted agent. This is exactly what BUILD-BRIEF's security rules and the
+  write gate forbid: the model reads and *proposes*; the only writes go through
+  `app/api/actions/execute` on explicit approval, and they touch the user's
+  DATA, never code or infra. Updates-as-approve-first-proposals also means a
+  human must review the code diff before merge; auto-build+merge would delete
+  that review. So the AI is never the actor for code/deploy.
+- **The only safe "one-tap" variant (shelved, not built):** a NON-AI Config
+  button using the user's OWN narrowly-scoped fine-grained PAT (single repo;
+  Pull requests: write, Contents: read) to *open* the PR — the user still
+  merges. Sidesteps injection (no model tool) and preserves review, but costs a
+  stored repo-write credential to manage and softens TRUST.md's "only you ever
+  touch your repo," to save ~1–2 clicks over the compare-link flow we already
+  ship. Marginal. If ever built: explicitly opt-in, off by default, never wired
+  to the model. Not worth it now.
+
+**Kept idea — where the embedded AI SHOULD help with updates:** on the review
+step, have Chief READ the public diff/release notes and explain the update in
+plain language ("changes X and Y, adds a migration to run, low risk") to help a
+non-technical user decide to merge. Read-only, touches nothing, honors the write
+gate — comprehension, not code-pushing. That's the right side of the line. Good
+Phase-6/concierge candidate.
