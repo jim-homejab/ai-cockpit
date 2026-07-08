@@ -64,10 +64,10 @@ export const SETTING_DEFS: SettingDef[] = [
     key: "chief.model",
     label: "Chief — model",
     description:
-      "The model Chief runs on. Search the list to pick one, or type any id by hand. In the default (AI Gateway) mode it can be any gateway model id — e.g. anthropic/claude-opus-4.7 or openai/gpt-5 — a bare id is assumed to be Anthropic. In direct Anthropic mode it's a Claude id like claude-opus-4-8.",
-    default: "claude-opus-4-8",
+      "The model Chief runs on. Default is claude-sonnet-5 — strong tool-use at a lower cost than Opus. Search the list to pick another, or type any id by hand. In the default (AI Gateway) mode it can be any gateway model id — e.g. anthropic/claude-opus-4.8 or openai/gpt-5 — a bare id is assumed to be Anthropic. In direct Anthropic mode it's a Claude id like claude-sonnet-5.",
+    default: "claude-sonnet-5",
     singleLine: true,
-    placeholder: "claude-opus-4-8",
+    placeholder: "claude-sonnet-5",
   },
   // --- AI provider (Vercel AI Gateway by default) --------------------------
   // Gateway is the default because it needs ZERO keys on a Vercel deployment:

@@ -18,7 +18,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getAppSettings, type AppSettings } from "@/lib/settings";
 
 export const AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh";
-const DEFAULT_MODEL = "claude-opus-4-8";
+const DEFAULT_MODEL = "claude-sonnet-5";
 
 // A free-tier gateway model Chief falls back to when the chosen premium model
 // is unavailable to this account (e.g. no paid credits, no BYOK key). Keeps
