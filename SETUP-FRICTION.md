@@ -580,3 +580,119 @@ Chief runs on the sovereign zero-key gateway default. Remaining friction is
 honest and small: sign in with GitHub (covers both accounts), a payment method
 on Vercel (one account, $0 on free models), and the update-enable tap. Every
 bug the walkthrough surfaced (entries 16–19) is fixed.
+
+## Walkthrough #2, continued (2026-07-08) — the update path is architecturally broken
+
+Jim tried to actually PULL an update on his live instance (`jimkeough/chief`,
+Vercel Hobby, private repo). Chasing it down took four failed runs and three
+code fixes, and it ended at a wall that **cannot be fixed in this repo** — the
+whole "updates as PRs into the user's own repo, merge auto-deploys" model
+collides with a Vercel Hobby-plan restriction. A new session picking this up
+should read entry 19 first (the pipeline's earlier rebuild), then this.
+
+### 23. The update pipeline dies at the Vercel deploy step (BLOCKER — needs an architecture decision)
+
+The chain of failures, in the order we hit them (each real, each was a
+separate fix or dead end):
+
+1. **`workflows` permission push-reject (fixed, PR #35).** The updater's
+   `git merge upstream/main` pulls in changes under `.github/workflows/`
+   (e.g. `release.yml`). The default `GITHUB_TOKEN` can **never** create or
+   update files under `.github/workflows/` — a hard, unconfigurable GitHub
+   rule (stops a workflow from rewriting workflows to self-escalate). The push
+   is rejected outright.
+   - A mid-fix (PR #34) wrongly added `permissions: workflows: write` to the
+     YAML — **there is no such permission key**; valid scopes are `contents`,
+     `pull-requests`, `issues`, `actions`, etc. A user who hand-copied it got
+     `Invalid workflow file … Unexpected value 'workflows'` ("Startup
+     failure"). Reverted.
+   - **Real fix (PR #35):** a "Strip workflow-file changes" step reverts any
+     `.github/workflows/**` change out of the merge commit before pushing, so
+     the branch never touches that path. `upstream-updates.yml` itself is kept
+     current through the *separate* "Enable auto-updates / re-commit" link
+     (that push is the user's own, not the Actions bot's, so it's allowed).
+2. **`gh pr create` → `Resource not accessible by integration`.** Even with
+   the branch pushed, opening the PR from Actions requires the repo toggle
+   "Allow GitHub Actions to create and approve pull requests" (Settings →
+   Actions → General). It has TWO separate Save buttons on that page; easy to
+   check the box and save the wrong section. Workaround that unblocked Jim:
+   GitHub prints a `…/pull/new/chief/upstream-update` link in the push output
+   — he opened the PR himself (a human-created PR isn't subject to the Actions
+   restriction).
+3. **THE WALL — Vercel blocks the deploy on commit author (NOT fixable here).**
+   The PR merged cleanly (no conflicts). But both the PR preview check and the
+   post-merge production deploy were **blocked by Vercel**:
+   > "The deployment was blocked because the commit author did not have
+   > contributing access to the project on Vercel. The Hobby Plan does not
+   > support collaboration for private repositories."
+   The blocking author is **`web-flow`** — GitHub's system identity for
+   anything committed through its web UI, which includes **merge commits made
+   by clicking GitHub's "Merge pull request" button**, plus the older
+   squash-merge commits already in upstream's history that got dragged in by
+   the first catch-up merge (68 commits).
+   - Mechanism: on **Vercel Hobby + a PRIVATE repo**, a deployment is refused
+     unless the triggering commit's author is a project collaborator — and
+     Hobby doesn't support collaborators at all. So *any* commit not authored
+     by the account owner's own verified git identity is un-deployable. Bot
+     commits and GitHub-web-UI merges are all `web-flow`. → the update path's
+     final step (merge → auto-deploy) is dead on the default plan.
+
+**Why this is architectural, not a bug.** The update design (entry 19, and
+the "Updates ship as proposals" decision above) rests on: *upstream change →
+PR into the user's private repo → user merges → Vercel auto-deploys.* Step 4
+requires Vercel to deploy a commit that, by construction, is authored by a bot
+or by GitHub's web-flow merge identity — exactly what Hobby+private forbids.
+No workflow-file or permission change can move this; it's a plan property.
+
+**The escape hatches that exist today (all imperfect):**
+- **Manual redeploy from the Vercel dashboard.** The owner clicking "Redeploy"
+  is an owner-initiated action, not a git-author-gated push, so it builds.
+  Unblocks a single update; not an "easy, obvious" update path.
+- **Upgrade to Vercel Pro.** Removes the collaboration restriction entirely.
+  Costs money; pushes a plan requirement onto every self-hoster.
+- **Merge locally, not via GitHub's web button.** `git pull && git merge &&
+  git push` re-authors the tip commit as the user's own verified identity,
+  which Vercel accepts. Defeats the "review-and-merge in the GitHub UI" UX and
+  assumes a git-capable user.
+- **Make the repo public.** Sidesteps the private-repo collaboration gate, but
+  contradicts the current default (clones are private by default; only the
+  UPSTREAM template is public — entry 14).
+
+**Option space for the redesign (for the next session / colleague discussion,
+not yet decided):**
+- **A. Require/recommend Vercel Pro** for self-hosters who want one-click
+  updates. Simplest, but a paywall on the core "keep your instance current"
+  promise.
+- **B. In-app update service** (Jim's sketch): Chief shows "vX available →
+  [Create pull request]", and the app/a small service opens the PR. Does **not**
+  solve this — the resulting merge commit is still bot/web-flow authored, so
+  Vercel still blocks the deploy on Hobby+private. And a service that pushes to
+  the user's repo needs a stored credential, cutting against TRUST.md's "only
+  you ever touch your repo." Rejected on those two grounds unless paired with
+  something that fixes the author gate.
+- **C. Deploy from a source that isn't git-author-gated.** E.g. Chief triggers
+  its own Vercel deploy via a deploy hook / the Vercel API after the user
+  approves — decoupling "get the new code into the repo" from "deploy," so the
+  deploy is owner-initiated (like the manual Redeploy) rather than commit-author
+  gated. Needs a Vercel token in the instance (TRUST.md implications, but it's
+  the user's OWN token for their OWN project — arguably in-bounds, unlike B).
+- **D. Rethink distribution entirely** — treat upstream as a versioned
+  template/release artifact the instance pulls and applies, rather than a git
+  ancestor merged via PR (this was floated as "Option 3/4" in the chat). Bigger
+  lift; may or may not dodge the Vercel author gate depending on how the deploy
+  is triggered.
+
+**State of the code right now:** `main` has the *correct* PR-#35 version of
+`upstream-updates.yml` (strips workflow files; no invalid `workflows:` key).
+The pipeline now successfully: detects behind-ness, builds the branch, strips
+workflow files, pushes, and (with the toggle on, or via the printed link)
+opens a PR. It gets all the way to a clean, mergeable PR — and then the deploy
+is what's blocked. So the fix surface has moved entirely to "how does the new
+code get DEPLOYED," which is options A–D above. Jim's instance is mid-update:
+PR #1 in `jimkeough/chief` is merged but the production deploy is blocked;
+immediate unblock is a manual Redeploy from the Vercel dashboard.
+
+**Note for whoever picks this up:** the in-repo Software-updates UI still tells
+the user the old story (enable → run workflow → merge → done). Until the deploy
+gate is solved, that UI is promising an update flow that stops one step short.
+Don't ship UI copy claiming updates "just work" until option A–D is chosen.
