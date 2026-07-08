@@ -84,7 +84,7 @@ function Narrative({ text }: { text: string }) {
   );
 }
 
-export default function HomeClient({ initial }: { initial: string }) {
+export default function HomeClient() {
   const chief = useChief();
   const [data, setData] = useState<HomeResponse | null>(null);
   const [now, setNow] = useState("");
@@ -159,19 +159,9 @@ export default function HomeClient({ initial }: { initial: string }) {
         />
       )}
 
-      {/* Date + avatar */}
-      <div className="flex items-center justify-between pt-1">
-        <div className="font-mono text-[11px] tracking-[0.12em] text-ink-3">
-          {now || " "}
-        </div>
-        <Link
-          href="/config"
-          aria-label="Config"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold text-ink-2"
-          style={{ background: "var(--raised)" }}
-        >
-          {initial}
-        </Link>
+      {/* Date line */}
+      <div className="pt-1 font-mono text-[11px] tracking-[0.12em] text-ink-3">
+        {now || " "}
       </div>
 
       {/* Chief's narrative */}

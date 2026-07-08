@@ -1,8 +1,9 @@
 import ConfigClient from "./ConfigClient";
 
-// Config — settings, standing instructions, memory, connections, account.
+// Config landing — the Setup concierge/checklist plus links into each
+// sub-page (AI & Usage, Connections, Chief, Memory, Account).
 export const dynamic = "force-dynamic";
 
 export default function ConfigPage() {
-  return <ConfigClient />;
+  return <ConfigClient section="home" />;
 }
