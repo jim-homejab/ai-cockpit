@@ -63,10 +63,13 @@ function dateLabel(iso: string | null): string {
 }
 
 export default function InboxClient() {
-  const { setOpen, openAndSend } = useChief();
+  const { openAndSend } = useChief();
   const [data, setData] = useState<InboxResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [chiefRead, setChiefRead] = useState<string | null>(null);
+  // Account plumbing (provider + disconnect) is hidden by default so the email
+  // is the whole view; revealed on demand from the header's ⋯ control.
+  const [showAcct, setShowAcct] = useState(false);
   const [receipt, setReceipt] = useState<{
     text: string;
     undo: UndoDescriptor | null;
@@ -168,7 +171,6 @@ export default function InboxClient() {
     await refresh();
   }, [data?.provider, refresh]);
 
-  const askChief = useCallback(() => setOpen(true), [setOpen]);
   const draftReply = useCallback(() => {
     openAndSend(
       "Draft a reply to the email I'm looking at, in my voice, then propose sending it.",
@@ -229,16 +231,51 @@ export default function InboxClient() {
         />
       )}
 
-      {/* Header: title + queue pill */}
+      {/* Header: title + queue pill + (tucked-away) account control */}
       <div className="flex items-center justify-between pt-2">
         <h1 className="text-[22px] font-semibold text-ink">Inbox</h1>
-        <div
-          className="rounded-full border px-2.5 py-[5px] font-mono text-[11px] tracking-[0.08em] text-ink-3"
-          style={{ borderColor: "var(--hairline)" }}
-        >
-          {queue > 1 ? `${queue - 1} MORE` : "LAST ONE"}
+        <div className="flex items-center gap-2">
+          <div
+            className="rounded-full border px-2.5 py-[5px] font-mono text-[11px] tracking-[0.08em] text-ink-3"
+            style={{ borderColor: "var(--hairline)" }}
+          >
+            {queue > 1 ? `${queue - 1} MORE` : "LAST ONE"}
+          </div>
+          {data?.account && (
+            <button
+              aria-label="Email account"
+              aria-expanded={showAcct}
+              onClick={() => setShowAcct((s) => !s)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border text-ink-3"
+              style={{ borderColor: "var(--hairline)" }}
+            >
+              <svg width="15" height="4" viewBox="0 0 15 4" fill="currentColor" aria-hidden="true">
+                <circle cx="2" cy="2" r="1.6" />
+                <circle cx="7.5" cy="2" r="1.6" />
+                <circle cx="13" cy="2" r="1.6" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Account strip — only when the user taps ⋯; keeps the reading view clean */}
+      {showAcct && data?.account && (
+        <div
+          className="flex items-center justify-between rounded-control border px-3 py-2 font-mono text-[11px] tracking-[0.06em] text-ink-3"
+          style={{ borderColor: "var(--hairline)", background: "var(--surface)" }}
+        >
+          <span className="truncate">
+            {data.provider === "imap" ? "IMAP" : "GMAIL"} · {data.account}
+          </span>
+          <button
+            onClick={() => void disconnect()}
+            className="shrink-0 pl-3 underline underline-offset-2"
+          >
+            DISCONNECT
+          </button>
+        </div>
+      )}
 
       {/* Receipt strip after an archive */}
       {receipt && (
@@ -342,49 +379,27 @@ export default function InboxClient() {
             </div>
           </div>
 
-          {/* Thumb-zone actions */}
-          <div className="flex flex-col gap-2.5 pb-1">
+          {/* Thumb-zone actions. "Ask Chief" lives in the always-docked Chief
+              bar just below (it already carries this email as context), so the
+              email keeps the room instead of a redundant button. */}
+          <div className="flex gap-2.5 pb-1">
             <button
-              onClick={askChief}
-              className="flex h-[52px] items-center justify-center gap-2 rounded-card text-[16px] font-semibold"
-              style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
+              onClick={() => void archive()}
+              disabled={archiving}
+              className="h-12 flex-1 rounded-control border text-[16px] font-medium text-ink-2"
+              style={{ borderColor: "var(--hairline)" }}
             >
-              <span className="font-serif text-[17px] italic">C</span>
-              Ask Chief about this
+              {archiving ? "Archiving…" : "Archive"}
             </button>
-            <div className="flex gap-2.5">
-              <button
-                onClick={() => void archive()}
-                disabled={archiving}
-                className="h-12 flex-1 rounded-control border text-[16px] font-medium text-ink-2"
-                style={{ borderColor: "var(--hairline)" }}
-              >
-                {archiving ? "Archiving…" : "Archive"}
-              </button>
-              <button
-                onClick={draftReply}
-                className="h-12 flex-1 rounded-control border text-[16px] font-medium text-ink"
-                style={{ borderColor: "var(--hairline)" }}
-              >
-                Reply
-              </button>
-            </div>
+            <button
+              onClick={draftReply}
+              className="h-12 flex-1 rounded-control border text-[16px] font-medium text-ink"
+              style={{ borderColor: "var(--hairline)" }}
+            >
+              Reply
+            </button>
           </div>
         </>
-      )}
-
-      {data?.account && (
-        <div className="flex items-center justify-center gap-3 pb-1 font-mono text-[10px] tracking-[0.08em] text-ink-3">
-          <span>
-            {data.provider === "imap" ? "IMAP" : "GMAIL"} · {data.account}
-          </span>
-          <button
-            onClick={() => void disconnect()}
-            className="underline underline-offset-2"
-          >
-            DISCONNECT
-          </button>
-        </div>
       )}
     </div>
   );
