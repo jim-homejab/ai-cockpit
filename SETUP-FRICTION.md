@@ -868,3 +868,99 @@ operator runs migrations centrally).
 delivery — it's code **and** schema. Either auto-run pending migrations on boot
 when `POSTGRES_URL_NON_POOLING` is present, or surface a global apply-update
 prompt. Track this before shipping more migration-bearing features.
+
+### 28. CORRECTION — UPDATES DO NOT WORK. Stop claiming otherwise. (2026-07-09, Jim)
+
+**Entry 25's "proven end to end" is retracted as a general claim.** It described
+ONE assisted run on ONE already-set-up instance, with an expert in the loop. It
+is not evidence that the flow works for a user. As of today — roughly the TENTH
+completely fresh deploy-button deploy — the update flow still does not work.
+Any session reading this log: do NOT describe the update pipeline as working,
+proven, or "close." "Close" has not converged after days of fixes.
+
+**Observed on the latest fresh deploy:** the app's "Review & merge" deep link
+(`…/compare/main...chief/upstream-update`) renders GitHub's *"There isn't
+anything to compare — do they point to valid commits?"* — i.e. the
+`chief/upstream-update` branch does not exist in the clone. On a fresh clone
+the updater workflow is stripped by design (entry 19), so until auto-updates
+are enabled AND a run has actually pushed the branch, that link points at a
+branch that cannot exist. The UI presents an action that cannot succeed on
+exactly the instance that most needs it. (Logged as the observed symptom; not
+claimed to be the only remaining defect.)
+
+**The independent verdict, even if the mechanics someday work:** the flow —
+make repo public → enable auto-updates → PR-permission toggle → run workflow →
+compare page → create PR → merge → apply DB migration — is far too complex for
+a non-developer. Fixing the mechanics does not fix the audience problem. The
+git/PR update pipeline should be treated as a developer-only path at best, and
+further investment in polishing it is suspect (sunk cost).
+
+**Status:** update delivery for user #2+ is an OPEN architecture problem, not a
+bug queue. Candidate directions under discussion (see CLOUD-PLAN.md review):
+accept dev-only updates; build for user #1 only for now (user #1 needs none of
+this machinery — deploying straight from the upstream repo makes every merge an
+auto-deploy); or redesign distribution away from git entirely (e.g. releases as
+artifacts + in-app one-tap deploy via the user's own Vercel token, or an
+app-store-style packaging platform). No direction chosen yet.
+
+### 29. The deploy-from-source setup (4a) — a clean, working path FOR THE OWNER (2026-07-09)
+
+Decision that came out of the entry-28 dead end: for now, **build for user #1
+(Jim) only**, and stand the instance up by **deploying directly from the source
+repo** rather than a deploy-button clone. This sidesteps the entire update
+pipeline (entries 19–28) because there is no clone-vs-upstream gap: the instance
+IS the source. Merge to `main` on `jim-homejab/ai-cockpit` → Vercel auto-deploys.
+No workflow, no PR-into-a-clone, no public/private dance, no toggles. Proven
+working end to end this session (`ai-cockpit-ten.vercel.app`, homejab Vercel).
+
+**The setup that worked (all manual, all one-time, dev-appropriate):**
+1. **Fresh standalone Supabase project** created directly at supabase.com (HomeJab
+   org, free). Deliberately NOT the Vercel-Marketplace-provisioned one: a
+   Marketplace DB's lifecycle can be coupled to the Vercel project that made it,
+   so deleting deploy-button debris could deprovision the database. A standalone
+   project has no such coupling — delete Vercel projects freely.
+   - On the create form: **do NOT fill "GitHub (optional)"** (the Supabase
+     GitHub integration). The app runs its OWN migrations; linking Supabase to
+     the repo makes two systems apply `supabase/migrations/*.sql` with separate
+     ledgers. Also moot here — the repo has no `supabase/config.toml`, so the
+     integration wouldn't work cleanly anyway. Keep one migration source: the app.
+   - Security toggles: Enable Data API ON, Automatically expose new tables ON
+     (RLS is the real gate), automatic RLS OFF (migrations enable RLS per-table).
+2. **Vercel project on the homejab team**, imported from `jim-homejab/ai-cockpit`
+   directly (Add New → Project → Import Git Repository). Delete any old
+   deploy-button Vercel project pointing at the same repo, or both auto-deploy on
+   every push.
+3. **Four env vars pasted by hand** (the Marketplace normally injects these; here
+   you do it once): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   (= the new **publishable** key; `lib/supabase/env.ts` accepts either name),
+   `SUPABASE_SERVICE_ROLE_KEY` (= the new **secret** key), and
+   `POSTGRES_URL_NON_POOLING` (= Supabase → **Connect → Session pooler** URI,
+   port 5432, with `[YOUR-PASSWORD]` filled in; NOT the Transaction pooler on
+   6543 — DDL misbehaves there, and NOT Direct connection, which is IPv6-only and
+   Vercel serverless can't reach). Note: `POSTGRES_URL_NON_POOLING` is only an
+   env-var NAME — there is no Supabase field by that label; its value is just the
+   connection string.
+4. **First render = onboarding, as designed**: "Set up my database" (one tap ran
+   all six migrations) → create login in-app → sign in. AI replied immediately on
+   the gateway default once a **credit card** was on the homejab Vercel account
+   (entry 22's gate — card required even for free models).
+
+**One gotcha worth flagging: Vercel Deployment Protection.** A homejab-team
+project came up with Vercel Authentication ON, which 403s all anonymous
+requests. The app rendered fine in the owner's Vercel-authenticated browser but
+was unreachable from a logged-out phone and would 403 the Proactive Chief webhook
+(`/api/events/pipedream`). Fix: project **Settings → Deployment Protection →
+disable Vercel Authentication** (three separate toggles live there — Vercel
+Authentication, Password Protection, Trusted IPs; also check Settings → Firewall
+if still blocked). Safe to disable — the app has its own single-user login and
+RLS. Acceptance test that actually proves it: open the production URL on a phone
+in an **incognito** tab (not signed into Vercel); it should load the Chief login.
+(Automated/server-side fetches from a datacenter IP may still get 403 from
+Vercel's bot filter even when the site is fully public — the incognito-phone test
+is the real check, not a curl/WebFetch from a helper.)
+
+**Scope — be honest about what this does and doesn't solve.** It fully solves the
+OWNER's setup and updates. It does **NOT** solve distribution for user #2+ — that
+is still entry 28's open problem. This is "build for myself first," not a general
+answer. When the app is good enough to give away, the user-#2 update question
+still has to be answered (or explicitly scoped to developers only).
