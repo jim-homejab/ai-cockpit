@@ -15,7 +15,7 @@
 
 import { getMcpServers, type McpServerConfig } from "@/lib/mcp";
 import { getConnectServers } from "@/lib/chief-connect";
-import { listMcpTools, callMcpTool } from "@/lib/mcp-broker";
+import { listMcpTools, callMcpTool, type McpToolDef } from "@/lib/mcp-broker";
 
 export type FrontConversation = {
   id: string;
@@ -29,7 +29,7 @@ export type FrontConversation = {
   /** ISO timestamp of the last activity, or null. */
   updatedAt: string | null;
   tags: string[];
-  /** Best-effort link back to Front (API self link), or null. */
+  /** Link that opens the conversation in Front, or null. */
   link: string | null;
 };
 
@@ -42,8 +42,10 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /** True when a broker server looks like a Front connector. */
 function isFrontServer(s: McpServerConfig): boolean {
-  const hay = `${norm(s.app ?? "")} ${norm(s.name ?? "")}`;
-  return hay.includes("front");
+  const app = norm(s.app ?? "");
+  if (app === "front" || app === "frontapp") return true;
+  const name = (s.name ?? "").toLowerCase();
+  return /(?:^|[^a-z0-9])front(?:app)?(?:$|[^a-z0-9])/.test(name);
 }
 
 /** Find the Front broker server across manual mcp.servers + Chief Connect. */
@@ -55,27 +57,48 @@ export async function resolveFrontServer(): Promise<McpServerConfig | null> {
   return connect.find(isFrontServer) ?? null;
 }
 
-/** Choose the tool that lists conversations, tolerant of naming differences
- *  across Front MCP implementations (Pipedream exposes `list-conversations`;
- *  others use `list_conversations`, `list_inbox_conversations`, etc.). */
-function pickListTool(tools: { name: string }[]): string | null {
+/** Choose a read-only tool that lists conversations. Pipedream exposes
+ *  `frontapp-list-conversations`; Front's official MCP exposes
+ *  `search_conversations`. Never bypass the broker's read-only classification. */
+function pickListTool(tools: McpToolDef[]): McpToolDef | null {
   const scored = tools
+    .filter((t) => t.readOnly)
     .map((t) => {
       const n = norm(t.name);
       const hasConv = n.includes("conversation");
-      if (!hasConv) return { name: t.name, score: 0 };
+      if (!hasConv) return { tool: t, score: 0 };
       let score = 0;
-      if (n.includes("list")) score += 3;
-      if (n.includes("listconversations")) score += 3;
+      if (n.includes("listconversations")) score += 10;
+      else if (n.includes("searchconversations")) score += 6;
+      else if (n.includes("list")) score += 3;
       if (n.includes("inbox")) score += 1;
-      if (n.includes("search")) score += 1; // acceptable fallback
-      if (n.includes("message")) score -= 2; // "list conversation messages" is not it
-      if (n.includes("tagged") || n.includes("contact")) score -= 1;
-      return { name: t.name, score };
+      if (n.includes("message")) score -= 10;
+      if (n.includes("tagged") || n.includes("contact")) score -= 5;
+      return { tool: t, score };
     })
     .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score);
-  return scored[0]?.name ?? null;
+  return scored[0]?.tool ?? null;
+}
+
+function toolArgs(tool: McpToolDef): Record<string, unknown> {
+  const properties = isRec(tool.inputSchema.properties)
+    ? tool.inputSchema.properties
+    : {};
+  const n = norm(tool.name);
+
+  // Front's official MCP requires a query or filter. all_inboxes includes
+  // unassigned work, while the status filter makes the result safe to render
+  // even if a response omits its status field.
+  if (n.includes("searchconversations")) {
+    return { scope: "all_inboxes", filters: { status: "open" } };
+  }
+
+  // Pipedream's action paginates internally and exposes only maxResults.
+  // Other list tools commonly expose a direct limit.
+  if ("maxResults" in properties) return { maxResults: 100 };
+  if ("limit" in properties) return { limit: 100 };
+  return {};
 }
 
 /** Convert Front's epoch-seconds (float) — or an already-ISO string — to ISO. */
@@ -126,7 +149,7 @@ function isOpen(o: Rec): boolean {
   if (cat) return cat === "open";
   const st = str(o.status).toLowerCase();
   if (st) return st === "assigned" || st === "unassigned" || st === "open";
-  return true; // no status info → assume it's a live conversation
+  return false;
 }
 
 function correspondentOf(o: Rec): string {
@@ -152,7 +175,6 @@ function mapConversation(o: Rec): FrontConversation | null {
   const last = isRec(o.last_message) ? o.last_message : null;
   const preview =
     str(last?.blurb) || str(last?.body) || str(o.blurb) || str(o.subject);
-  const links = isRec(o._links) ? o._links : null;
   const tags = Array.isArray(o.tags)
     ? o.tags
         .map((t) => (isRec(t) ? str(t.name) : typeof t === "string" ? t : ""))
@@ -165,10 +187,45 @@ function mapConversation(o: Rec): FrontConversation | null {
     preview: preview.replace(/\s+/g, " ").trim().slice(0, 200),
     correspondent: correspondentOf(o),
     updatedAt:
-      toIso(last?.created_at) ?? toIso(o.waiting_since) ?? toIso(o.created_at),
+      toIso(o.updated_at) ??
+      toIso(last?.created_at) ??
+      toIso(o.waiting_since) ??
+      toIso(o.created_at),
     tags,
-    link: str(links?.self) || null,
+    link: /^cnv_[a-zA-Z0-9]+$/.test(id)
+      ? `https://app.frontapp.com/open/${encodeURIComponent(id)}`
+      : null,
   };
+}
+
+function parseMcpJson(text: string): unknown {
+  const trimmed = text.trim();
+  if (/https:\/\/pipedream\.com\/_static\/connect\.html/i.test(trimmed)) {
+    throw new Error("Front needs to be reconnected in Config.");
+  }
+
+  const candidates = [trimmed];
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)?.[1];
+  if (fenced) candidates.push(fenced);
+  const firstObject = trimmed.indexOf("{");
+  const lastObject = trimmed.lastIndexOf("}");
+  if (firstObject >= 0 && lastObject > firstObject) {
+    candidates.push(trimmed.slice(firstObject, lastObject + 1));
+  }
+  const firstArray = trimmed.indexOf("[");
+  const lastArray = trimmed.lastIndexOf("]");
+  if (firstArray >= 0 && lastArray > firstArray) {
+    candidates.push(trimmed.slice(firstArray, lastArray + 1));
+  }
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // Try the next plausible JSON envelope.
+    }
+  }
+  throw new Error("Front returned an unexpected response.");
 }
 
 /** List the open Front conversations, newest activity first. */
@@ -178,24 +235,17 @@ export async function listOpenFrontConversations(): Promise<FrontInboxResult> {
 
   try {
     const tools = await listMcpTools(server);
-    const toolName = pickListTool(tools);
-    if (!toolName) {
+    const tool = pickListTool(tools);
+    if (!tool) {
       return {
         connected: true,
         error:
-          "Connected to Front, but couldn't find a 'list conversations' tool on that MCP server.",
+          "Connected to Front, but couldn't find a read-only conversations tool on that MCP server.",
       };
     }
 
-    // No args: list across the account's accessible inboxes. (The Front/
-    // Pipedream list tool defaults to the connected account's conversations.)
-    const text = await callMcpTool(server, toolName, {});
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      return { connected: true, error: "Front returned an unexpected response." };
-    }
+    const text = await callMcpTool(server, tool.name, toolArgs(tool));
+    const parsed = parseMcpJson(text);
 
     const conversations = extractConversations(parsed)
       .filter(isOpen)
