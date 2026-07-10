@@ -583,6 +583,7 @@ export default function ConfigClient({
       ]
     : [];
   const setupDone = setupItems.every((i) => i.ok);
+  const mcpServersDef = defs.find((d) => d.key === "mcp.servers");
 
   return (
     <div className="flex flex-col gap-6 pt-2 pb-8">
@@ -906,12 +907,43 @@ export default function ConfigClient({
       </Section>
       )}
 
+      {/* MCP connectors: direct remote MCP servers, the DIY twin to Chief
+          Connect above. Lives here (not buried in the generic Chief settings
+          list) since this is the page the copy above points to. */}
+      {section === "connections" && mcpServersDef && (
+      <Section label="MCP CONNECTORS">
+        <div className={card} style={cardStyle}>
+          <div className="text-[12.5px] leading-snug text-ink-3">
+            {mcpServersDef.description}
+          </div>
+          <textarea
+            value={settings["mcp.servers"] ?? ""}
+            placeholder={mcpServersDef.placeholder}
+            rows={mcpServersDef.rows ?? 6}
+            onChange={(e) =>
+              setSettings((s) => ({ ...s, "mcp.servers": e.target.value }))
+            }
+            className={`${inputCls} resize-y font-mono text-[12.5px]`}
+            style={{ borderColor: "var(--hairline)" }}
+          />
+          <button
+            onClick={() => void saveSettings()}
+            disabled={saving}
+            className="flex h-11 items-center justify-center rounded-control text-[14.5px] font-semibold disabled:opacity-50"
+            style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
+          >
+            {saving ? "Saving…" : savedFlash ? "Saved" : "Save"}
+          </button>
+        </div>
+      </Section>
+      )}
+
       {/* Chief settings */}
       {section === "chief" && (
       <Section label="CHIEF SETTINGS">
         <div className={card} style={cardStyle}>
           {defs
-            .filter((d) => d.key !== "updates.enabled")
+            .filter((d) => d.key !== "updates.enabled" && d.key !== "mcp.servers")
             .map((d) => (
             <div key={d.key} className="flex flex-col gap-1.5">
               <div className="text-[14px] font-medium text-ink">{d.label}</div>
@@ -1057,10 +1089,14 @@ export default function ConfigClient({
                     : "—"}
                 </span>
               </div>
-              <p className="text-[12px] leading-relaxed text-ink-3">
-                Vercel AI Gateway credits, on your own Vercel account. Top up or
-                manage in the Vercel dashboard.
-              </p>
+              <a
+                href="https://vercel.com/dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-fit text-[13px] font-semibold text-teal"
+              >
+                Buy more credits →
+              </a>
             </>
           ) : (
             <p className="text-[13px] leading-relaxed text-ink-2">
@@ -1070,39 +1106,6 @@ export default function ConfigClient({
                   ? "No gateway credential detected yet."
                   : "Usage unavailable right now."}
             </p>
-          )}
-        </div>
-      </Section>
-
-      {/* Diagnostics */}
-      <Section label="DIAGNOSTICS">
-        <div className={card} style={cardStyle}>
-          {status ? (
-            <>
-              <div className="flex items-center gap-3">
-                <Dot ok={status.env.anthropic} />
-                <span className="flex-1 text-[14px] text-ink">ANTHROPIC_API_KEY</span>
-                <span className="font-mono text-[11px] text-ink-3">
-                  {status.env.anthropic ? "SET" : "MISSING — Chief can't run"}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Dot ok={status.env.voyage} />
-                <span className="flex-1 text-[14px] text-ink">VOYAGE_API_KEY</span>
-                <span className="font-mono text-[11px] text-ink-3">
-                  {status.env.voyage ? "SET" : "OPTIONAL — memory search is text-only"}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Dot ok={status.env.googleOauth} />
-                <span className="flex-1 text-[14px] text-ink">GOOGLE_CLIENT_ID/SECRET</span>
-                <span className="font-mono text-[11px] text-ink-3">
-                  {status.env.googleOauth ? "SET" : "OPTIONAL — app password works"}
-                </span>
-              </div>
-            </>
-          ) : (
-            <p className="text-[13.5px] text-ink-3">Loading…</p>
           )}
         </div>
       </Section>
