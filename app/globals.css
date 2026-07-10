@@ -38,6 +38,10 @@
   --bar-gradient-pending: linear-gradient(180deg, #243029, #1c221e);
   --bar-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   --bar-shadow-pending: 0 10px 30px rgba(51, 99, 90, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+
+  /* Floating controls (menu button) over full-bleed content — glassy, no bar. */
+  --float-surface: rgba(26, 29, 27, 0.6);
+  --float-shadow: 0 2px 8px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 @media (prefers-color-scheme: light) {
@@ -69,6 +73,9 @@
     --bar-gradient-pending: linear-gradient(180deg, #f2f5f2, #eaefec);
     --bar-shadow: 0 8px 24px rgba(28, 32, 29, 0.12);
     --bar-shadow-pending: 0 10px 30px rgba(44, 95, 86, 0.18), 0 8px 24px rgba(28, 32, 29, 0.12);
+
+    --float-surface: rgba(252, 252, 250, 0.66);
+    --float-shadow: 0 2px 8px rgba(28, 32, 29, 0.1), 0 1px 2px rgba(28, 32, 29, 0.08);
   }
 }
 

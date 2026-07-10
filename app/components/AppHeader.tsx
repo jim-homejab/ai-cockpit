@@ -1,9 +1,11 @@
 "use client";
 
-// Top bar + slide-in drawer (ChatGPT-style). The bar is just a hamburger; the
-// drawer holds the app's navigation (formerly the bottom tab bar), the profile
-// row (→ full-screen Settings), and Sign out as the last item. Bigger, readable
-// type throughout — menu rows are 16–17px with generous touch targets.
+// Floating menu button + slide-in drawer (ChatGPT-style). No top bar — the
+// button floats over full-bleed page content, glassy and fixed in place while
+// the page scrolls beneath it. The drawer holds the app's navigation (formerly
+// the bottom tab bar), the profile row (→ full-screen Settings), and Sign out
+// as the last item. Bigger, readable type throughout — menu rows are 16–17px
+// with generous touch targets.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -82,21 +84,28 @@ export default function AppHeader({
 
   return (
     <>
-      <header
-        className="sticky top-0 z-30 flex items-center px-3 py-2.5"
-        style={{ background: "var(--surface)", borderBottom: "1px solid var(--hairline)" }}
+      {/* Invisible spacer — reserves room below the floating button without
+          drawing a bar (no background, no border). */}
+      <div
+        aria-hidden="true"
+        style={{ height: "calc(env(safe-area-inset-top) + 56px)" }}
+      />
+
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Menu"
+        aria-expanded={open}
+        className="fixed left-3 z-30 flex h-11 w-11 items-center justify-center rounded-full text-ink backdrop-blur-md"
+        style={{
+          top: "calc(env(safe-area-inset-top) + 10px)",
+          background: "var(--float-surface)",
+          boxShadow: "var(--float-shadow)",
+        }}
       >
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="Menu"
-          aria-expanded={open}
-          className="flex h-10 w-10 items-center justify-center rounded-control text-ink"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-          </svg>
-        </button>
-      </header>
+        <svg width="19" height="19" viewBox="0 0 19 19" fill="none" aria-hidden="true">
+          <path d="M3 6.5h13M3 9.5h9M3 12.5h13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+      </button>
 
       {/* Drawer */}
       {open && (
