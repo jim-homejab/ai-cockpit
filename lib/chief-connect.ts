@@ -243,12 +243,23 @@ export async function getConnectServers(): Promise<McpServerConfig[]> {
     const out: McpServerConfig[] = [];
     for (const [app, appAccounts] of byApp) {
       if (appAccounts.length === 1) {
+        const acct = appAccounts[0];
         out.push({
           name: `pipedream-${app}`,
           app,
-          url: buildMcpUrl(token, app),
+          // Scope to the account EXPLICITLY, even though it's the only one.
+          // Pipedream's implicit "just use the single connected account"
+          // resolution is unreliable: tools/list succeeds (so the app looks
+          // connected and its tools show up in Config), but a tools/call can
+          // come back as if the app isn't connected — a spurious "not enabled"
+          // error plus a connect link — which makes Chief announce the app
+          // isn't connected and offer a connect card for something already
+          // linked. Pinning accountId (as the multi-account branch already
+          // does) makes every call resolve the account deterministically. Name
+          // and tool names stay unprefixed so existing per-tool overrides hold.
+          url: buildMcpUrl(token, app, acct.id),
           authorization_token: token.accessToken,
-          ...(appAccounts[0].name ? { accountLabel: appAccounts[0].name } : {}),
+          ...(acct.name ? { accountLabel: acct.name } : {}),
         });
         continue;
       }
