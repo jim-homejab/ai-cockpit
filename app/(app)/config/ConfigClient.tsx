@@ -583,6 +583,7 @@ export default function ConfigClient({
       ]
     : [];
   const setupDone = setupItems.every((i) => i.ok);
+  const mcpServersDef = defs.find((d) => d.key === "mcp.servers");
 
   return (
     <div className="flex flex-col gap-6 pt-2 pb-8">
@@ -906,12 +907,43 @@ export default function ConfigClient({
       </Section>
       )}
 
+      {/* MCP connectors: direct remote MCP servers, the DIY twin to Chief
+          Connect above. Lives here (not buried in the generic Chief settings
+          list) since this is the page the copy above points to. */}
+      {section === "connections" && mcpServersDef && (
+      <Section label="MCP CONNECTORS">
+        <div className={card} style={cardStyle}>
+          <div className="text-[12.5px] leading-snug text-ink-3">
+            {mcpServersDef.description}
+          </div>
+          <textarea
+            value={settings["mcp.servers"] ?? ""}
+            placeholder={mcpServersDef.placeholder}
+            rows={mcpServersDef.rows ?? 6}
+            onChange={(e) =>
+              setSettings((s) => ({ ...s, "mcp.servers": e.target.value }))
+            }
+            className={`${inputCls} resize-y font-mono text-[12.5px]`}
+            style={{ borderColor: "var(--hairline)" }}
+          />
+          <button
+            onClick={() => void saveSettings()}
+            disabled={saving}
+            className="flex h-11 items-center justify-center rounded-control text-[14.5px] font-semibold disabled:opacity-50"
+            style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
+          >
+            {saving ? "Saving…" : savedFlash ? "Saved" : "Save"}
+          </button>
+        </div>
+      </Section>
+      )}
+
       {/* Chief settings */}
       {section === "chief" && (
       <Section label="CHIEF SETTINGS">
         <div className={card} style={cardStyle}>
           {defs
-            .filter((d) => d.key !== "updates.enabled")
+            .filter((d) => d.key !== "updates.enabled" && d.key !== "mcp.servers")
             .map((d) => (
             <div key={d.key} className="flex flex-col gap-1.5">
               <div className="text-[14px] font-medium text-ink">{d.label}</div>
