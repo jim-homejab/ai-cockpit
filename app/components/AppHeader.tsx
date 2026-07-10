@@ -26,14 +26,6 @@ function InboxIcon({ stroke }: IconProps) {
     </svg>
   );
 }
-function ChiefIcon({ stroke }: IconProps) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.5" stroke={stroke} strokeWidth="1.7" />
-      <path d="M14.8 9.6a3.4 3.4 0 100 4.8" stroke={stroke} strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  );
-}
 function ProjectsIcon({ stroke }: IconProps) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -61,7 +53,6 @@ function NotesIcon({ stroke }: IconProps) {
 const NAV = [
   { href: "/", label: "Home", Icon: HomeIcon },
   { href: "/inbox", label: "Inbox", Icon: InboxIcon },
-  { href: "/chief", label: "Chief", Icon: ChiefIcon },
   { href: "/projects", label: "Projects", Icon: ProjectsIcon },
   { href: "/tasks", label: "Tasks", Icon: TasksIcon },
   { href: "/notes", label: "Notes", Icon: NotesIcon },
