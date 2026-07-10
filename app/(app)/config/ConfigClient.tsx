@@ -1057,10 +1057,14 @@ export default function ConfigClient({
                     : "—"}
                 </span>
               </div>
-              <p className="text-[12px] leading-relaxed text-ink-3">
-                Vercel AI Gateway credits, on your own Vercel account. Top up or
-                manage in the Vercel dashboard.
-              </p>
+              <a
+                href="https://vercel.com/dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-fit text-[13px] font-semibold text-teal"
+              >
+                Buy more credits →
+              </a>
             </>
           ) : (
             <p className="text-[13px] leading-relaxed text-ink-2">
@@ -1070,39 +1074,6 @@ export default function ConfigClient({
                   ? "No gateway credential detected yet."
                   : "Usage unavailable right now."}
             </p>
-          )}
-        </div>
-      </Section>
-
-      {/* Diagnostics */}
-      <Section label="DIAGNOSTICS">
-        <div className={card} style={cardStyle}>
-          {status ? (
-            <>
-              <div className="flex items-center gap-3">
-                <Dot ok={status.env.anthropic} />
-                <span className="flex-1 text-[14px] text-ink">ANTHROPIC_API_KEY</span>
-                <span className="font-mono text-[11px] text-ink-3">
-                  {status.env.anthropic ? "SET" : "MISSING — Chief can't run"}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Dot ok={status.env.voyage} />
-                <span className="flex-1 text-[14px] text-ink">VOYAGE_API_KEY</span>
-                <span className="font-mono text-[11px] text-ink-3">
-                  {status.env.voyage ? "SET" : "OPTIONAL — memory search is text-only"}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Dot ok={status.env.googleOauth} />
-                <span className="flex-1 text-[14px] text-ink">GOOGLE_CLIENT_ID/SECRET</span>
-                <span className="font-mono text-[11px] text-ink-3">
-                  {status.env.googleOauth ? "SET" : "OPTIONAL — app password works"}
-                </span>
-              </div>
-            </>
-          ) : (
-            <p className="text-[13.5px] text-ink-3">Loading…</p>
           )}
         </div>
       </Section>
