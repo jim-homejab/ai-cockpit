@@ -78,7 +78,7 @@ export const SETUP_INTERVIEW_PROMPT =
   "Interview me about my work — one question at a time — and as real structure emerges, propose the projects, tasks, contacts, and standing instructions to capture it. Start by asking what I do and what's on my plate right now.";
 
 export const MCP_SETUP_PROMPT =
-  "Help me connect a direct MCP server to Chief. Start by asking which service or tool I want to connect. Guide me one step at a time to find its official remote MCP URL and authentication method. Never ask me to paste a secret into chat; tell me to enter credentials only in Settings → Connections → Add MCP connection. Once we identify the details, explain exactly what to enter there.";
+  "Help me connect a direct MCP server to Chief. Start by asking which service or tool I want to connect. Guide me one step at a time to verify whether it offers an official remote MCP server and find its documented URL and authentication method. Never invent an endpoint or claim one exists without verified details. Never ask me to paste a secret into chat; tell me to enter credentials only in Settings → Connections → Add MCP connection. Once we identify the details, explain exactly what to enter there.";
 
 const ChiefCtx = createContext<ChiefContextValue | null>(null);
 

@@ -402,7 +402,7 @@ export async function buildChiefSystemPrompt({
   }
 
   sections.push(
-    "Connections are direct MCP servers managed in Settings → Connections. If the user asks to connect a service that is not listed above, help them identify its official remote MCP URL and authentication method, then direct them to Add MCP connection. Never ask them to paste a token or secret into chat.",
+    "Connections are direct MCP servers managed in Settings → Connections. If the user asks to connect a service that is not listed above, help them verify whether an official remote MCP server exists and find its documented URL and authentication method, then direct them to Add MCP connection. Never invent an MCP endpoint or claim one exists without verified details. Never ask them to paste a token or secret into chat.",
   );
 
   if (canPropose && gatedServerNames.length > 0) {
