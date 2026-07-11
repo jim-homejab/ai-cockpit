@@ -88,8 +88,8 @@ function toolArgs(tool: McpToolDef): Record<string, unknown> {
   const n = norm(tool.name);
 
   // Front's official MCP requires a query or filter. all_inboxes includes
-  // unassigned work, while the status filter makes the result safe to render
-  // even if a response omits its status field.
+  // unassigned work, while the status filter requests only open records before
+  // the response is defensively filtered again below.
   if (n.includes("searchconversations")) {
     return { scope: "all_inboxes", filters: { status: "open" } };
   }
