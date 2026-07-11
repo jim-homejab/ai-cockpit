@@ -10,8 +10,11 @@
 // broker treatment is unconditional.
 
 import { getSetting } from "@/lib/settings";
+import { getRuntimeMcpConnections } from "@/lib/mcp-connections";
 
 export type McpServerConfig = {
+  /** Stable database id for structured manual connections. */
+  id?: string;
   name: string;
   url: string;
   authorization_token?: string;
@@ -40,6 +43,12 @@ export type McpServerConfig = {
    * tool names would otherwise collide.
    */
   toolPrefix?: string;
+  /**
+   * Manual servers default false: remote read-only annotations are only trusted
+   * after the user opts in. Managed/built-in servers omit this and retain their
+   * annotation-based behavior.
+   */
+  trustAnnotations?: boolean;
 };
 
 export function parseMcpServers(raw: string): McpServerConfig[] {
@@ -89,5 +98,19 @@ export function parseMcpServers(raw: string): McpServerConfig[] {
 }
 
 export async function getMcpServers(): Promise<McpServerConfig[]> {
-  return parseMcpServers(await getSetting("mcp.servers"));
+  let secure: McpServerConfig[] = [];
+  try {
+    secure = await getRuntimeMcpConnections();
+  } catch (error) {
+    // Deployments briefly running new code before the migration lands retain
+    // legacy connector access instead of breaking Chief.
+    console.error("Secure MCP connections unavailable:", error);
+  }
+
+  const legacy = parseMcpServers(await getSetting("mcp.servers"));
+  const names = new Set(secure.map((server) => server.name.toLowerCase()));
+  return [
+    ...secure,
+    ...legacy.filter((server) => !names.has(server.name.toLowerCase())),
+  ];
 }
