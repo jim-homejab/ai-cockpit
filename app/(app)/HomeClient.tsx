@@ -29,6 +29,8 @@ type WaitingRow = {
   what: string;
   state: "moved" | "quiet" | "aging";
   days: number;
+  contactEmail: string | null;
+  canFollowUp: boolean;
 };
 
 type AwayEvent = {
@@ -371,6 +373,36 @@ export default function HomeClient() {
                   >
                     review →
                   </Link>
+                ) : w.canFollowUp ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void chief.runIntent({
+                        id: "home.draft_follow_up",
+                        taskId: w.taskId,
+                        contactName: w.who,
+                      })
+                    }
+                    className="flex shrink-0 items-center gap-2 whitespace-nowrap"
+                    aria-label={`Draft a follow-up to ${w.who} with Chief`}
+                  >
+                    <span
+                      className="font-mono text-[11px]"
+                      style={{
+                        color:
+                          w.state === "aging"
+                            ? "var(--copper)"
+                            : "var(--ink-3)",
+                      }}
+                    >
+                      {w.state === "aging"
+                        ? `day ${w.days}`
+                        : `quiet ${w.days}d`}
+                    </span>
+                    <span className="text-[14px] font-semibold text-teal">
+                      draft →
+                    </span>
+                  </button>
                 ) : (
                   <div
                     className="shrink-0 whitespace-nowrap font-mono text-[11px]"
