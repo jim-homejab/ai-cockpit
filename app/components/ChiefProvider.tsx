@@ -227,6 +227,7 @@ export default function ChiefProvider({
             messages: historyRef.current,
             page: effectivePage,
             ...(atts.length ? { attachments: atts } : {}),
+            ...(plan ? { requireProposalPlan: true } : {}),
           }),
         });
         if (!res.ok || !res.body) {
