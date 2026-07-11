@@ -31,6 +31,7 @@ export type ProposalStatus =
   | "done"
   | "error"
   | "dismissed"
+  | "superseded"
   | "undoing"
   | "undone";
 
@@ -45,12 +46,28 @@ export type ProposalItem = {
   undo?: UndoDescriptor | null;
 };
 
+export type ProposalPlan = {
+  version: number;
+  sourceNames: string[];
+  /** Kept in memory so a revision can re-read the original source files. */
+  sourceAttachments: ChatAttachment[];
+};
+
 export type ChiefMessage = {
   role: "user" | "assistant";
   content: string;
   proposals?: ProposalItem[];
+  /** Present when this assistant turn is a reviewable document-import plan. */
+  plan?: ProposalPlan;
   /** Files attached to this (user) turn, for display only — name + kind. */
   attachments?: { name: string; kind: ChatAttachment["kind"] }[];
+};
+
+type SendOptions = {
+  /** Model-facing text when it needs more context than the visible user turn. */
+  apiText?: string;
+  plan?: ProposalPlan;
+  showAttachments?: boolean;
 };
 
 type ChiefContextValue = {
@@ -61,7 +78,16 @@ type ChiefContextValue = {
   messages: ChiefMessage[];
   streaming: boolean;
   pendingCount: number;
-  send: (text: string, attachments?: ChatAttachment[]) => Promise<void>;
+  send: (
+    text: string,
+    attachments?: ChatAttachment[],
+    options?: SendOptions,
+  ) => Promise<boolean>;
+  revisePlan: (
+    items: ProposalItem[],
+    instruction: string,
+    plan: ProposalPlan,
+  ) => Promise<void>;
   /** Open the sheet and immediately send a preset message (no-op if a reply
    *  is already streaming — the sheet still opens). */
   openAndSend: (text: string) => void;
@@ -148,15 +174,29 @@ export default function ChiefProvider({
   );
 
   const send = useCallback(
-    async (text: string, attachments?: ChatAttachment[]) => {
+    async (
+      text: string,
+      attachments?: ChatAttachment[],
+      options?: SendOptions,
+    ): Promise<boolean> => {
       const trimmed = text.trim();
+      const apiText = options?.apiText?.trim() || trimmed;
       const atts = attachments ?? [];
-      if ((!trimmed && atts.length === 0) || streaming) return;
+      if ((!apiText && atts.length === 0) || streaming) return false;
       setStreaming(true);
+      const plan =
+        options?.plan ??
+        (atts.length > 0
+          ? {
+              version: 1,
+              sourceNames: atts.map((attachment) => attachment.name),
+              sourceAttachments: atts,
+            }
+          : undefined);
       // The transcript re-sent on every future turn must carry non-empty text
       // for every message — an attachment-only turn still needs a stand-in
       // line here (the attachment itself only rides along on THIS request).
-      const historyText = trimmed || "(sent a file)";
+      const historyText = apiText || "(sent a file)";
       historyRef.current = [
         ...historyRef.current,
         { role: "user", content: historyText },
@@ -166,13 +206,19 @@ export default function ChiefProvider({
         {
           role: "user",
           content: trimmed,
-          ...(atts.length
+          ...(atts.length && options?.showAttachments !== false
             ? { attachments: atts.map((a) => ({ name: a.name, kind: a.kind })) }
             : {}),
         },
-        { role: "assistant", content: "" },
+        {
+          role: "assistant",
+          content: "",
+          ...(plan ? { plan } : {}),
+        },
       ]);
 
+      let succeeded = true;
+      let receivedPlan = false;
       try {
         const res = await fetch("/api/chief", {
           method: "POST",
@@ -181,6 +227,7 @@ export default function ChiefProvider({
             messages: historyRef.current,
             page: effectivePage,
             ...(atts.length ? { attachments: atts } : {}),
+            ...(plan ? { requireProposalPlan: true } : {}),
           }),
         });
         if (!res.ok || !res.body) {
@@ -232,6 +279,7 @@ export default function ChiefProvider({
               proposal: p,
               status: "proposed",
             }));
+            receivedPlan = items.length > 0;
             if (items.length > 0) {
               setMessages((msgs) => {
                 const out = [...msgs];
@@ -249,7 +297,9 @@ export default function ChiefProvider({
             /* malformed blob — leave the text as-is */
           }
         }
+        if (plan && !receivedPlan) succeeded = false;
       } catch (e) {
+        succeeded = false;
         const detail = e instanceof Error ? e.message : "Something went wrong.";
         setMessages((msgs) => {
           const out = [...msgs];
@@ -265,8 +315,83 @@ export default function ChiefProvider({
       } finally {
         setStreaming(false);
       }
+      return succeeded;
     },
     [effectivePage, streaming],
+  );
+
+  const revisePlan = useCallback(
+    async (
+      items: ProposalItem[],
+      instruction: string,
+      plan: ProposalPlan,
+    ) => {
+      const request = instruction.trim();
+      const replaceable = items.filter(
+        (item) => item.status === "proposed" || item.status === "error",
+      );
+      if (!request || replaceable.length === 0 || streaming) return;
+
+      const ids = new Set(replaceable.map((item) => item.uid));
+      const previous = new Map(
+        replaceable.map((item) => [item.uid, item.status] as const),
+      );
+      setMessages((msgs) =>
+        msgs.map((message) =>
+          message.proposals?.some((item) => ids.has(item.uid))
+            ? {
+                ...message,
+                proposals: message.proposals.map((item) =>
+                  ids.has(item.uid)
+                    ? { ...item, status: "superseded" as const }
+                    : item,
+                ),
+              }
+            : message,
+        ),
+      );
+
+      const currentPlan = replaceable.map((item) => ({
+        key: item.proposal.key,
+        args: item.proposal.args,
+        ...(item.proposal.server ? { server: item.proposal.server } : {}),
+      }));
+      const apiText = [
+        "Revise the pending DOCUMENT IMPORT PLAN.",
+        "The old cards are now superseded. Return the COMPLETE replacement set of proposals, not just the changed items.",
+        "Re-read the attached source files and compare them with the current saved projects and tasks.",
+        "Do not execute anything. Do not repeat an item the user asks to remove. If the request exposes an unresolved conflict, explain it and omit that write until the user resolves it.",
+        `Source files: ${plan.sourceNames.join(", ")}`,
+        `Current plan: ${JSON.stringify(currentPlan)}`,
+        `User's requested changes: ${request}`,
+      ].join("\n\n");
+
+      const succeeded = await send(request, plan.sourceAttachments, {
+        apiText,
+        showAttachments: false,
+        plan: {
+          version: plan.version + 1,
+          sourceNames: plan.sourceNames,
+          sourceAttachments: plan.sourceAttachments,
+        },
+      });
+      if (!succeeded) {
+        setMessages((msgs) =>
+          msgs.map((message) =>
+            message.proposals?.some((item) => ids.has(item.uid))
+              ? {
+                  ...message,
+                  proposals: message.proposals.map((item) => {
+                    const status = previous.get(item.uid);
+                    return status ? { ...item, status } : item;
+                  }),
+                }
+              : message,
+          ),
+        );
+      }
+    },
+    [send, streaming],
   );
 
   const openAndSend = useCallback(
@@ -280,7 +405,12 @@ export default function ChiefProvider({
   const approve = useCallback(
     async (uid: string, mergeTargetId?: string) => {
       const item = findProposal(uid);
-      if (!item || item.status === "executing" || item.status === "done") return;
+      if (
+        !item ||
+        (item.status !== "proposed" && item.status !== "error")
+      ) {
+        return;
+      }
       patchProposal(uid, { status: "executing", error: undefined });
       try {
         const res = await fetch("/api/actions/execute", {
@@ -383,6 +513,7 @@ export default function ChiefProvider({
       streaming,
       pendingCount,
       send,
+      revisePlan,
       openAndSend,
       approve,
       dismiss,
@@ -397,6 +528,7 @@ export default function ChiefProvider({
       streaming,
       pendingCount,
       send,
+      revisePlan,
       openAndSend,
       approve,
       dismiss,

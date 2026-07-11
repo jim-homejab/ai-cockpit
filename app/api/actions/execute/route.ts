@@ -49,6 +49,7 @@ import {
   createProject,
   updateProject,
   getProject,
+  getProjectByName,
   getProjectState,
   upsertProjectState,
   type Project,
@@ -181,6 +182,21 @@ export async function POST(req: Request) {
             { status: 400 },
           );
         }
+        let projectId = opt(safeArgs.project_id) ?? null;
+        const projectName = opt(safeArgs.project_name);
+        if (!projectId && projectName) {
+          const project = await getProjectByName(projectName);
+          if (!project) {
+            return Response.json(
+              {
+                ok: false,
+                error: `Approve the "${projectName}" project first, then retry this task.`,
+              },
+              { status: 409 },
+            );
+          }
+          projectId = project.id;
+        }
         const task = await createTask({
           title,
           notes: opt(safeArgs.notes) ?? null,
@@ -192,7 +208,7 @@ export async function POST(req: Request) {
           delegateTo: opt(safeArgs.delegate_to) ?? null,
           dueAt: opt(safeArgs.due_at) ?? null,
           waitingOnContactId: opt(safeArgs.waiting_on_contact_id) ?? null,
-          projectId: opt(safeArgs.project_id) ?? null,
+          projectId,
           source: "chief",
         });
         await journal("Added task", task.title);
@@ -531,11 +547,20 @@ export async function POST(req: Request) {
       }
 
       if (action.key === "update_project_state") {
-        const projectId = String(safeArgs.project_id ?? "").trim();
+        let projectId = String(safeArgs.project_id ?? "").trim();
+        const projectName = opt(safeArgs.project_name);
+        if (!projectId && projectName) {
+          projectId = (await getProjectByName(projectName))?.id ?? "";
+        }
         if (!projectId) {
           return Response.json(
-            { ok: false, error: "No project to update." },
-            { status: 400 },
+            {
+              ok: false,
+              error: projectName
+                ? `Approve the "${projectName}" project first, then retry its current state.`
+                : "No project to update.",
+            },
+            { status: projectName ? 409 : 400 },
           );
         }
         // Default-deny: the project must exist (RLS already scopes it to this
