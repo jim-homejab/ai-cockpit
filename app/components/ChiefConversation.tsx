@@ -147,7 +147,16 @@ function ConnectCard({ suggestion }: { suggestion: ConnectSuggestion }) {
 }
 
 export default function ChiefConversation() {
-  const { messages, streaming, send, approve, dismiss, restore, undo } =
+  const {
+    messages,
+    streaming,
+    send,
+    revisePlan,
+    approve,
+    dismiss,
+    restore,
+    undo,
+  } =
     useChief();
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState<ChatAttachment[]>([]);
@@ -195,7 +204,7 @@ export default function ChiefConversation() {
 
   const handlers = {
     onApprove: (uid: string, mergeTargetId?: string) =>
-      void approve(uid, mergeTargetId),
+      approve(uid, mergeTargetId),
     onDismiss: dismiss,
     onRestore: restore,
     onUndo: (uid: string) => void undo(uid),
@@ -210,9 +219,20 @@ export default function ChiefConversation() {
         {messages.length === 0 ? (
           <div className="flex items-start gap-3 pt-4">
             <ChiefMonogram size={28} className="mt-1 shrink-0" />
-            <p className="chief-voice text-narrative text-ink">
-              What can I take off your plate?
-            </p>
+            <div className="flex flex-col gap-3">
+              <p className="chief-voice text-narrative text-ink">
+                What can I take off your plate?
+              </p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 self-start rounded-control border px-3 py-2 text-left text-[13px] text-ink-2"
+                style={{ borderColor: "var(--hairline)" }}
+              >
+                <span aria-hidden="true">＋</span>
+                Upload documents to build a review plan
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -264,7 +284,18 @@ export default function ChiefConversation() {
                   )}
                   {m.proposals && m.proposals.length > 0 && (
                     <div className="pl-9">
-                      <ProposalGroup items={m.proposals} handlers={handlers} />
+                      <ProposalGroup
+                        items={m.proposals}
+                        handlers={handlers}
+                        plan={m.plan}
+                        revisionDisabled={streaming}
+                        onRevise={
+                          m.plan
+                            ? (instruction) =>
+                                revisePlan(m.proposals!, instruction, m.plan!)
+                            : undefined
+                        }
+                      />
                     </div>
                   )}
                   {m.connect && m.connect.length > 0 && (

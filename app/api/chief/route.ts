@@ -104,12 +104,14 @@ export async function POST(req: Request) {
     attachments?: ChatAttachment[];
   };
 
-  // Exfiltration guard (build-brief security rule 2): when the page context
-  // embeds external content (an email body), open-world READ tools must not be
+  // Exfiltration guard (build-brief security rule 2): when the page context or
+  // an uploaded file embeds external content, open-world READ tools must not be
   // attached in the same turn — a read call with model-chosen arguments is an
-  // exfiltration channel. Chief can still summarize and propose; enrichment
-  // reads happen on a turn without the untrusted content, or behind approval.
-  const untrustedTurn = page?.untrusted === true;
+  // exfiltration channel. Chief can still summarize and propose from the
+  // workspace snapshot; connector reads happen on a clean follow-up turn.
+  const hasAttachments =
+    Array.isArray(attachments) && attachments.length > 0;
+  const untrustedTurn = page?.untrusted === true || hasAttachments;
 
   // Broker every configured server so Chief can read across all of them —
   // plus Gmail when connected (its reads are annotated read-only, so
