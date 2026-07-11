@@ -3,6 +3,11 @@ export type ChiefIntent =
   | { id: "setup.mcp" }
   | { id: "inbox.draft_reply"; threadId?: string }
   | { id: "project.refresh_state"; projectId: string }
+  | {
+      id: "project.plan_next_steps";
+      projectId: string;
+      projectName: string;
+    }
   | { id: "tasks.triage_open" };
 
 export type ChiefIntentId = ChiefIntent["id"] | "document.review" | "general";
@@ -14,6 +19,7 @@ const CHIEF_INTENT_IDS: ChiefIntentId[] = [
   "setup.mcp",
   "inbox.draft_reply",
   "project.refresh_state",
+  "project.plan_next_steps",
   "tasks.triage_open",
 ];
 
@@ -74,6 +80,18 @@ export function resolveChiefIntent(intent: ChiefIntent): ResolvedChiefIntent {
           `The project id is ${intent.projectId}.`,
         ].join(" "),
         title: "Refresh project state",
+      };
+    case "project.plan_next_steps":
+      return {
+        displayText: `Plan the next steps for ${intent.projectName}`,
+        apiText: [
+          "Review this project's goal, status, current state, and open tasks from the page context.",
+          "Turn its current position into a practical short plan: identify the next one to three actions, important dependencies or blockers, and any missing decisions.",
+          "Preserve useful existing work and avoid duplicate tasks.",
+          "Propose only the concrete task or project-state changes that would improve the plan. Do not execute anything.",
+          `The project id is ${intent.projectId}.`,
+        ].join(" "),
+        title: `Plan ${intent.projectName}`,
       };
     case "tasks.triage_open":
       return {
