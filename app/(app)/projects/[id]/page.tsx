@@ -7,6 +7,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddTask from "@/app/components/AddTask";
 import ChiefPageSnapshot from "@/app/components/ChiefPageSnapshot";
+import ProjectChiefAction from "@/app/components/ProjectChiefAction";
 import StateCard from "@/app/components/StateCard";
 import StatusChip from "@/app/components/StatusChip";
 import TaskList from "@/app/components/TaskList";
@@ -80,6 +81,10 @@ export default async function ProjectDetailPage({
           </svg>
         </Link>
         <div className="text-micro text-ink-3">PROJECT</div>
+        <ProjectChiefAction
+          projectId={project.id}
+          projectName={project.name}
+        />
       </div>
 
       <div className="flex flex-col gap-2">
