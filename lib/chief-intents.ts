@@ -8,6 +8,11 @@ export type ChiefIntent =
       projectId: string;
       projectName: string;
     }
+  | {
+      id: "home.draft_follow_up";
+      taskId: string;
+      contactName: string;
+    }
   | { id: "tasks.triage_open" };
 
 export type ChiefIntentId = ChiefIntent["id"] | "document.review" | "general";
@@ -20,6 +25,7 @@ const CHIEF_INTENT_IDS: ChiefIntentId[] = [
   "inbox.draft_reply",
   "project.refresh_state",
   "project.plan_next_steps",
+  "home.draft_follow_up",
   "tasks.triage_open",
 ];
 
@@ -92,6 +98,18 @@ export function resolveChiefIntent(intent: ChiefIntent): ResolvedChiefIntent {
           `The project id is ${intent.projectId}.`,
         ].join(" "),
         title: `Plan ${intent.projectName}`,
+      };
+    case "home.draft_follow_up":
+      return {
+        displayText: `Draft a follow-up to ${intent.contactName}`,
+        apiText: [
+          `Draft a concise, considerate follow-up for the Home waiting item whose task id is ${intent.taskId}.`,
+          "Use the matching waiting item and contact details in the page context to reference what I am waiting for and how long it has been quiet.",
+          "Show me the complete ready-to-send draft first. Do not change the task.",
+          "If email read tools are available, find the relevant thread using both the contact email and the waiting-item context. Never assume the contact's latest thread is the right one, and never invent a thread id. Propose reply_email only when the matching thread is unambiguous; otherwise give me a copy-paste draft without a send proposal.",
+          "Sending remains irreversible: never send without my explicit approval.",
+        ].join(" "),
+        title: `Follow up with ${intent.contactName}`,
       };
     case "tasks.triage_open":
       return {

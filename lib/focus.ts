@@ -62,6 +62,10 @@ export type WaitingRow = {
   state: WaitingState;
   /** Days since the task entered waiting. */
   days: number;
+  /** First known email for a linked contact; absent for delegate-only rows. */
+  contactEmail: string | null;
+  /** A quiet/aging linked contact with an email can be followed up. */
+  canFollowUp: boolean;
 };
 
 export type FocusSnapshot = {
@@ -118,12 +122,15 @@ export async function buildFocusSnapshot(): Promise<FocusSnapshot> {
     }
     if (moved) movedIds.add(t.id);
     const days = daysSince(since) ?? 0;
+    const contactEmail = contact?.emails[0] ?? null;
     waiting.push({
       taskId: t.id,
       who: contact?.name ?? t.delegate_to ?? "—",
       what: t.title,
       state: moved ? "moved" : days >= agingDays ? "aging" : "quiet",
       days,
+      contactEmail,
+      canFollowUp: !moved && Boolean(contactEmail),
     });
   }
   // Moved first (they need action), then oldest quiet.
