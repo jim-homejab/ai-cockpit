@@ -50,7 +50,7 @@ if (baseRef && current) {
     const base = parseVersion(baseManifest.version, `${baseRef} package.json version`);
     if (base && compareVersions(current, base) <= 0) {
       errors.push(
-        `Every upstream PR must increase the Chief version: ${manifest.version} is not newer than ${baseManifest.version}. Run npm run release:patch (or release:minor/release:major).`,
+        `Every Chief PR must increase the app version: ${manifest.version} is not newer than ${baseManifest.version}. Run npm run release:patch (or release:minor/release:major).`,
       );
     }
   } catch (error) {
@@ -74,7 +74,7 @@ if (!updaterMatch) {
     );
     if (embeddedWorkflow !== workflow) {
       errors.push(
-        "lib/updater-workflow.ts is out of sync with .github/workflows/upstream-updates.yml.",
+        "lib/updater-workflow.ts is out of sync with .github/workflows/upstream-updates.yml. Run npm run release:sync-updater.",
       );
     }
   } catch (error) {

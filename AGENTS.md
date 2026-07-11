@@ -13,7 +13,7 @@ the only static check. `.env.local` is gitignored; general setup is in `README.m
 
 ### Release discipline
 
-- Every pull request to the upstream Chief repo must increase the app version.
+- Every pull request in this Chief repo must increase the app version.
   Run `npm run release:patch` by default; use `release:minor` or `release:major`
   when the change warrants it. These commands keep `package.json` and
   `package-lock.json` synchronized.
@@ -24,7 +24,8 @@ the only static check. `.env.local` is gitignored; general setup is in `README.m
   also requires updates to `README.md` (user/setup behavior), `TRUST.md` (security,
   privacy, or data-flow contract), or other agent guidance.
 - Changes to `.github/workflows/upstream-updates.yml` must also update the embedded
-  copy in `lib/updater-workflow.ts`; `release:check` enforces exact parity.
+  copy in `lib/updater-workflow.ts`; run `npm run release:sync-updater`, and
+  `release:check` will enforce exact parity.
 
 ### Running the app locally (Supabase runs locally via the CLI)
 

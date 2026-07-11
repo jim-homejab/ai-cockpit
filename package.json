@@ -8,6 +8,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "release:check": "node scripts/check-release.mjs",
+    "release:sync-updater": "node scripts/sync-updater-workflow.mjs",
     "release:patch": "npm version patch --no-git-tag-version",
     "release:minor": "npm version minor --no-git-tag-version",
     "release:major": "npm version major --no-git-tag-version"

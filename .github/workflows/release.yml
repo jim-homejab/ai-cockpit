@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   release:
-    if: github.repository == 'jim-homejab/ai-cockpit'
+    if: github.repository == 'jimkeough/chief-ai'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
