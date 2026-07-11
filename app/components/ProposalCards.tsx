@@ -12,10 +12,10 @@
 // ("N PROPOSALS · ALL REVERSIBLE") with per-row ✓/✕ plus Approve all.
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { ProposalItem } from "./ChiefProvider";
+import type { ProposalItem, ProposalPlan } from "./ChiefProvider";
 
 type Handlers = {
-  onApprove: (uid: string, mergeTargetId?: string) => void;
+  onApprove: (uid: string, mergeTargetId?: string) => void | Promise<void>;
   onDismiss: (uid: string) => void;
   onRestore: (uid: string) => void;
   onUndo: (uid: string) => void;
@@ -132,6 +132,17 @@ function DismissedRow({
   );
 }
 
+function SupersededRow() {
+  return (
+    <div
+      className="rounded-card border border-dashed px-3.5 py-3 text-[13px] text-ink-3"
+      style={{ borderColor: "var(--hairline)" }}
+    >
+      Superseded by a newer plan.
+    </div>
+  );
+}
+
 // --- Standard (teal) card ----------------------------------------------------
 
 const PREVIEW_CLAMP = 320;
@@ -161,6 +172,7 @@ function StandardCard({ item, handlers }: { item: ProposalItem; handlers: Handle
   const p = item.proposal;
   if (item.status === "dismissed")
     return <DismissedRow item={item} onRestore={() => handlers.onRestore(item.uid)} />;
+  if (item.status === "superseded") return <SupersededRow />;
   if (item.status === "done" || item.status === "undoing" || item.status === "undone")
     return <ReceiptRow item={item} onUndo={() => handlers.onUndo(item.uid)} />;
 
@@ -500,6 +512,10 @@ function BatchRow({ item, handlers }: { item: ProposalItem; handlers: Handlers }
         </>
       ) : item.status === "executing" || item.status === "undoing" ? (
         <Spinner />
+      ) : item.status === "superseded" ? (
+        <span className="shrink-0 font-mono text-[10px] tracking-[0.06em] text-ink-3">
+          REVISED
+        </span>
       ) : item.status === "dismissed" ? (
         <button
           onClick={() => handlers.onRestore(item.uid)}
@@ -524,6 +540,92 @@ function BatchRow({ item, handlers }: { item: ProposalItem; handlers: Handlers }
   );
 }
 
+function RevisionControl({
+  disabled,
+  onRevise,
+}: {
+  disabled: boolean;
+  onRevise: (instruction: string) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [instruction, setInstruction] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    const request = instruction.trim();
+    if (!request || busy || disabled) return;
+    setBusy(true);
+    try {
+      await onRevise(request);
+      setInstruction("");
+      setOpen(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+        className="mt-2 h-10 w-full rounded-control border text-[13.5px] text-ink-2 disabled:opacity-40"
+        style={{ borderColor: "var(--hairline)" }}
+      >
+        Suggest changes
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 flex flex-col gap-2 border-t pt-3" style={{ borderColor: "var(--hairline)" }}>
+      <label className="font-mono text-[10px] tracking-[0.09em] text-ink-3">
+        WHAT SHOULD CHIEF CHANGE?
+      </label>
+      <textarea
+        autoFocus
+        aria-label="Changes to the document plan"
+        rows={3}
+        value={instruction}
+        onChange={(event) => setInstruction(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            void submit();
+          }
+        }}
+        placeholder="For example: skip completed tasks and combine the two marketing projects."
+        className="w-full resize-none rounded-control border bg-transparent px-3 py-2.5 text-[14px] leading-relaxed text-ink outline-none placeholder:text-ink-3"
+        style={{ borderColor: "var(--hairline)" }}
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setInstruction("");
+          }}
+          disabled={busy}
+          className="h-10 flex-1 rounded-control border text-[13px] text-ink-2"
+          style={{ borderColor: "var(--hairline)" }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => void submit()}
+          disabled={!instruction.trim() || busy || disabled}
+          className="h-10 flex-[1.4] rounded-control text-[13px] font-semibold disabled:opacity-40"
+          style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
+        >
+          {busy ? "Revising…" : "Revise plan"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // --- Group renderer -----------------------------------------------------
 
 /** Render one assistant turn's proposals: 2+ standard proposals collapse into
@@ -531,9 +633,15 @@ function BatchRow({ item, handlers }: { item: ProposalItem; handlers: Handlers }
 export default function ProposalGroup({
   items,
   handlers,
+  plan,
+  onRevise,
+  revisionDisabled = false,
 }: {
   items: ProposalItem[];
   handlers: Handlers;
+  plan?: ProposalPlan;
+  onRevise?: (instruction: string) => Promise<void>;
+  revisionDisabled?: boolean;
 }) {
   const yellow = useMemo(
     () => items.filter((i) => i.proposal.tier === "yellow"),
@@ -544,10 +652,38 @@ export default function ProposalGroup({
     [items],
   );
   const approvable = yellow.filter((i) => i.status === "proposed");
+  const replaceable = yellow.filter(
+    (i) => i.status === "proposed" || i.status === "error",
+  );
+  const supersededPlan =
+    Boolean(plan) &&
+    items.some((item) => item.status === "superseded") &&
+    items.every(
+      (item) =>
+        item.status === "superseded" || item.status === "dismissed",
+    );
 
-  const approveAll = useCallback(() => {
-    for (const i of approvable) handlers.onApprove(i.uid);
+  const approveAll = useCallback(async () => {
+    // Import batches can create a project and then reference it by name from
+    // later state/task cards, so preserve the model's proposal order.
+    for (const i of approvable) await handlers.onApprove(i.uid);
   }, [approvable, handlers]);
+
+  if (supersededPlan && plan) {
+    return (
+      <div
+        className="rounded-card border border-dashed px-3.5 py-3"
+        style={{ borderColor: "var(--hairline)" }}
+      >
+        <div className="font-mono text-[10px] tracking-[0.09em] text-ink-3">
+          DOCUMENT PLAN · V{plan.version} · SUPERSEDED
+        </div>
+        <div className="mt-1 truncate text-[12.5px] text-ink-3">
+          {plan.sourceNames.join(", ")}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -558,11 +694,13 @@ export default function ProposalGroup({
         >
           <div className="mb-1 flex items-center justify-between gap-2 pb-1">
             <span className="font-mono text-[11px] tracking-[0.1em] text-teal">
-              {yellow.length} PROPOSALS · ALL REVERSIBLE
+              {plan
+                ? `DOCUMENT PLAN · V${plan.version} · ${yellow.length} CHANGES`
+                : `${yellow.length} PROPOSALS · ALL REVERSIBLE`}
             </span>
             {approvable.length > 1 && (
               <button
-                onClick={approveAll}
+                onClick={() => void approveAll()}
                 className="h-[38px] shrink-0 rounded-control px-3.5 text-[13px] font-semibold"
                 style={{
                   background: "var(--teal-fill)",
@@ -573,12 +711,46 @@ export default function ProposalGroup({
               </button>
             )}
           </div>
+          {plan && (
+            <div className="mb-1 truncate text-[12px] text-ink-3">
+              {plan.sourceNames.join(", ")} · all changes reversible
+            </div>
+          )}
           {yellow.map((i) => (
             <BatchRow key={i.uid} item={i} handlers={handlers} />
           ))}
+          {plan && onRevise && replaceable.length > 0 && (
+            <RevisionControl
+              disabled={revisionDisabled}
+              onRevise={onRevise}
+            />
+          )}
         </div>
       ) : (
-        yellow.map((i) => <StandardCard key={i.uid} item={i} handlers={handlers} />)
+        <>
+          {plan && (
+            <div
+              className="rounded-control border px-3 py-2"
+              style={{ borderColor: "var(--teal-border)" }}
+            >
+              <div className="font-mono text-[10px] tracking-[0.09em] text-teal">
+                DOCUMENT PLAN · V{plan.version}
+              </div>
+              <div className="mt-0.5 truncate text-[12px] text-ink-3">
+                {plan.sourceNames.join(", ")}
+              </div>
+            </div>
+          )}
+          {yellow.map((i) => (
+            <StandardCard key={i.uid} item={i} handlers={handlers} />
+          ))}
+          {plan && onRevise && replaceable.length > 0 && (
+            <RevisionControl
+              disabled={revisionDisabled}
+              onRevise={onRevise}
+            />
+          )}
+        </>
       )}
       {red.map((i) => (
         <IrreversibleCard key={i.uid} item={i} handlers={handlers} />

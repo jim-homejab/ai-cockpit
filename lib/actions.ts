@@ -123,6 +123,7 @@ function taskFieldLines(a: Record<string, unknown>): string[] {
   if (a.effort) lines.push(`effort → ${TASK_EFFORT_LABEL[String(a.effort)] ?? a.effort}`);
   if (a.category) lines.push(`category → ${a.category}`);
   if (a.delegate_to) lines.push(`delegate → ${a.delegate_to}`);
+  if (a.project_name) lines.push(`project → ${a.project_name}`);
   if (a.due_at) lines.push(`due → ${String(a.due_at).slice(0, 10)}`);
   return lines;
 }
@@ -166,6 +167,9 @@ export const WRITE_ACTIONS: WriteAction[] = [
         ),
         project_id: str(
           "Optional: the id of the project/workstream this task belongs to (from the CURRENT STATE: PROJECTS section). Set this when creating a task as a project's next action.",
+        ),
+        project_name: str(
+          "Use ONLY when the task belongs to a NEW project proposed in the SAME batch and no id exists yet. Pass the exact create_project name; put the create_project call before this task.",
         ),
       },
       required: ["title"],
@@ -414,11 +418,14 @@ export const WRITE_ACTIONS: WriteAction[] = [
     tier: "yellow",
     label: "Update current state",
     description:
-      "Propose an updated CURRENT-STATE record for a project/workstream — its current state, next action, what it's waiting on, open loops, blockers, decisions, and recent changes. This does NOT apply immediately — it shows an Approve/Dismiss card. You MUST pass the project's `id` as `project_id` (shown in the CURRENT STATE: PROJECTS section). REPLACE-PER-FIELD: pass only the fields that should change, and for each field you set, write the FULL new text for it (it replaces that field) — carry forward what's still true rather than writing only the delta. Ground every field in the actual tasks, activity, and Memory evidence; don't invent. (The approval stamps when the state was last verified automatically.)",
+      "Propose an updated CURRENT-STATE record for a project/workstream — its current state, next action, what it's waiting on, open loops, blockers, decisions, and recent changes. This does NOT apply immediately — it shows an Approve/Dismiss card. Pass the existing project's `id` as `project_id`. If this state belongs to a NEW create_project proposal in the SAME batch, pass its exact name as `project_name` instead and put create_project first. REPLACE-PER-FIELD: pass only the fields that should change, and for each field you set, write the FULL new text for it (it replaces that field) — carry forward what's still true rather than writing only the delta. Ground every field in the actual tasks, activity, and Memory evidence; don't invent. (The approval stamps when the state was last verified automatically.)",
     input_schema: {
       type: "object",
       properties: {
         project_id: str("The id of the project whose state to update."),
+        project_name: str(
+          "Use ONLY for a NEW project proposed earlier in this same batch; exact create_project name.",
+        ),
         current_state: str("Where this stands right now — the headline. Full new text."),
         next_action: str(
           "The single most important next move, as free text. Prefer linking an actual task via next_task_id; use this for the fallback wording or when no task exists yet.",
@@ -437,7 +444,7 @@ export const WRITE_ACTIONS: WriteAction[] = [
           "high",
         ]),
       },
-      required: ["project_id"],
+      required: [],
     },
     preview: (a) => {
       const f = (label: string, v: unknown) =>
@@ -609,7 +616,10 @@ export function isEmptyUpdate(
   ) {
     return false;
   }
-  const idKeys = name === "update_project_state" ? ["project_id"] : ["id"];
+  const idKeys =
+    name === "update_project_state"
+      ? ["project_id", "project_name"]
+      : ["id"];
   return !Object.keys(args ?? {}).some(
     (k) => !idKeys.includes(k) && args[k] !== undefined,
   );
@@ -653,7 +663,9 @@ export function nameProjectProposals(
       return n ? { ...p, label: `${n} — project details` } : p;
     }
     if (p.key === "update_project_state") {
-      const n = nameById(String(p.args.project_id ?? ""));
+      const n =
+        String(p.args.project_name ?? "").trim() ||
+        nameById(String(p.args.project_id ?? ""));
       return n ? { ...p, label: `${n} — current state` } : p;
     }
     return p;

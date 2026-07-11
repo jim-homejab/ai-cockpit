@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { after } from "next/server";
 import { getAuthed } from "@/lib/auth";
 import { getAppSettings } from "@/lib/settings";
 import { resolveAi } from "@/lib/ai";
@@ -98,18 +99,23 @@ export async function POST(req: Request) {
   const webFetchEnabled =
     settings["web.fetch_enabled"].trim().toLowerCase() === "on";
 
-  const { messages, page, attachments } = (await req.json().catch(() => ({}))) as {
+  const { messages, page, attachments, requireProposalPlan } = (await req
+    .json()
+    .catch(() => ({}))) as {
     messages?: ChatMessage[];
     page?: ChiefPageContext | null;
     attachments?: ChatAttachment[];
+    requireProposalPlan?: boolean;
   };
 
-  // Exfiltration guard (build-brief security rule 2): when the page context
-  // embeds external content (an email body), open-world READ tools must not be
+  // Exfiltration guard (build-brief security rule 2): when the page context or
+  // an uploaded file embeds external content, open-world READ tools must not be
   // attached in the same turn — a read call with model-chosen arguments is an
-  // exfiltration channel. Chief can still summarize and propose; enrichment
-  // reads happen on a turn without the untrusted content, or behind approval.
-  const untrustedTurn = page?.untrusted === true;
+  // exfiltration channel. Chief can still summarize and propose from the
+  // workspace snapshot; connector reads happen on a clean follow-up turn.
+  const hasAttachments =
+    Array.isArray(attachments) && attachments.length > 0;
+  const untrustedTurn = page?.untrusted === true || hasAttachments;
 
   // Broker every configured server so Chief can read across all of them —
   // plus Gmail when connected (its reads are annotated read-only, so
@@ -243,6 +249,8 @@ export async function POST(req: Request) {
   // what's saved instead of re-proposing), plus the brokered connector tools
   // (reads always, writes when enabled).
   const writeTools = actionsEnabled ? writeActionTools() : [];
+  const mustEmitDocumentPlan =
+    requireProposalPlan === true && hasAttachments && writeTools.length > 0;
   // Anthropic's native web_fetch — server-side, returns results inline (never a
   // client tool_use block, so the dispatch loop ignores it). Placed first so it
   // stays inside the cached tool prefix. Typed loosely (the SDK's Tool union
@@ -288,6 +296,14 @@ export async function POST(req: Request) {
     role: m.role,
     content: m.content,
   }));
+  // Sonnet 5 changed the default from no thinking to adaptive thinking. Chief's
+  // interactive 4k response budget predates that change, and can otherwise be
+  // consumed entirely by hidden thinking before any text or proposal is emitted.
+  // Restore the prior low-latency behavior only for that model family; other
+  // configured/fallback models keep their native request semantics.
+  const thinking =
+    model.includes("claude-sonnet-5") &&
+    ({ type: "disabled" } satisfies Anthropic.ThinkingConfigParam);
 
   // Fold any uploaded document/image/text attachments into the latest user
   // turn as content blocks — Claude reads a PDF/image natively (no server-side
@@ -309,13 +325,26 @@ export async function POST(req: Request) {
     async start(controller) {
       // Everything Chief says this exchange, for the communications log.
       let assistantText = "";
+      let forcingDocumentPlan = false;
       try {
         for (let turn = 0; turn < MAX_TURNS; turn++) {
+          const toolsForTurn = forcingDocumentPlan
+            ? writeTools
+            : cachedClientTools;
           const stream = client.messages.stream({
             model,
             max_tokens: 4096,
+            ...(thinking ? { thinking } : {}),
             system: systemBlocks,
-            ...(cachedClientTools.length ? { tools: cachedClientTools } : {}),
+            ...(toolsForTurn.length ? { tools: toolsForTurn } : {}),
+            ...(forcingDocumentPlan
+              ? {
+                  tool_choice: {
+                    type: "any",
+                    disable_parallel_tool_use: false,
+                  },
+                }
+              : {}),
             messages: convo,
             // Gateway routing (free-model fallback + BYOK) when in gateway mode.
             // `providerOptions` is a gateway extension the SDK types don't know.
@@ -330,19 +359,44 @@ export async function POST(req: Request) {
           const final = await stream.finalMessage();
 
           const content = final.content as Anthropic.ContentBlock[];
+          const toolUses = content.filter(
+            (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
+          );
           convo.push({
             role: "assistant",
             content: content as unknown as Anthropic.MessageParam["content"],
           });
 
+          if (
+            final.stop_reason === "max_tokens" &&
+            toolUses.length === 0 &&
+            !assistantText.trim()
+          ) {
+            throw new Error(
+              "Chief exhausted its response budget before producing a visible answer. Please retry.",
+            );
+          }
+
           // Server-side tools (e.g. web_fetch) can pause mid-run; re-send the
           // transcript so the API resumes rather than ending the turn early.
           if (final.stop_reason === "pause_turn") continue;
-          if (final.stop_reason !== "tool_use") break;
-
-          const toolUses = content.filter(
-            (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
-          );
+          if (final.stop_reason !== "tool_use") {
+            if (mustEmitDocumentPlan && !forcingDocumentPlan) {
+              convo.push({
+                role: "user",
+                content:
+                  "Finish the document review now by calling the available proposal tools. Return every safe, concrete change as tool calls in one batch. If one item is ambiguous, omit only that item and still propose the rest. Do not stop with prose or another question.",
+              });
+              forcingDocumentPlan = true;
+              continue;
+            }
+            if (mustEmitDocumentPlan && forcingDocumentPlan) {
+              throw new Error(
+                "Chief could not produce the required document review cards. Please retry.",
+              );
+            }
+            break;
+          }
 
           // Split the calls: registered write actions and connector WRITES
           // become proposals (never executed here); reads run now and feed
@@ -493,27 +547,52 @@ export async function POST(req: Request) {
             break;
           }
           // Otherwise continue the loop with the read-tool results (if any).
-          if (results.length === 0) break;
-          convo.push({ role: "user", content: results });
+          if (results.length === 0) {
+            break;
+          }
+          if (mustEmitDocumentPlan && !forcingDocumentPlan) {
+            convo.push({
+              role: "user",
+              content: [
+                ...results,
+                {
+                  type: "text",
+                  text: "Now finish the document review by calling the available proposal tools. Return every safe, concrete change as tool calls in one batch. If one item is ambiguous, omit only that item and still propose the rest. Do not stop with prose or another question.",
+                },
+              ],
+            });
+            forcingDocumentPlan = true;
+          } else {
+            convo.push({ role: "user", content: results });
+          }
         }
 
-        // Log the exchange to the append-only communications table (channel
-        // "chief"): the user's message as outbound, Chief's reply as inbound.
-        // Best-effort — the chat must never fail because the log did.
-        if (lastUser?.content.trim()) {
-          await recordCommunication({
-            channel: "chief",
-            direction: "out",
-            bodyText: lastUser.content.trim(),
-          }).catch(() => {});
-        }
-        if (assistantText.trim()) {
-          await recordCommunication({
-            channel: "chief",
-            direction: "in",
-            bodyText: assistantText.trim(),
-          }).catch(() => {});
-        }
+        // Logging is post-response work: a slow database must never hold the
+        // text stream open after Chief has finished generating.
+        const outbound = lastUser?.content.trim();
+        const inbound = assistantText.trim();
+        after(async () => {
+          await Promise.all([
+            ...(outbound
+              ? [
+                  recordCommunication({
+                    channel: "chief",
+                    direction: "out",
+                    bodyText: outbound,
+                  }),
+                ]
+              : []),
+            ...(inbound
+              ? [
+                  recordCommunication({
+                    channel: "chief",
+                    direction: "in",
+                    bodyText: inbound,
+                  }),
+                ]
+              : []),
+          ]).catch(() => {});
+        });
         controller.close();
       } catch (err) {
         console.error("chief: stream failed:", err);
