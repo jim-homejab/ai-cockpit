@@ -15,7 +15,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import type { ProposalItem, ProposalPlan } from "./ChiefProvider";
 
 type Handlers = {
-  onApprove: (uid: string, mergeTargetId?: string) => Promise<void>;
+  onApprove: (uid: string, mergeTargetId?: string) => void | Promise<void>;
   onDismiss: (uid: string) => void;
   onRestore: (uid: string) => void;
   onUndo: (uid: string) => void;
