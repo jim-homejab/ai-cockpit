@@ -97,7 +97,9 @@ test("document import policy exhaustively classifies write actions", () => {
   assert.ok(
     documentImportActions().every(
       (action) =>
-        DOCUMENT_IMPORT_ACTION_POLICY[action.key] === "import" &&
+        DOCUMENT_IMPORT_ACTION_POLICY[
+          action.key as keyof typeof DOCUMENT_IMPORT_ACTION_POLICY
+        ] === "import" &&
         action.tier === "yellow",
     ),
   );
@@ -171,7 +173,9 @@ test("rejects a manifest that omits a deterministic source record", () => {
 
 test("rejects action fields that drift outside the live action schema", () => {
   const manifest = completeManifest();
-  manifest.records[1].actions[0].args = {
+  (
+    manifest.records[1].actions[0] as { args: Record<string, unknown> }
+  ).args = {
     title: "Publish the website",
     project_name: "Website",
     imaginary_database_column: "no",
