@@ -581,7 +581,10 @@ function presentTrigger(
     return {
       ...component,
       name: "New conversation",
-      description: "Wake Chief when a new conversation arrives in Front.",
+      description: "Pipedream's current Front cursor can miss new conversations.",
+      supported: false,
+      unsupportedReason:
+        "Chief will offer this when Pipedream's Front cursor is safe to use.",
     };
   }
   if (component.id === "frontapp-new-conversation-state-change") {

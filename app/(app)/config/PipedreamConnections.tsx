@@ -1113,8 +1113,10 @@ export default function PipedreamConnections() {
                       </p>
                       {connection.appSlug === "frontapp" && (
                         <p className="text-[11.5px] leading-relaxed text-ink-3">
-                          Front currently supports reliable new-conversation alerts here.
-                          Mention, inbound-message, and sender filters are not available yet.
+                          Front&apos;s current Pipedream event sources can miss or replay
+                          activity, so Chief does not offer Front notifications yet.
+                          Mention, inbound-message, and sender filters need a reliable
+                          upstream event feed first.
                         </p>
                       )}
                       {notificationError && !notificationNeedsMigration && (
@@ -1164,7 +1166,9 @@ export default function PipedreamConnections() {
                       )}
                       {notificationData?.components.length === 0 && (
                         <div className="text-[13px] text-ink-3">
-                          No notification events Chief can configure for this app yet.
+                          {connection.appSlug === "frontapp"
+                            ? "No reliable Front notification events are available yet."
+                            : "No notification events Chief can configure for this app yet."}
                         </div>
                       )}
                       {notificationData?.components.map((component) => {
