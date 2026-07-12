@@ -43,3 +43,18 @@ grant execute on function public.chief_mcp_update_connection(
   to service_role;
 grant execute on function public.chief_mcp_runtime_secrets(uuid[], uuid)
   to service_role;
+
+-- Pipedream OAuth client credentials use the same write-only Vault boundary.
+revoke all on function public.chief_pipedream_upsert_config(uuid, text, text, text)
+  from public, anon, authenticated;
+revoke all on function public.chief_pipedream_runtime_config(uuid)
+  from public, anon, authenticated;
+revoke all on function public.chief_pipedream_delete_config(uuid)
+  from public, anon, authenticated;
+
+grant execute on function public.chief_pipedream_upsert_config(uuid, text, text, text)
+  to service_role;
+grant execute on function public.chief_pipedream_runtime_config(uuid)
+  to service_role;
+grant execute on function public.chief_pipedream_delete_config(uuid)
+  to service_role;

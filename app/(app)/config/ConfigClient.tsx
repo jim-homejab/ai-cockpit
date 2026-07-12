@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useChief } from "@/app/components/ChiefProvider";
 import ManualMcpConnections from "@/app/(app)/config/ManualMcpConnections";
+import PipedreamConnections from "@/app/(app)/config/PipedreamConnections";
 import { UPSTREAM_REPO } from "@/lib/version";
 
 type SettingDef = {
@@ -36,6 +37,7 @@ type Status = {
     contacts: number;
   };
   ai?: { provider: string; ready: boolean };
+  pipedream?: { configured: boolean };
   updates?: {
     provider: string | null;
     repoOwner: string | null;
@@ -351,6 +353,11 @@ export default function ConfigClient({
           ok: status.counts.instructions > 0,
           label: "A standing instruction saved",
         },
+        {
+          ok: status.pipedream?.configured === true,
+          label: "Pipedream connected",
+          href: "/config/connections",
+        },
       ]
     : [];
   const setupDone = setupItems.every((i) => i.ok);
@@ -420,10 +427,16 @@ export default function ConfigClient({
       </Section>
       )}
 
-      {/* Direct remote MCP servers. Chief can guide discovery, but credentials
-          are entered only in the secure form — never in chat. */}
       {section === "connections" && (
-      <Section label="MCP CONNECTORS">
+      <Section label="PIPEDREAM">
+        <PipedreamConnections />
+      </Section>
+      )}
+
+      {/* Direct remote MCP remains available as a separate advanced path.
+          Credentials are entered only in the secure form — never in chat. */}
+      {section === "connections" && (
+      <Section label="ADVANCED · DIRECT MCP">
         <button
           type="button"
           onClick={() => void runIntent({ id: "setup.mcp" })}
@@ -431,7 +444,7 @@ export default function ConfigClient({
           style={{ borderColor: "var(--teal-border)", background: "var(--surface)" }}
         >
           <span className="font-serif text-[17px] italic text-teal">C</span>
-          Ask Chief to set up MCP
+          Ask Chief about direct MCP
         </button>
         <ManualMcpConnections />
       </Section>

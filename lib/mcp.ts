@@ -22,6 +22,9 @@ export type McpServerConfig = {
   name: string;
   url: string;
   authorization_token?: string;
+  /** Server-only routing headers for managed MCP providers. Never persisted in
+   * browser-readable metadata or exposed to the model. */
+  headers?: Record<string, string>;
   /**
    * Read-only allowlist: when set, only these tool names are exposed to the
    * model (everything else is disabled). Undefined means no filtering — the
@@ -134,8 +137,27 @@ export async function getMcpServers(): Promise<McpServerConfig[]> {
       console.error("Legacy MCP migration unavailable:", error);
     }
   }
-  const names = new Set(secure.map((server) => server.name.toLowerCase()));
+  let pipedream: McpServerConfig[] = [];
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { getRuntimePipedreamServers } = await import("@/lib/pipedream");
+      pipedream = await getRuntimePipedreamServers(user.id);
+    }
+  } catch (error) {
+    // Pipedream is additive: a provider outage or pre-migration deployment must
+    // not hide direct MCP servers or break Chief.
+    console.error("Pipedream MCP connections unavailable:", error);
+  }
+
+  const names = new Set(
+    [...pipedream, ...secure].map((server) => server.name.toLowerCase()),
+  );
   return [
+    ...pipedream,
     ...secure,
     ...legacy.filter((server) => !names.has(server.name.toLowerCase())),
   ];

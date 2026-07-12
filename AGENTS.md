@@ -3,9 +3,8 @@
 ## Cursor Cloud specific instructions
 
 This repo is **Chief** (`ai-cockpit`): a single-user Next.js 15 (App Router) + React 19
-PWA backed by **Supabase** (Postgres + Auth + RLS). There is also an optional,
-operator-side microservice in `connect-service/` (Chief Connect) — it is **not**
-required to run or test the main app and is out of scope for local dev.
+PWA backed by **Supabase** (Postgres + Auth + RLS). Pipedream Connect runs
+directly in the main app with owner-supplied, Vault-backed project credentials.
 
 Standard scripts live in `package.json` (`dev`, `build`, `start`, `typecheck`).
 There is **no ESLint and no test suite** — `npm run typecheck` (`tsc --noEmit`) is

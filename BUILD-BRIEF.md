@@ -15,7 +15,7 @@ You are building **Chief**, a self-hosted personal AI chief-of-staff web app for
 
 ## Stack
 
-Next.js (App Router) + TypeScript + Supabase (Postgres, Auth, RLS) + Anthropic API (Claude, with remote MCP connector pass-through) + Voyage embeddings (KB search, port existing). Deployed on Vercel. Tailwind for styling with the design tokens defined as CSS variables.
+Next.js (App Router) + TypeScript + Supabase (Postgres, Auth, RLS, Vault) + Anthropic API + Pipedream Connect MCP + direct remote MCP + Voyage embeddings. Deployed on Vercel. Tailwind for styling with the design tokens defined as CSS variables.
 
 ## Port map (from `Email-wrapper/`)
 
@@ -33,7 +33,7 @@ Next.js (App Router) + TypeScript + Supabase (Postgres, Auth, RLS) + Anthropic A
 - **UI: everything.** All pages and components are rebuilt to the design spec. Do not port any JSX/CSS from the old app.
 
 ### Drop
-- `lib/pipedream.ts` and `app/api/connectors` Pipedream paths (keep the broker; connectors are direct remote MCP URLs added in Config). `lib/openai-image.ts`. Admin pages. The triage `EmailApp`. `app/api/archive|reply|draft|items|conversation` Front routes (reply/archive become proposals executed through the Gmail MCP).
+- The operator-side Chief Connect service and customer subscription-key layer. Pipedream now runs directly in the main app with owner-supplied, Vault-backed project credentials; direct remote MCP URLs remain an advanced option. Also drop `lib/openai-image.ts`, admin pages, the triage `EmailApp`, and `app/api/archive|reply|draft|items|conversation` Front routes (reply/archive become proposals executed through MCP).
 
 ## Data model (new/changed migrations)
 
