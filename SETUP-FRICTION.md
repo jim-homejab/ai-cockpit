@@ -427,9 +427,10 @@ lesson: only your own logins can touch sovereign infra):
    → Project Settings → General → Delete project. (Deleting the project
    deletes the auth user and all data with it — nothing else to clean.)
 2. **Vercel**: dashboard (personal scope) → the chief project → Settings →
-   Advanced → Delete Project. If Chief Connect's `connect-service` is deployed
-   as its own project, LEAVE it — it's operator infrastructure, not user
-   infrastructure.
+   Advanced → Delete Project. Delete or disconnect any legacy `chief-connect`
+   Vercel project too; owner-operated Pipedream replaced that shared service,
+   and leaving its Git integration attached creates a failing check after the
+   obsolete `connect-service/` directory is removed.
 3. **GitHub**: delete the cloned repo if walkthrough #1 created one (Settings
    → Danger Zone). If the Vercel project was imported straight from
    `jim-homejab/ai-cockpit`, there is no clone to delete — and dogfood #2

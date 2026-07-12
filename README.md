@@ -124,6 +124,25 @@ Either way the write gate is identical: archive is a reversible standard card
 (with Undo), and **Reply actually sends** — only ever behind the copper
 slide-to-send card, through the one executor.
 
+### Connections
+
+Pipedream is the default connector provider. In **Settings → Connections**, the
+one-time guide walks the owner through creating their own Pipedream account and
+Connect project, then entering its project ID, OAuth client ID, client secret,
+and environment. The OAuth credentials are write-only: Chief verifies them,
+encrypts them in Supabase Vault, and never returns them to the browser or puts
+them in model context.
+
+After setup, search Pipedream's app catalog in Chief and connect accounts through
+Pipedream's hosted authorization screen. Each account becomes its own logical
+Chief connection and its MCP session is scoped to that app, that account, and
+the signed-in Supabase user's stable ID. Tools marked read-only by the managed
+provider default to **Auto**; every write, send, delete, or unknown tool defaults
+to **Ask** and flows through the same approval executor.
+
+Direct remote MCP servers remain available under **Advanced · Direct MCP** for
+owners who prefer to configure a server URL and credential themselves.
+
 ## For Claude Code
 
 Read `BUILD-BRIEF.md` in full, read `handoff/HANDOFF.md`, then execute the next

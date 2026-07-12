@@ -35,11 +35,15 @@ async function connect(server: McpServerConfig) {
     "@modelcontextprotocol/sdk/client/streamableHttp.js"
   );
   const url = await validateMcpUrl(server.url);
+  const headers = {
+    ...(server.headers ?? {}),
+    ...(server.authorization_token
+      ? { Authorization: `Bearer ${server.authorization_token}` }
+      : {}),
+  };
   const transport = new StreamableHTTPClientTransport(url, {
     fetch: safeMcpFetch,
-    requestInit: server.authorization_token
-      ? { headers: { Authorization: `Bearer ${server.authorization_token}` } }
-      : undefined,
+    requestInit: Object.keys(headers).length ? { headers } : undefined,
   });
   const client = new Client(
     { name: "chief-mcp-broker", version: "1.0.0" },
@@ -59,9 +63,15 @@ function toolCacheKey(server: McpServerConfig): string {
   const tokenFingerprint = server.authorization_token
     ? createHash("sha256").update(server.authorization_token).digest("hex")
     : "";
+  const headersFingerprint = server.headers
+    ? createHash("sha256")
+        .update(JSON.stringify(Object.entries(server.headers).sort(([a], [b]) => a.localeCompare(b))))
+        .digest("hex")
+    : "";
   return JSON.stringify({
     url: server.url,
     tokenFingerprint,
+    headersFingerprint,
     allowedTools: server.allowedTools ?? null,
     toolPrefix: server.toolPrefix ?? "",
     trustAnnotations: server.trustAnnotations ?? null,

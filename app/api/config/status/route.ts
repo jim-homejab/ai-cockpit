@@ -13,6 +13,7 @@ import { listKbDocuments, listInstructions } from "@/lib/kb/store";
 import { listContacts } from "@/lib/contacts";
 import { getUpdatesInfo } from "@/lib/updater-workflow";
 import { resolveAi, resolveProvider } from "@/lib/ai";
+import { getPipedreamConfigStatus } from "@/lib/pipedream";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,18 @@ export async function GET() {
   const authed = await getAuthed();
   if (!authed) return unauthorized();
 
-  const [mail, google, projects, tasks, kb, instructions, contacts, ai, provider] =
+  const [
+    mail,
+    google,
+    projects,
+    tasks,
+    kb,
+    instructions,
+    contacts,
+    ai,
+    provider,
+    pipedream,
+  ] =
     await Promise.all([
       getMailAccount().catch(() => null),
       getGoogleConnection().catch(() => null),
@@ -34,6 +46,11 @@ export async function GET() {
       // Anthropic key both count. resolveAi returns null when neither exists.
       resolveAi().catch(() => null),
       resolveProvider().catch(() => "gateway" as const),
+      getPipedreamConfigStatus(authed.userId).catch(() => ({
+        configured: false,
+        projectId: null,
+        environment: null,
+      })),
     ]);
 
   const email = (await authed.supabase.auth.getUser()).data.user?.email ?? null;
@@ -58,6 +75,7 @@ export async function GET() {
       contacts: contacts.length,
     },
     ai: { provider, ready: Boolean(ai) },
+    pipedream: { configured: pipedream.configured },
     updates: getUpdatesInfo(),
   });
 }

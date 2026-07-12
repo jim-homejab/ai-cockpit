@@ -44,9 +44,9 @@ Everything below runs on infrastructure **you** own and bill:
   never act on its own. Leave `SUPABASE_SERVICE_ROLE_KEY` unset and the whole
   proactive path is simply off.
 
-No telemetry, no phone-home, no vendor account required. The app works
-end-to-end in this mode: email over an app password, connectors as direct
-MCP URLs you configure yourself.
+No telemetry or phone-home is required for the core. It works end-to-end with
+email over an app password and connectors as direct MCP URLs. The default
+guided connector path below uses the Pipedream account you create and control.
 
 ## Updates (sovereign, approve-first)
 
@@ -93,8 +93,8 @@ stored only in your own database and sent to the gateway per request.
 
 **Why this stays sovereign:** you deploy your OWN Vercel project, so gateway
 traffic authenticates with *that* project's auto-injected OIDC token and bills
-to *your* Vercel account. There is no operator in the path — unlike Chief
-Connect, this needs no shared service and no subscription. The `chief.model`
+to *your* Vercel account. There is no Chief operator, shared service, or
+subscription in the path. The `chief.model`
 setting stays yours to control (it just accepts gateway model ids like
 `anthropic/claude-opus-4.7` or `openai/gpt-5`).
 
@@ -113,29 +113,41 @@ piece is the optional server-side web fetch tool (off by default), which the
 gateway's Anthropic-compatible endpoint may not proxy; flip to direct
 Anthropic mode if you turn it on and it misbehaves.
 
-## Chief Connect (optional, paid)
+## Pipedream Connect (owner-operated)
 
-A small operator-run service (`connect-service/`) that makes connecting apps
-(Gmail, Calendar, Notion, Slack, …) two clicks instead of a DIY OAuth setup,
-by brokering Pipedream Connect's managed OAuth. The subscription price exists
-to cover that real third-party cost.
+Pipedream is Chief's default connector provider, but there is no shared Chief
+Connect operator anymore. You create and control the Pipedream account and
+Connect project. The one-time flow in Config stores the project's OAuth client
+ID and secret as one encrypted Supabase Vault value. Browser roles cannot call
+the decrypting RPC, and Chief's APIs return only project metadata plus a
+`configured` boolean.
 
-**What it can see:** which apps you've connected, and the OAuth tokens
-Pipedream manages for those apps (that's what managed OAuth is).
+Chief uses the authenticated Supabase user UUID as Pipedream's
+`external_user_id`. It is stable, unique in this deployment, and comes from the
+verified session rather than a request body. Pipedream binds connected accounts
+to that identifier. Hosted authorization uses a short-lived Connect Link; the
+project client credentials never go to the browser.
 
-**What it can never see:** your database, your Anthropic key, your email
-archive or app password, your tasks, projects, memory, or approvals. None of
-that ever touches the service — the app talks to your connectors' MCP servers
-directly; the service only issues short-lived access tokens.
+**What Pipedream can see:** which apps and accounts you connect, the OAuth
+grants it manages for those apps, and the connector tool requests and results
+that pass through its MCP service. That is the managed-connector give.
 
-**The gate is unchanged:** Chief Connect tools flow through the same broker
-as everything else — reads run transparently, anything that writes becomes an
-approval card you can dismiss.
+**What Pipedream cannot see through this integration:** your Supabase database,
+AI credential, email app password, unrelated tasks, projects, memory, chat
+history, or approval decisions. Chief sends only the app/account-scoped MCP
+request needed for a selected connector tool.
 
-**Ejecting:** every Connect app has a sovereign twin — email via app password
-or your own Google OAuth client, any other service via a direct MCP server URL
-in Config. Disconnect an app in Config (the grant is deleted at Pipedream),
-blank the two Chief Connect settings, and the layer is gone.
+**Scoping and the gate:** each connected Pipedream account is a separate logical
+Chief connection. Its MCP session includes the project, environment,
+`external_user_id`, app slug, and account ID, so Chief never receives
+Pipedream's full cross-app catalog. Verified read-only tools default to Auto.
+Unknown tools and every write, send, or delete default to Ask and use the same
+broker, proposal card, live permission re-check, executor, and journal as a
+direct MCP server.
+
+**Ejecting:** disconnect the account in Config to delete its Pipedream grant.
+Direct remote MCP remains available under **Advanced · Direct MCP**, so no
+Chief-operated connector service is required.
 
 ## Verify it yourself
 
@@ -145,6 +157,6 @@ blank the two Chief Connect settings, and the layer is gone.
    app — and ask it to look for backdoors, exfiltration, or writes that bypass
    `app/api/actions/execute`. (An audit run by the thing being audited can
    only ever be a convenience, so run it elsewhere.)
-3. **Watch the network**: the app's outbound calls go to your Supabase, the
-   Anthropic API, your mail server, MCP servers you configured, and — only if
-   you subscribed — your Chief Connect service.
+3. **Watch the network**: the app's outbound calls go to your Supabase, your AI
+   provider, your mail server, direct MCP servers you configure, and — when you
+   enable the default connector provider — Pipedream's API and MCP service.

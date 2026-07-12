@@ -3,9 +3,8 @@
 ## Cursor Cloud specific instructions
 
 This repo is **Chief** (`ai-cockpit`): a single-user Next.js 15 (App Router) + React 19
-PWA backed by **Supabase** (Postgres + Auth + RLS). There is also an optional,
-operator-side microservice in `connect-service/` (Chief Connect) — it is **not**
-required to run or test the main app and is out of scope for local dev.
+PWA backed by **Supabase** (Postgres + Auth + RLS). Pipedream Connect runs
+directly in the main app with owner-supplied, Vault-backed project credentials.
 
 Standard scripts live in `package.json` (`dev`, `build`, `start`, `typecheck`).
 There is **no ESLint and no test suite** — `npm run typecheck` (`tsc --noEmit`) is
@@ -63,12 +62,14 @@ Useful: `http://localhost:3000/api/setup/health` reports env wiring, `schema`
 
 ### UI testing artifacts
 
-- Use screenshots as the default user-facing evidence for UI changes. Do not
-  create or attach screen recordings solely as a walkthrough for the user.
+- The owner dogfoods and manually tests UI changes. Do not run browser-based
+  end-to-end/manual testing unless the user explicitly requests it; prefer the
+  repository's automated checks.
+- When visual evidence is explicitly requested, use concise screenshots of the
+  final rendered state. Do not create or attach screen recordings solely as a
+  walkthrough for the user.
 - Screen recordings are still appropriate as temporary debugging tools when
   motion or interaction behavior needs investigation.
-- The user manually tests changes, so keep visual evidence concise and focused
-  on the final rendered state.
 
 ### Non-obvious gotchas
 
