@@ -891,12 +891,7 @@ export default function ChiefProvider({
             messages: historyRef.current,
             page: effectivePage,
             sessionId: activeSessionId,
-            ...(plan?.sourceAttachmentIds?.length
-              ? { attachmentIds: plan.sourceAttachmentIds }
-              : atts.length
-                ? { attachments: atts }
-                : {}),
-            ...(plan ? { requireProposalPlan: true } : {}),
+            ...(atts.length ? { attachments: atts } : {}),
           }),
         });
         if (!res.ok || !res.body) {
