@@ -7,11 +7,14 @@
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getWriteAction, type ProposedAction } from "@/lib/actions";
+import { resolveAi } from "@/lib/ai";
+import type { AppSettings } from "@/lib/settings";
 
 export type ChiefTrigger = {
   id: string;
   app: string;
   component_id: string | null;
+  connection_id: string | null;
   name: string | null;
   token: string;
   signing_key: string | null;
@@ -32,7 +35,7 @@ export async function listTriggers(): Promise<ChiefTrigger[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("chief_triggers")
-    .select("id, app, component_id, name, token, signing_key");
+    .select("id, app, component_id, connection_id, name, token, signing_key");
   if (error) throw new Error(error.message);
   return (data ?? []) as ChiefTrigger[];
 }
@@ -43,6 +46,7 @@ export async function saveTrigger(
     id: string;
     app: string;
     componentId?: string | null;
+    connectionId?: string | null;
     name?: string | null;
     token: string;
     signingKey?: string | null;
@@ -54,6 +58,7 @@ export async function saveTrigger(
     user_id: userId,
     app: row.app,
     component_id: row.componentId ?? null,
+    connection_id: row.connectionId ?? null,
     name: row.name ?? null,
     token: row.token,
     signing_key: row.signingKey ?? null,
@@ -130,10 +135,11 @@ export type Classification = {
 export async function classifyEvent(
   app: string,
   eventBody: unknown,
+  settings?: AppSettings,
+  signal?: AbortSignal,
 ): Promise<Classification | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-  const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
+  const ai = await resolveAi({ settings });
+  if (!ai) return null;
 
   let payload = "";
   try {
@@ -143,15 +149,19 @@ export async function classifyEvent(
   }
 
   try {
-    const client = new Anthropic({ apiKey });
-    const msg = await client.messages.create({
-      model,
+    const params = {
+      model: ai.model,
       max_tokens: 400,
       system: CLASSIFY_SYSTEM,
       messages: [
         { role: "user", content: `App: ${app}\nEvent:\n${payload}` },
       ],
-    });
+      ...(ai.providerOptions ? { providerOptions: ai.providerOptions } : {}),
+    } as unknown as Anthropic.MessageCreateParamsNonStreaming;
+    const msg = await ai.client.messages.create(
+      params,
+      signal ? { signal } : undefined,
+    );
     const text = msg.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
       .map((b) => b.text)
