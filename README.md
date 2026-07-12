@@ -138,7 +138,10 @@ Pipedream's hosted authorization screen. Each account becomes its own logical
 Chief connection and its MCP session is scoped to that app, that account, and
 the signed-in Supabase user's stable ID. Tools marked read-only by the managed
 provider default to **Auto**; every write, send, delete, or unknown tool defaults
-to **Ask** and flows through the same approval executor.
+to **Ask** and flows through the same approval executor. Expand **Tools** on a
+connected account to review or change those modes. Expand **Notify** to turn
+Pipedream event triggers on or off; incoming events can queue suggestions, but
+Chief still requires approval before any action.
 
 Direct remote MCP servers remain available under **Advanced · Direct MCP** for
 owners who prefer to configure a server URL and credential themselves.

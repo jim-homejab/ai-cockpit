@@ -17,6 +17,9 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/auth/") ||
     path.startsWith("/icon") ||
     path.startsWith("/apple-icon") ||
+    // Pipedream posts proactive events without a browser session. The route
+    // authenticates each delivery with its trigger token and HMAC signature.
+    path === "/api/events/pipedream" ||
     // First-render setup: the login page's pre-auth concierge. Each route
     // guards itself (health is read-only status; migrate/create-user refuse
     // to run once the instance is claimed).

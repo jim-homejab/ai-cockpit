@@ -24,6 +24,30 @@ type Connection = {
   serverName: string;
 };
 
+type ServerTool = {
+  name: string;
+  description: string;
+  readOnly: boolean;
+  mode: "auto" | "ask" | "off";
+};
+
+type TriggerComponent = {
+  id: string;
+  name: string;
+  description: string | null;
+};
+
+type DeployedTrigger = {
+  id: string;
+  componentId: string | null;
+  name: string | null;
+};
+
+type NotificationData = {
+  components: TriggerComponent[];
+  deployed: DeployedTrigger[];
+};
+
 type Draft = {
   projectId: string;
   clientId: string;
@@ -40,6 +64,59 @@ const emptyDraft = (): Draft => ({
 
 const inputClass =
   "w-full rounded-control border bg-transparent px-3 py-2.5 text-[14.5px] text-ink outline-none placeholder:text-ink-3";
+
+function ToolModes({
+  server,
+  tools,
+  onChange,
+}: {
+  server: string;
+  tools: ServerTool[];
+  onChange: (server: string, tool: string, mode: "auto" | "ask" | "off") => void;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-2 rounded-control border p-3"
+      style={{ borderColor: "var(--hairline)" }}
+    >
+      {tools.map((tool) => (
+        <div key={tool.name} className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-mono text-[12px] text-ink">{tool.name}</div>
+            <div className="truncate text-[11.5px] text-ink-3">
+              {tool.readOnly ? "verified read" : "always asks"}
+            </div>
+          </div>
+          {(tool.readOnly
+            ? (["auto", "ask", "off"] as const)
+            : (["ask", "off"] as const)
+          ).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onChange(server, tool.name, mode)}
+              className="rounded-chip border px-2 py-1 font-mono text-[10px] tracking-[0.06em]"
+              style={
+                tool.mode === mode
+                  ? {
+                      background: "var(--teal-fill)",
+                      color: "var(--teal-on-fill)",
+                      borderColor: "transparent",
+                    }
+                  : { borderColor: "var(--hairline)", color: "var(--ink-3)" }
+              }
+            >
+              {mode.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      ))}
+      {tools.length === 0 && (
+        <div className="text-[13px] text-ink-3">No tools exposed.</div>
+      )}
+    </div>
+  );
+}
 
 function StatusDot({ ok }: { ok: boolean }) {
   return (
@@ -311,6 +388,15 @@ export default function PipedreamConnections() {
   const [busy, setBusy] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toolsFor, setToolsFor] = useState<string | null>(null);
+  const [tools, setTools] = useState<ServerTool[] | null>(null);
+  const [toolsError, setToolsError] = useState<string | null>(null);
+  const [notificationsFor, setNotificationsFor] = useState<string | null>(null);
+  const [notificationData, setNotificationData] = useState<NotificationData | null>(
+    null,
+  );
+  const [notificationBusy, setNotificationBusy] = useState<string | null>(null);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
 
   const loadConnections = useCallback(async () => {
     const response = await fetch("/api/pipedream/connections");
@@ -321,6 +407,167 @@ export default function PipedreamConnections() {
     if (!response.ok) throw new Error(body.error ?? "Couldn't load connections.");
     setConnections(body.connections ?? []);
   }, []);
+
+  const loadTools = async (server: string) => {
+    if (toolsFor === server) {
+      setToolsFor(null);
+      setTools(null);
+      return;
+    }
+    setToolsFor(server);
+    setTools(null);
+    setToolsError(null);
+    const response = await fetch(
+      `/api/mcp/tools?server=${encodeURIComponent(server)}`,
+    ).catch(() => null);
+    const body = (await response?.json().catch(() => ({}))) as {
+      ok?: boolean;
+      tools?: ServerTool[];
+      error?: string;
+    };
+    if (response?.ok && body.ok) setTools(body.tools ?? []);
+    else setToolsError(body.error ?? "Couldn't list tools.");
+  };
+
+  const setToolMode = async (
+    server: string,
+    tool: string,
+    mode: "auto" | "ask" | "off",
+  ) => {
+    const previous = tools;
+    setTools(
+      (current) =>
+        current?.map((item) => (item.name === tool ? { ...item, mode } : item)) ??
+        null,
+    );
+    const response = await fetch("/api/mcp/tools", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ server, tool, mode }),
+    }).catch(() => null);
+    if (!response?.ok) {
+      const body = (await response?.json().catch(() => ({}))) as { error?: string };
+      setTools(previous);
+      setToolsError(body.error ?? "Couldn't update that tool.");
+    }
+  };
+
+  const fetchNotifications = async (
+    connectionId: string,
+  ): Promise<NotificationData | null> => {
+    const response = await fetch(
+      `/api/pipedream/connections/${encodeURIComponent(connectionId)}/triggers`,
+    ).catch(() => null);
+    const body = (await response?.json().catch(() => ({}))) as NotificationData & {
+      ok?: boolean;
+      error?: string;
+    };
+    if (!response?.ok || !body.ok) {
+      setNotificationError(body.error ?? "Couldn't list notifications.");
+      return null;
+    }
+    return {
+      components: body.components ?? [],
+      deployed: body.deployed ?? [],
+    };
+  };
+
+  const loadNotifications = async (connectionId: string) => {
+    if (notificationsFor === connectionId) {
+      setNotificationsFor(null);
+      setNotificationData(null);
+      return;
+    }
+    setNotificationsFor(connectionId);
+    setNotificationData(null);
+    setNotificationError(null);
+    setNotificationData(await fetchNotifications(connectionId));
+  };
+
+  const enableNotification = async (
+    connectionId: string,
+    component: TriggerComponent,
+  ) => {
+    const busyKey = `${connectionId}:${component.id}`;
+    setNotificationBusy(busyKey);
+    setNotificationError(null);
+    const temporaryId = `pending:${component.id}`;
+    setNotificationData((current) =>
+      current
+        ? {
+            ...current,
+            deployed: [
+              ...current.deployed,
+              { id: temporaryId, componentId: component.id, name: component.name },
+            ],
+          }
+        : current,
+    );
+    const response = await fetch(
+      `/api/pipedream/connections/${encodeURIComponent(connectionId)}/triggers`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ componentId: component.id }),
+      },
+    ).catch(() => null);
+    const body = (await response?.json().catch(() => ({}))) as {
+      ok?: boolean;
+      error?: string;
+    };
+    setNotificationBusy(null);
+    if (!response?.ok || !body.ok) {
+      setNotificationData((current) =>
+        current
+          ? {
+              ...current,
+              deployed: current.deployed.filter((item) => item.id !== temporaryId),
+            }
+          : current,
+      );
+      setNotificationError(body.error ?? "Couldn't turn on that notification.");
+      return;
+    }
+    const fresh = await fetchNotifications(connectionId);
+    if (fresh) setNotificationData(fresh);
+  };
+
+  const disableNotification = async (
+    connectionId: string,
+    trigger: DeployedTrigger,
+  ) => {
+    const busyKey = `${connectionId}:${trigger.id}`;
+    setNotificationBusy(busyKey);
+    setNotificationError(null);
+    setNotificationData((current) =>
+      current
+        ? {
+            ...current,
+            deployed: current.deployed.filter((item) => item.id !== trigger.id),
+          }
+        : current,
+    );
+    const response = await fetch(
+      `/api/pipedream/connections/${encodeURIComponent(connectionId)}/triggers?trigger=${encodeURIComponent(trigger.id)}`,
+      { method: "DELETE" },
+    ).catch(() => null);
+    const body = (await response?.json().catch(() => ({}))) as {
+      ok?: boolean;
+      error?: string;
+    };
+    setNotificationBusy(null);
+    if (!response?.ok || !body.ok) {
+      setNotificationData((current) =>
+        current && !current.deployed.some((item) => item.id === trigger.id)
+          ? { ...current, deployed: [...current.deployed, trigger] }
+          : current,
+      );
+      setNotificationError(body.error ?? "Couldn't turn off that notification.");
+      return;
+    }
+    const fresh = await fetchNotifications(connectionId);
+    if (fresh) setNotificationData(fresh);
+  };
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -440,6 +687,14 @@ export default function PipedreamConnections() {
       const body = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) throw new Error(body.error ?? "Couldn't disconnect account.");
       setConnections((current) => current.filter((item) => item.id !== connection.id));
+      if (toolsFor === connection.serverName) {
+        setToolsFor(null);
+        setTools(null);
+      }
+      if (notificationsFor === connection.id) {
+        setNotificationsFor(null);
+        setNotificationData(null);
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Couldn't disconnect account.");
     } finally {
@@ -690,39 +945,159 @@ export default function PipedreamConnections() {
             {connections.length === 0 && (
               <div className="text-[13px] text-ink-3">No Pipedream apps connected yet.</div>
             )}
-            {connections.map((connection) => (
-              <div key={connection.id} className="flex flex-col gap-2">
-                <div className="flex items-center gap-2.5">
-                  <StatusDot ok={connection.healthy} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14.5px] text-ink">
-                      {connection.appName}
-                    </div>
-                    <div className="truncate font-mono text-[10.5px] text-ink-3">
-                      {connection.accountName ?? connection.accountId} ·{" "}
-                      {connection.healthy ? "CONNECTED" : "NEEDS RECONNECT"}
+            {connections.map((connection) => {
+              const toolsExpanded = toolsFor === connection.serverName;
+              const notificationsExpanded = notificationsFor === connection.id;
+              return (
+                <div key={connection.id} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <StatusDot ok={connection.healthy} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[14.5px] text-ink">
+                        {connection.appName}
+                      </div>
+                      <div className="truncate font-mono text-[10.5px] text-ink-3">
+                        {connection.accountName ?? connection.accountId} ·{" "}
+                        {connection.healthy ? "CONNECTED" : "NEEDS RECONNECT"}
+                      </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void connect(connection.appSlug)}
-                    disabled={Boolean(busy)}
-                    className="font-mono text-[10.5px] tracking-[0.05em] text-teal disabled:opacity-50"
-                  >
-                    RECONNECT
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void disconnect(connection)}
-                    disabled={Boolean(busy)}
-                    className="font-mono text-[10.5px] tracking-[0.05em] text-ink-3 disabled:opacity-50"
-                  >
-                    {busy === `disconnect:${connection.id}` ? "REMOVING…" : "REMOVE"}
-                  </button>
+
+                  <div className="flex flex-wrap justify-end gap-x-4 gap-y-2">
+                    <button
+                      type="button"
+                      onClick={() => void loadTools(connection.serverName)}
+                      className="font-mono text-[10.5px] tracking-[0.05em] text-teal"
+                    >
+                      TOOLS {toolsExpanded ? "▴" : "▾"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void loadNotifications(connection.id)}
+                      className="font-mono text-[10.5px] tracking-[0.05em] text-teal"
+                    >
+                      NOTIFY {notificationsExpanded ? "▴" : "▾"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void connect(connection.appSlug)}
+                      disabled={Boolean(busy)}
+                      className="font-mono text-[10.5px] tracking-[0.05em] text-teal disabled:opacity-50"
+                    >
+                      RECONNECT
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void disconnect(connection)}
+                      disabled={Boolean(busy)}
+                      className="font-mono text-[10.5px] tracking-[0.05em] text-ink-3 disabled:opacity-50"
+                    >
+                      {busy === `disconnect:${connection.id}` ? "REMOVING…" : "REMOVE"}
+                    </button>
+                  </div>
+
+                  {notificationsExpanded && (
+                    <div
+                      className="flex flex-col gap-2 rounded-control border p-3"
+                      style={{ borderColor: "var(--hairline)" }}
+                    >
+                      <div className="font-mono text-[10px] tracking-[0.1em] text-ink-3">
+                        NOTIFY ME WHEN…
+                      </div>
+                      <p className="text-[11.5px] leading-relaxed text-ink-3">
+                        Events can suggest actions; Chief never acts without approval.
+                      </p>
+                      {notificationError && (
+                        <div className="text-[12px]" style={{ color: "var(--danger)" }}>
+                          {notificationError}
+                        </div>
+                      )}
+                      {notificationData === null && !notificationError && (
+                        <div className="text-[13px] text-ink-3">Loading notifications…</div>
+                      )}
+                      {notificationData?.components.length === 0 && (
+                        <div className="text-[13px] text-ink-3">
+                          No event notifications exposed for this app.
+                        </div>
+                      )}
+                      {notificationData?.components.map((component) => {
+                        const enabled = notificationData.deployed.find(
+                          (trigger) => trigger.componentId === component.id,
+                        );
+                        const enablingKey = `${connection.id}:${component.id}`;
+                        const disablingKey = enabled
+                          ? `${connection.id}:${enabled.id}`
+                          : null;
+                        return (
+                          <div key={component.id} className="flex items-center gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-[13.5px] text-ink">
+                                {component.name}
+                              </div>
+                              {component.description && (
+                                <div className="truncate text-[11.5px] text-ink-3">
+                                  {component.description}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                enabled
+                                  ? void disableNotification(connection.id, enabled)
+                                  : void enableNotification(connection.id, component)
+                              }
+                              disabled={
+                                notificationBusy === enablingKey ||
+                                notificationBusy === disablingKey
+                              }
+                              className="shrink-0 rounded-chip border px-2.5 py-1 font-mono text-[10px] tracking-[0.06em] disabled:opacity-50"
+                              style={
+                                enabled
+                                  ? {
+                                      background: "var(--teal-fill)",
+                                      color: "var(--teal-on-fill)",
+                                      borderColor: "transparent",
+                                    }
+                                  : {
+                                      borderColor: "var(--hairline)",
+                                      color: "var(--ink-3)",
+                                    }
+                              }
+                            >
+                              {enabled ? "ON" : "OFF"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {toolsExpanded && (
+                    <>
+                      {tools === null && !toolsError && (
+                        <div className="text-[13px] text-ink-3">Listing tools…</div>
+                      )}
+                      {toolsError && (
+                        <div className="text-[13px]" style={{ color: "var(--danger)" }}>
+                          {toolsError}
+                        </div>
+                      )}
+                      {tools && (
+                        <ToolModes
+                          server={connection.serverName}
+                          tools={tools}
+                          onChange={(server, tool, mode) =>
+                            void setToolMode(server, tool, mode)
+                          }
+                        />
+                      )}
+                    </>
+                  )}
+                  <div className="h-px" style={{ background: "var(--hairline)" }} />
                 </div>
-                <div className="h-px" style={{ background: "var(--hairline)" }} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

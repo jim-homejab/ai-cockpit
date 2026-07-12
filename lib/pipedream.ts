@@ -38,6 +38,12 @@ export type PipedreamConnection = {
   serverName: string;
 };
 
+export type PipedreamTriggerComponent = {
+  id: string;
+  name: string;
+  description: string | null;
+};
+
 type RuntimeConfig = {
   projectId: string;
   environment: PipedreamEnvironment;
@@ -75,6 +81,16 @@ type ConnectionRow = {
 type AccessToken = { token: string; expiresAt: number };
 
 const tokenCache = new Map<string, AccessToken>();
+
+class PipedreamRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "PipedreamRequestError";
+  }
+}
 
 function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -178,6 +194,13 @@ async function requireRuntimeConfig(userId: string): Promise<RuntimeConfig> {
   return config;
 }
 
+async function verifyPipedreamProject(config: RuntimeConfig): Promise<void> {
+  await pipedreamFetch(
+    config,
+    `/connect/projects/${encodeURIComponent(config.projectId)}`,
+  );
+}
+
 async function pipedreamFetch(
   config: RuntimeConfig,
   path: string,
@@ -196,12 +219,35 @@ async function pipedreamFetch(
     signal: AbortSignal.timeout(20_000),
   });
   if (!response.ok) {
+    const detail = (await response.json().catch(() => ({}))) as {
+      error?: unknown;
+      message?: unknown;
+    };
+    const reason = clean(detail.error ?? detail.message).slice(0, 180);
     if (response.status === 401 || response.status === 403) {
-      throw new Error("Pipedream rejected the stored project credentials.");
+      throw new PipedreamRequestError(
+        "Pipedream rejected the stored project credentials.",
+        response.status,
+      );
     }
-    if (response.status === 404) throw new Error("Pipedream could not find that project or account.");
-    if (response.status === 429) throw new Error("Pipedream is rate-limiting requests. Try again shortly.");
-    throw new Error(`Pipedream request failed (${response.status}).`);
+    if (response.status === 404) {
+      throw new PipedreamRequestError(
+        "Pipedream could not find that project or account.",
+        response.status,
+      );
+    }
+    if (response.status === 429) {
+      throw new PipedreamRequestError(
+        "Pipedream is rate-limiting requests. Try again shortly.",
+        response.status,
+      );
+    }
+    throw new PipedreamRequestError(
+      reason
+        ? `Pipedream rejected that request: ${reason}`
+        : `Pipedream request failed (${response.status}).`,
+      response.status,
+    );
   }
   if (response.status === 204) return null;
   return response.json().catch(() => null);
@@ -226,10 +272,21 @@ async function listRemoteAccounts(
   healthy: boolean;
 }>> {
   const config = suppliedConfig ?? (await requireRuntimeConfig(userId));
-  const data = await pipedreamFetch(
-    config,
-    `/connect/${encodeURIComponent(config.projectId)}/users/${encodeURIComponent(userId)}/accounts`,
-  );
+  let data: unknown;
+  try {
+    data = await pipedreamFetch(
+      config,
+      `/connect/${encodeURIComponent(config.projectId)}/users/${encodeURIComponent(userId)}/accounts`,
+    );
+  } catch (error) {
+    // Pipedream creates the external user on the first hosted authorization.
+    // Before that, its per-user accounts endpoint returns 404 instead of [].
+    if (error instanceof PipedreamRequestError && error.status === 404) {
+      await verifyPipedreamProject(config);
+      return [];
+    }
+    throw error;
+  }
   return accountArray(data)
     .map((account) => {
       const accountId = clean(account.id);
@@ -291,6 +348,7 @@ export async function savePipedreamConfig(
   const input = parseInput(raw);
   const config: RuntimeConfig = input;
   await fetchAccessToken(config);
+  await verifyPipedreamProject(config);
 
   const admin = createAdminClient();
   const { error } = await admin.rpc("chief_pipedream_upsert_config", {
@@ -415,6 +473,165 @@ export async function syncPipedreamConnections(
   return ((data ?? []) as ConnectionRow[]).map(toPublic);
 }
 
+type RuntimeTriggerComponent = PipedreamTriggerComponent & {
+  appPropName: string | null;
+};
+
+async function triggerComponents(
+  userId: string,
+  appSlug: string,
+): Promise<RuntimeTriggerComponent[]> {
+  const app = appSlug.trim();
+  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(app)) return [];
+  const config = await requireRuntimeConfig(userId);
+  const params = new URLSearchParams({
+    app,
+    registry: "public",
+    limit: "30",
+  });
+  const response = (await pipedreamFetch(
+    config,
+    `/connect/${encodeURIComponent(config.projectId)}/triggers?${params}`,
+  )) as { data?: unknown } | null;
+  const components = Array.isArray(response?.data) ? response.data : [];
+  return components
+    .map((raw) => {
+      const component =
+        raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+      const props = Array.isArray(component.configurable_props)
+        ? component.configurable_props
+        : [];
+      const appProp =
+        props.find((rawProp) => {
+          const prop =
+            rawProp && typeof rawProp === "object"
+              ? (rawProp as Record<string, unknown>)
+              : {};
+          return prop.type === "app" && clean(prop.app) === app;
+        }) ??
+        props.find((rawProp) => {
+          const prop =
+            rawProp && typeof rawProp === "object"
+              ? (rawProp as Record<string, unknown>)
+              : {};
+          return prop.type === "app";
+        });
+      const prop =
+        appProp && typeof appProp === "object"
+          ? (appProp as Record<string, unknown>)
+          : {};
+      return {
+        id: clean(component.key ?? component.id),
+        name: clean(component.name),
+        description: clean(component.description) || null,
+        appPropName: clean(prop.name) || null,
+      };
+    })
+    .filter((component) => component.id && component.name);
+}
+
+export async function listPipedreamTriggerComponents(
+  userId: string,
+  connectionId: string,
+): Promise<PipedreamTriggerComponent[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("pipedream_connections")
+    .select("app_slug")
+    .eq("id", connectionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Pipedream connection not found.");
+  return (await triggerComponents(userId, data.app_slug as string)).map(
+    ({ appPropName: _appPropName, ...component }) => component,
+  );
+}
+
+export async function deployPipedreamTrigger(
+  userId: string,
+  connectionId: string,
+  componentId: string,
+  webhookUrl: string,
+): Promise<{
+  id: string;
+  app: string;
+  name: string | null;
+  signingKey: string | null;
+}> {
+  const supabase = await createClient();
+  const { data: connection, error } = await supabase
+    .from("pipedream_connections")
+    .select("account_id,app_slug")
+    .eq("id", connectionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!connection) throw new Error("Pipedream connection not found.");
+
+  const component = (await triggerComponents(userId, connection.app_slug as string)).find(
+    (candidate) => candidate.id === componentId,
+  );
+  if (!component) throw new Error("Choose an available Pipedream notification.");
+  const config = await requireRuntimeConfig(userId);
+  const configuredProps = component.appPropName
+    ? {
+        [component.appPropName]: {
+          authProvisionId: connection.account_id as string,
+        },
+      }
+    : {};
+  const response = (await pipedreamFetch(
+    config,
+    `/connect/${encodeURIComponent(config.projectId)}/triggers/deploy`,
+    {
+      method: "POST",
+      body: {
+        id: component.id,
+        external_user_id: userId,
+        configured_props: configuredProps,
+        webhook_url: webhookUrl,
+        emit_on_deploy: false,
+      },
+    },
+  )) as { data?: unknown } | null;
+  const raw =
+    response?.data && typeof response.data === "object"
+      ? (response.data as Record<string, unknown>)
+      : {};
+  const id = clean(raw.id);
+  if (!/^dc_[a-zA-Z0-9]+$/.test(id)) {
+    throw new Error("Pipedream returned an invalid deployed trigger.");
+  }
+  return {
+    id,
+    app: connection.app_slug as string,
+    name: clean(raw.name) || component.name || null,
+    signingKey: clean(raw.webhook_signing_key) || null,
+  };
+}
+
+export async function deletePipedreamTrigger(
+  userId: string,
+  triggerId: string,
+): Promise<void> {
+  if (!/^dc_[a-zA-Z0-9]+$/.test(triggerId)) {
+    throw new Error("Choose a valid Pipedream notification.");
+  }
+  const config = await requireRuntimeConfig(userId);
+  try {
+    await pipedreamFetch(
+      config,
+      `/connect/${encodeURIComponent(config.projectId)}/deployed-triggers/${encodeURIComponent(triggerId)}?external_user_id=${encodeURIComponent(userId)}`,
+      { method: "DELETE" },
+    );
+  } catch (error) {
+    // Already absent remotely is the desired delete state.
+    if (error instanceof PipedreamRequestError && error.status === 404) return;
+    throw error;
+  }
+}
+
 export async function disconnectPipedreamAccount(
   userId: string,
   connectionId: string,
@@ -489,7 +706,7 @@ export async function getRuntimePipedreamServers(
 export function publicPipedreamError(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : "";
   if (
-    /^(Enter|Choose|Finish Pipedream|Pipedream (rejected|could not|did not|returned|is rate-limiting)|Invalid return URL|Stored Pipedream|Pipedream connection not found)/.test(
+    /^(Enter|Choose|Finish Pipedream|Pipedream (rejected|could not|did not|returned|is rate-limiting|request failed)|Invalid return URL|Stored Pipedream|Pipedream connection not found)/.test(
       message,
     )
   ) {
