@@ -1111,6 +1111,12 @@ export default function PipedreamConnections() {
                         Choose which events should wake Chief. It will summarize what
                         happened and may suggest an action; nothing runs without approval.
                       </p>
+                      {connection.appSlug === "frontapp" && (
+                        <p className="text-[11.5px] leading-relaxed text-ink-3">
+                          Front currently supports reliable new-conversation alerts here.
+                          Mention, inbound-message, and sender filters are not available yet.
+                        </p>
+                      )}
                       {notificationError && !notificationNeedsMigration && (
                         <div className="text-[12px]" style={{ color: "var(--danger)" }}>
                           {notificationError}

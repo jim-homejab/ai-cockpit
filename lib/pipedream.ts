@@ -588,20 +588,11 @@ function presentTrigger(
     return {
       ...component,
       name: "Front activity",
-      description: "Choose the Front events that should wake Chief.",
-      configProps: component.configProps.map((prop) => ({
-        ...prop,
-        label: "Notify Chief when",
-        options: prop.options
-          .filter((option) => ["mention", "inbound"].includes(option.value))
-          .map((option) => ({
-            ...option,
-            label:
-              option.value === "mention"
-                ? "Any mention in Front"
-                : "Any inbound message",
-          })),
-      })),
+      description: "Mention and inbound-message events are not reliable upstream yet.",
+      supported: false,
+      unsupportedReason:
+        "Chief will offer this when Pipedream's Front event cursor is safe to use.",
+      configProps: [],
     };
   }
   return component;
