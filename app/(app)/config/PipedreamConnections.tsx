@@ -403,6 +403,8 @@ export default function PipedreamConnections() {
   );
   const [notificationBusy, setNotificationBusy] = useState<string | null>(null);
   const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [notificationNeedsMigration, setNotificationNeedsMigration] =
+    useState(false);
 
   const loadConnections = useCallback(async () => {
     const response = await fetch("/api/pipedream/connections");
@@ -471,11 +473,15 @@ export default function PipedreamConnections() {
     const body = (await response?.json().catch(() => ({}))) as NotificationData & {
       ok?: boolean;
       error?: string;
+      migrationRequired?: boolean;
     };
     if (!response?.ok || !body.ok) {
+      setNotificationNeedsMigration(body.migrationRequired === true);
       setNotificationError(body.error ?? "Couldn't list notifications.");
       return null;
     }
+    setNotificationNeedsMigration(false);
+    setNotificationError(null);
     return {
       components: body.components ?? [],
       deployed: body.deployed ?? [],
@@ -483,15 +489,47 @@ export default function PipedreamConnections() {
   };
 
   const loadNotifications = async (connectionId: string) => {
+    if (notificationBusy) return;
     if (notificationsFor === connectionId) {
       setNotificationsFor(null);
       setNotificationData(null);
+      setNotificationNeedsMigration(false);
       return;
     }
     setNotificationsFor(connectionId);
     setNotificationData(null);
     setNotificationError(null);
-    setNotificationData(await fetchNotifications(connectionId));
+    setNotificationNeedsMigration(false);
+    setNotificationBusy(`load:${connectionId}`);
+    try {
+      setNotificationData(await fetchNotifications(connectionId));
+    } finally {
+      setNotificationBusy(null);
+    }
+  };
+
+  const applyNotificationMigration = async (connectionId: string) => {
+    const busyKey = `migration:${connectionId}`;
+    if (notificationBusy) return;
+    setNotificationBusy(busyKey);
+    setNotificationError(null);
+    try {
+      const response = await fetch("/api/setup/migrate", { method: "POST" });
+      const body = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      if (!response.ok) {
+        setNotificationError(body.error ?? "Couldn't apply the database update.");
+        return;
+      }
+      setNotificationNeedsMigration(false);
+      const fresh = await fetchNotifications(connectionId);
+      if (fresh) setNotificationData(fresh);
+    } catch {
+      setNotificationError("Couldn't apply the database update.");
+    } finally {
+      setNotificationBusy(null);
+    }
   };
 
   const enableNotification = async (
@@ -995,7 +1033,8 @@ export default function PipedreamConnections() {
                     <button
                       type="button"
                       onClick={() => void loadNotifications(connection.id)}
-                      className="font-mono text-[10.5px] tracking-[0.05em] text-teal"
+                      disabled={Boolean(notificationBusy)}
+                      className="font-mono text-[10.5px] tracking-[0.05em] text-teal disabled:opacity-50"
                     >
                       NOTIFY {notificationsExpanded ? "▴" : "▾"}
                     </button>
@@ -1028,9 +1067,46 @@ export default function PipedreamConnections() {
                       <p className="text-[11.5px] leading-relaxed text-ink-3">
                         Events can suggest actions; Chief never acts without approval.
                       </p>
-                      {notificationError && (
+                      {notificationError && !notificationNeedsMigration && (
                         <div className="text-[12px]" style={{ color: "var(--danger)" }}>
                           {notificationError}
+                        </div>
+                      )}
+                      {notificationNeedsMigration && (
+                        <div className="flex flex-col gap-2">
+                          <div className="text-[13.5px] font-semibold text-ink">
+                            One quick database update
+                          </div>
+                          <p className="text-[12px] leading-relaxed text-ink-2">
+                            Notifications need the migration included with this Chief
+                            update. It runs only against your own Supabase database.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void applyNotificationMigration(connection.id)
+                            }
+                            disabled={
+                              notificationBusy === `migration:${connection.id}`
+                            }
+                            className="flex h-10 items-center justify-center rounded-control text-[13px] font-semibold disabled:opacity-50"
+                            style={{
+                              background: "var(--teal-fill)",
+                              color: "var(--teal-on-fill)",
+                            }}
+                          >
+                            {notificationBusy === `migration:${connection.id}`
+                              ? "Applying…"
+                              : "Apply database update"}
+                          </button>
+                          {notificationError && (
+                            <div
+                              className="text-[12px]"
+                              style={{ color: "var(--danger)" }}
+                            >
+                              {notificationError}
+                            </div>
+                          )}
                         </div>
                       )}
                       {notificationData === null && !notificationError && (

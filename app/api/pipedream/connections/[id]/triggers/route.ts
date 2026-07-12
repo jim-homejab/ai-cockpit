@@ -1,6 +1,11 @@
 import { randomBytes } from "node:crypto";
 import { getAuthed, unauthorized } from "@/lib/auth";
-import { deleteTriggerRow, listTriggers, saveTrigger } from "@/lib/events";
+import {
+  deleteTriggerRow,
+  listTriggers,
+  saveTrigger,
+  TriggerMigrationRequiredError,
+} from "@/lib/events";
 import {
   deletePipedreamTrigger,
   deployPipedreamTrigger,
@@ -13,15 +18,30 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
+function migrationRequiredResponse(error: unknown): Response | null {
+  if (!(error instanceof TriggerMigrationRequiredError)) return null;
+  return Response.json(
+    {
+      ok: false,
+      migrationRequired: true,
+      error: error.message,
+    },
+    { status: 409 },
+  );
+}
+
 export async function GET(_request: Request, { params }: Params) {
   const authed = await getAuthed();
   if (!authed) return unauthorized();
   const { id: connectionId } = await params;
   try {
-    const [components, triggers] = await Promise.all([
-      listPipedreamTriggerComponents(authed.userId, connectionId),
-      listTriggers(),
-    ]);
+    // Check the local registry first so an unapplied database migration gets a
+    // deterministic recovery response instead of racing a Pipedream API call.
+    const triggers = await listTriggers();
+    const components = await listPipedreamTriggerComponents(
+      authed.userId,
+      connectionId,
+    );
     return Response.json({
       ok: true,
       components,
@@ -35,6 +55,8 @@ export async function GET(_request: Request, { params }: Params) {
     });
   } catch (error) {
     console.error("Could not list Pipedream notifications:", error);
+    const migrationResponse = migrationRequiredResponse(error);
+    if (migrationResponse) return migrationResponse;
     return Response.json(
       {
         ok: false,
@@ -93,6 +115,8 @@ export async function POST(request: Request, { params }: Params) {
     return Response.json({ ok: true, id: deployed.id });
   } catch (error) {
     console.error("Could not deploy Pipedream notification:", error);
+    const migrationResponse = migrationRequiredResponse(error);
+    if (migrationResponse) return migrationResponse;
     return Response.json(
       {
         ok: false,
@@ -128,6 +152,8 @@ export async function DELETE(request: Request, { params }: Params) {
     return Response.json({ ok: true });
   } catch (error) {
     console.error("Could not delete Pipedream notification:", error);
+    const migrationResponse = migrationRequiredResponse(error);
+    if (migrationResponse) return migrationResponse;
     return Response.json(
       {
         ok: false,

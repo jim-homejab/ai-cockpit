@@ -29,6 +29,23 @@ export type ChiefEvent = {
   created_at: string;
 };
 
+export class TriggerMigrationRequiredError extends Error {
+  constructor() {
+    super("Pipedream notifications need a one-time database update.");
+    this.name = "TriggerMigrationRequiredError";
+  }
+}
+
+function missingTriggerConnectionColumn(error: {
+  code?: string;
+  message?: string;
+}): boolean {
+  return (
+    ["42703", "PGRST204"].includes(error.code ?? "") &&
+    /connection_id/i.test(error.message ?? "")
+  );
+}
+
 // --- Registry (session client) ----------------------------------------------
 
 export async function listTriggers(): Promise<ChiefTrigger[]> {
@@ -36,7 +53,12 @@ export async function listTriggers(): Promise<ChiefTrigger[]> {
   const { data, error } = await supabase
     .from("chief_triggers")
     .select("id, app, component_id, connection_id, name, token, signing_key");
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (missingTriggerConnectionColumn(error)) {
+      throw new TriggerMigrationRequiredError();
+    }
+    throw new Error(error.message);
+  }
   return (data ?? []) as ChiefTrigger[];
 }
 
