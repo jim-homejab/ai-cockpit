@@ -25,4 +25,6 @@ jobs:
 
       - run: npm ci
 
+      - run: npm run import:check
+
       - run: npm run typecheck

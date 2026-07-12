@@ -80,6 +80,14 @@ export type ProposedAction = {
    * via reconcileKbEntry in the executor.
    */
   related?: { id: string; title: string; snippet: string }[];
+  /** Document-import provenance. The executor ignores this metadata; it lets
+   *  the review UI show exactly which source record produced the proposal. */
+  source?: {
+    sourceId: string;
+    name: string;
+    locator?: string;
+    excerpt: string;
+  };
 };
 
 const str = (description: string) => ({ type: "string" as const, description });
@@ -133,7 +141,7 @@ function taskFieldLines(a: Record<string, unknown>): string[] {
 // they flow through the broker, with optional curated polish defined in
 // lib/tool-enrichments.ts. Phase 3 ships only standard-tier natives; the first
 // red-tier action (send email) arrives with the inbox.
-export const WRITE_ACTIONS: WriteAction[] = [
+export const WRITE_ACTIONS = [
   // --- Task actions ---------------------------------------------------------
   // Chief can propose changes to the user's task list — capture a task, or
   // reprioritize / complete one. Like every write, these are reversible in the
@@ -528,9 +536,15 @@ export const WRITE_ACTIONS: WriteAction[] = [
       return `To: ${to}${cc}\nSubject: ${String(a.subject ?? "")}\n\n${String(a.body ?? "")}`;
     },
   },
-];
+] as const satisfies readonly WriteAction[];
 
-const BY_KEY = new Map(WRITE_ACTIONS.map((a) => [a.key, a]));
+/** Literal union used by feature contracts that compile into write actions.
+ *  Adding or renaming an action makes exhaustive policies fail typecheck. */
+export type WriteActionKey = (typeof WRITE_ACTIONS)[number]["key"];
+
+const BY_KEY = new Map<string, WriteAction>(
+  WRITE_ACTIONS.map((a) => [a.key, a]),
+);
 
 /** Look up a registered action by tool name. Returns undefined for anything not
  *  in the registry — the default-deny gate for both the chief loop and executor. */
