@@ -1074,7 +1074,7 @@ export default function PipedreamConnections() {
                                   : void enableNotification(connection.id, component)
                               }
                               disabled={
-                                !component.supported ||
+                                (!enabled && !component.supported) ||
                                 notificationBusy === enablingKey ||
                                 notificationBusy === disablingKey
                               }

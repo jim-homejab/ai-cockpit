@@ -136,6 +136,7 @@ export async function classifyEvent(
   app: string,
   eventBody: unknown,
   settings?: AppSettings,
+  signal?: AbortSignal,
 ): Promise<Classification | null> {
   const ai = await resolveAi({ settings });
   if (!ai) return null;
@@ -148,7 +149,7 @@ export async function classifyEvent(
   }
 
   try {
-    const msg = await ai.client.messages.create({
+    const params = {
       model: ai.model,
       max_tokens: 400,
       system: CLASSIFY_SYSTEM,
@@ -156,7 +157,11 @@ export async function classifyEvent(
         { role: "user", content: `App: ${app}\nEvent:\n${payload}` },
       ],
       ...(ai.providerOptions ? { providerOptions: ai.providerOptions } : {}),
-    } as unknown as Anthropic.MessageCreateParamsNonStreaming);
+    } as unknown as Anthropic.MessageCreateParamsNonStreaming;
+    const msg = await ai.client.messages.create(
+      params,
+      signal ? { signal } : undefined,
+    );
     const text = msg.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
       .map((b) => b.text)

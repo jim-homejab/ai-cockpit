@@ -72,10 +72,11 @@ export async function POST(request: Request) {
   }
   if (!trigger) return new Response("Unknown trigger.", { status: 404 });
 
+  const signatureHeader = request.headers.get("x-pd-signature");
   if (
     !validSignature(
       (trigger.signing_key as string | null) ?? null,
-      request.headers.get("x-pd-signature"),
+      signatureHeader,
       raw,
     )
   ) {
@@ -88,18 +89,12 @@ export async function POST(request: Request) {
   } catch {
     return new Response("Invalid JSON.", { status: 400 });
   }
-  const record =
-    body && typeof body === "object" ? (body as Record<string, unknown>) : {};
-  const nestedEvent =
-    record.event && typeof record.event === "object"
-      ? (record.event as Record<string, unknown>)
-      : {};
-  const candidateId =
-    request.headers.get("x-pd-event-id") ?? record.id ?? nestedEvent.id;
-  const eventId =
-    typeof candidateId === "string" && candidateId.trim()
-      ? candidateId.trim().slice(0, 500)
-      : `sha256:${createHash("sha256").update(raw).digest("hex")}`;
+  const deliveryId = request.headers.get("x-pd-event-id")?.trim();
+  const signatureTimestamp =
+    signatureHeader?.match(/(?:^|,)\s*t=(\d+)/)?.[1] ?? "unknown";
+  const eventId = deliveryId
+    ? deliveryId.slice(0, 500)
+    : `delivery:${signatureTimestamp}:${createHash("sha256").update(raw).digest("hex")}`;
   const userId = trigger.user_id as string;
   const app = (trigger.app as string) || "";
 
@@ -135,12 +130,19 @@ export async function POST(request: Request) {
   const settings = appSettingsFromRows(
     ((settingRows ?? []) as Array<{ key: string; value: string }>),
   );
-  const classified = await Promise.race([
-    classifyEvent(app, body, settings).catch(() => null),
-    new Promise<null>((resolve) =>
-      setTimeout(() => resolve(null), CLASSIFICATION_TIMEOUT_MS),
-    ),
-  ]);
+  let classified: Awaited<ReturnType<typeof classifyEvent>> = null;
+  if (!settingsError) {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      CLASSIFICATION_TIMEOUT_MS,
+    );
+    try {
+      classified = await classifyEvent(app, body, settings, controller.signal);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
   if (classified) {
     const { error: updateError } = await admin
       .from("chief_events")

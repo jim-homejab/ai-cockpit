@@ -291,23 +291,27 @@ async function listRemoteAccounts(
   }
   const accounts = accountArray(data);
   if (!accounts) throw new Error("Pipedream returned an invalid account list.");
-  return accounts
-    .map((account) => {
-      const accountId = clean(account.id);
-      const appSlug = clean(account.app?.name_slug ?? account.app?.nameSlug);
-      const appName = clean(account.app?.name) || appSlug;
-      return {
-        accountId,
-        appSlug,
-        appName,
-        accountName: clean(account.name) || null,
-        healthy: account.healthy !== false && account.dead !== true,
-      };
-    })
-    .filter(
+  const parsed = accounts.map((account) => {
+    const accountId = clean(account.id);
+    const appSlug = clean(account.app?.name_slug ?? account.app?.nameSlug);
+    const appName = clean(account.app?.name) || appSlug;
+    return {
+      accountId,
+      appSlug,
+      appName,
+      accountName: clean(account.name) || null,
+      healthy: account.healthy !== false && account.dead !== true,
+    };
+  });
+  if (
+    parsed.some(
       (account) =>
-        /^apn_[a-zA-Z0-9]+$/.test(account.accountId) && Boolean(account.appSlug),
-    );
+        !/^apn_[a-zA-Z0-9]+$/.test(account.accountId) || !account.appSlug,
+    )
+  ) {
+    throw new Error("Pipedream returned an invalid account list.");
+  }
+  return parsed;
 }
 
 function serverName(connectionId: string): string {
@@ -353,6 +357,24 @@ export async function savePipedreamConfig(
   const config: RuntimeConfig = input;
   await fetchAccessToken(config);
   await verifyPipedreamProject(config);
+  const previous = await runtimeConfig(userId);
+  if (
+    previous &&
+    (previous.projectId !== input.projectId ||
+      previous.environment !== input.environment)
+  ) {
+    const supabase = await createClient();
+    const { count, error: countError } = await supabase
+      .from("pipedream_connections")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) > 0) {
+      throw new Error(
+        "Disconnect Pipedream apps before changing the project or environment.",
+      );
+    }
+  }
 
   const admin = createAdminClient();
   const { error } = await admin.rpc("chief_pipedream_upsert_config", {
@@ -662,7 +684,7 @@ export async function deployPipedreamTrigger(
   if (!signingKey) {
     await pipedreamFetch(
       config,
-      `/connect/${encodeURIComponent(config.projectId)}/deployed-triggers/${encodeURIComponent(id)}?external_user_id=${encodeURIComponent(userId)}`,
+      `/connect/${encodeURIComponent(config.projectId)}/deployed-triggers/${encodeURIComponent(id)}?external_user_id=${encodeURIComponent(userId)}&ignore_hook_errors=true`,
       { method: "DELETE" },
     ).catch(() => {});
     throw new Error("Pipedream did not return a webhook signing key.");
@@ -686,7 +708,7 @@ export async function deletePipedreamTrigger(
   try {
     await pipedreamFetch(
       config,
-      `/connect/${encodeURIComponent(config.projectId)}/deployed-triggers/${encodeURIComponent(triggerId)}?external_user_id=${encodeURIComponent(userId)}`,
+      `/connect/${encodeURIComponent(config.projectId)}/deployed-triggers/${encodeURIComponent(triggerId)}?external_user_id=${encodeURIComponent(userId)}&ignore_hook_errors=true`,
       { method: "DELETE" },
     );
   } catch (error) {
@@ -784,7 +806,7 @@ export async function getRuntimePipedreamServers(
 export function publicPipedreamError(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : "";
   if (
-    /^(Enter|Choose|Finish Pipedream|Pipedream (rejected|could not|did not|returned|is rate-limiting|request failed)|Invalid return URL|Stored Pipedream|Pipedream connection not found)/.test(
+    /^(Enter|Choose|Disconnect Pipedream|Finish Pipedream|Pipedream (rejected|could not|did not|returned|is rate-limiting|request failed)|Invalid return URL|Stored Pipedream|Pipedream connection not found)/.test(
       message,
     )
   ) {
