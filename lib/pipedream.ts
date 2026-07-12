@@ -598,8 +598,8 @@ function presentTrigger(
             ...option,
             label:
               option.value === "mention"
-                ? "I'm mentioned"
-                : "A new inbound message arrives",
+                ? "Any mention in Front"
+                : "Any inbound message",
           })),
       })),
     };
@@ -656,23 +656,6 @@ async function triggerComponents(
         .filter((configProp): configProp is PipedreamTriggerConfigProp =>
           Boolean(configProp),
         );
-      if (
-        app === "frontapp" &&
-        id === "frontapp-new-conversation-state-change" &&
-        !configProps.some((configProp) => configProp.name === "types")
-      ) {
-        configProps.push({
-          name: "types",
-          label: "Notify Chief when",
-          description: null,
-          multiple: true,
-          required: true,
-          options: [
-            { label: "I'm mentioned", value: "mention" },
-            { label: "A new inbound message arrives", value: "inbound" },
-          ],
-        });
-      }
       const unsupportedProps = props.filter((rawProp) => {
         const candidate =
           rawProp && typeof rawProp === "object"
@@ -819,9 +802,20 @@ export async function deployPipedreamTrigger(
     component,
     rawConfiguredProps,
   );
+  const selectedLabels = component.configProps.flatMap((prop) => {
+    const configured = configuredProps[prop.name];
+    const values = Array.isArray(configured)
+      ? configured
+      : typeof configured === "string"
+        ? [configured]
+        : [];
+    return prop.options
+      .filter((option) => values.includes(option.value))
+      .map((option) => option.label);
+  });
   if (component.appPropName) {
     configuredProps[component.appPropName] = {
-          authProvisionId: connection.account_id as string,
+      authProvisionId: connection.account_id as string,
     };
   }
   const response = (await pipedreamFetch(
@@ -858,7 +852,10 @@ export async function deployPipedreamTrigger(
   return {
     id,
     app: connection.app_slug as string,
-    name: clean(raw.name) || component.name || null,
+    name:
+      selectedLabels.length > 0
+        ? `${component.name}: ${selectedLabels.join(", ")}`
+        : clean(raw.name) || component.name || null,
     signingKey,
   };
 }

@@ -1190,6 +1190,12 @@ export default function PipedreamConnections() {
                                     {component.description}
                                   </div>
                                 )}
+                                {enabled?.name?.startsWith(`${component.name}: `) && (
+                                  <div className="text-[11.5px] text-teal">
+                                    Listening for{" "}
+                                    {enabled.name.slice(component.name.length + 2)}
+                                  </div>
+                                )}
                                 {!component.supported &&
                                   component.unsupportedReason && (
                                     <div className="text-[11.5px] text-ink-3">
