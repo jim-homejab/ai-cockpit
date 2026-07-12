@@ -45,7 +45,7 @@ export type ResolvedChiefIntent = {
 export const DOCUMENT_REVIEW_INTENT: ResolvedChiefIntent = {
   displayText: "Review these documents",
   apiText:
-    "Review the attached documents as source material. Build one complete, reviewable plan that proposes the projects, tasks, project-state updates, contacts, standing instructions, and reference notes worth saving. Do not execute anything; omit ambiguous writes and explain any important ambiguity.",
+    "Review the attached documents as source material. Build one complete, reviewable import manifest covering every source project, task, project-state update, contact, standing instruction, and reference note. Reconcile it with the live workspace, account explicitly for no-change, ambiguous, and ignored records, and submit the typed manifest once. Do not execute anything.",
   title: "Review documents",
 };
 

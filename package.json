@@ -1,11 +1,12 @@
 {
   "name": "chief",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "import:check": "node --import tsx --test tests/document-import.test.ts",
     "typecheck": "tsc --noEmit",
     "release:check": "node scripts/check-release.mjs",
     "release:sync-updater": "node scripts/sync-updater-workflow.mjs",
@@ -39,6 +40,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "tailwindcss": "^4.1.0",
+    "tsx": "^4.23.0",
     "typescript": "^5.7.0"
   }
 }

@@ -25,6 +25,7 @@ import { PROPOSALS_MARKER, type ProposedAction } from "@/lib/actions";
 import type { ChiefPageContext } from "@/lib/chief";
 import type { UndoDescriptor } from "@/lib/undo";
 import type { ChatAttachment } from "@/lib/chat-attachments";
+import type { DocumentImportSummary } from "@/lib/document-import/contract";
 import { storeChiefAttachments } from "@/lib/chat-attachment-client";
 import {
   DOCUMENT_REVIEW_INTENT,
@@ -66,6 +67,8 @@ export type ProposalPlan = {
   sourceAttachments?: ChatAttachment[];
   /** Durable references used to restore source files after a reload. */
   sourceAttachmentIds?: string[];
+  /** Server-validated coverage and compilation counts for this plan version. */
+  verification?: DocumentImportSummary;
 };
 
 export type ChiefMessage = {
@@ -817,13 +820,15 @@ export default function ChiefProvider({
           try {
             const blob = JSON.parse(buffer.slice(cut + 1)) as {
               proposals?: ProposedAction[];
+              planVerified?: boolean;
+              importSummary?: DocumentImportSummary;
             };
             const items: ProposalItem[] = (blob.proposals ?? []).map((p) => ({
               uid: crypto.randomUUID(),
               proposal: p,
               status: "proposed",
             }));
-            receivedPlan = items.length > 0;
+            receivedPlan = items.length > 0 || blob.planVerified === true;
             if (items.length > 0) {
               updateMessages((msgs) => {
                 const out = [...msgs];
@@ -832,6 +837,29 @@ export default function ChiefProvider({
                   out[out.length - 1] = {
                     ...last,
                     proposals: items,
+                    ...(last.plan && blob.importSummary
+                      ? {
+                          plan: {
+                            ...last.plan,
+                            verification: blob.importSummary,
+                          },
+                        }
+                      : {}),
+                  };
+                }
+                return out;
+              });
+            } else if (blob.planVerified && blob.importSummary) {
+              updateMessages((msgs) => {
+                const out = [...msgs];
+                const last = out[out.length - 1];
+                if (last?.role === "assistant" && last.plan) {
+                  out[out.length - 1] = {
+                    ...last,
+                    plan: {
+                      ...last.plan,
+                      verification: blob.importSummary,
+                    },
                   };
                 }
                 return out;
@@ -946,9 +974,10 @@ export default function ChiefProvider({
       }));
       const apiText = [
         "Revise the pending DOCUMENT IMPORT PLAN.",
-        "The old cards are now superseded. Return the COMPLETE replacement set of proposals, not just the changed items.",
+        "The old cards are now superseded. Submit one COMPLETE replacement import manifest, not just changed actions.",
         "Re-read the attached source files and compare them with the current saved projects and tasks.",
-        "Do not execute anything. Do not repeat an item the user asks to remove. If the request exposes an unresolved conflict, explain it and omit that write until the user resolves it.",
+        "Inventory every source record again. A removed write remains represented with an appropriate no_change, ignore, or ambiguous disposition so coverage stays complete.",
+        "Do not execute anything. If the request exposes an unresolved conflict, explain it and mark the record ambiguous until the user resolves it.",
         `Source files: ${plan.sourceNames.join(", ")}`,
         `Current plan: ${JSON.stringify(currentPlan)}`,
         `User's requested changes: ${request}`,

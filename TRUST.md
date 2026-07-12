@@ -29,6 +29,11 @@ Everything below runs on infrastructure **you** own and bill:
   performs a write is `app/api/actions/execute`, on your explicit approval.
   Reversible actions carry Undo; sending email requires slide-to-confirm.
   Every executed action lands in the append-only journal.
+- **Document imports are compiled, not improvised.** Uploaded sources are
+  treated as untrusted content. The model inventories them into a typed source
+  ledger with evidence and an explicit disposition for every record; app code
+  validates coverage and compiles only actions from the same allowlist used by
+  the executor. The model never emits SQL or bypasses approval.
 - **Proactive events stay proposals.** When you turn on "notify me when…"
   (Config → Connections), Pipedream pushes events to `/api/events/pipedream`.
   That endpoint has no session, so it uses the Supabase service-role key —

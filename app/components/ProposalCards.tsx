@@ -712,9 +712,20 @@ export default function ProposalGroup({
             )}
           </div>
           {plan && (
-            <div className="mb-1 truncate text-[12px] text-ink-3">
-              {plan.sourceNames.join(", ")} · all changes reversible
-            </div>
+            <>
+              <div className="mb-1 truncate text-[12px] text-ink-3">
+                {plan.sourceNames.join(", ")} · all changes reversible
+              </div>
+              {plan.verification && (
+                <div className="mb-1.5 font-mono text-[10px] tracking-[0.07em] text-teal">
+                  VERIFIED · {plan.verification.recordCount} SOURCE RECORDS ·{" "}
+                  {plan.verification.proposalCount} CHANGES
+                  {plan.verification.ambiguousCount
+                    ? ` · ${plan.verification.ambiguousCount} NEED REVIEW`
+                    : ""}
+                </div>
+              )}
+            </>
           )}
           {yellow.map((i) => (
             <BatchRow key={i.uid} item={i} handlers={handlers} />
@@ -739,6 +750,11 @@ export default function ProposalGroup({
               <div className="mt-0.5 truncate text-[12px] text-ink-3">
                 {plan.sourceNames.join(", ")}
               </div>
+              {plan.verification && (
+                <div className="mt-1 font-mono text-[10px] tracking-[0.07em] text-teal">
+                  VERIFIED · {plan.verification.recordCount} SOURCE RECORDS
+                </div>
+              )}
             </div>
           )}
           {yellow.map((i) => (

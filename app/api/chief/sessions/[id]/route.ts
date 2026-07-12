@@ -55,7 +55,16 @@ function validMessage(value: unknown): boolean {
       plan.sourceNames.some((name) => typeof name !== "string") ||
       (plan.sourceAttachmentIds !== undefined &&
         (!Array.isArray(plan.sourceAttachmentIds) ||
-          plan.sourceAttachmentIds.some((id) => typeof id !== "string")))
+          plan.sourceAttachmentIds.some((id) => typeof id !== "string"))) ||
+      (plan.verification !== undefined &&
+        (!plan.verification ||
+          typeof plan.verification !== "object" ||
+          !Number.isFinite(
+            (plan.verification as Record<string, unknown>).recordCount,
+          ) ||
+          !Number.isFinite(
+            (plan.verification as Record<string, unknown>).proposalCount,
+          )))
     ) {
       return false;
     }
