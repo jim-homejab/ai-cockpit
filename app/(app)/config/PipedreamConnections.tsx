@@ -489,6 +489,7 @@ export default function PipedreamConnections() {
   };
 
   const loadNotifications = async (connectionId: string) => {
+    if (notificationBusy) return;
     if (notificationsFor === connectionId) {
       setNotificationsFor(null);
       setNotificationData(null);
@@ -499,7 +500,12 @@ export default function PipedreamConnections() {
     setNotificationData(null);
     setNotificationError(null);
     setNotificationNeedsMigration(false);
-    setNotificationData(await fetchNotifications(connectionId));
+    setNotificationBusy(`load:${connectionId}`);
+    try {
+      setNotificationData(await fetchNotifications(connectionId));
+    } finally {
+      setNotificationBusy(null);
+    }
   };
 
   const applyNotificationMigration = async (connectionId: string) => {
@@ -1027,7 +1033,8 @@ export default function PipedreamConnections() {
                     <button
                       type="button"
                       onClick={() => void loadNotifications(connection.id)}
-                      className="font-mono text-[10.5px] tracking-[0.05em] text-teal"
+                      disabled={Boolean(notificationBusy)}
+                      className="font-mono text-[10.5px] tracking-[0.05em] text-teal disabled:opacity-50"
                     >
                       NOTIFY {notificationsExpanded ? "▴" : "▾"}
                     </button>

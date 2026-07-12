@@ -18,6 +18,18 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
+function migrationRequiredResponse(error: unknown): Response | null {
+  if (!(error instanceof TriggerMigrationRequiredError)) return null;
+  return Response.json(
+    {
+      ok: false,
+      migrationRequired: true,
+      error: error.message,
+    },
+    { status: 409 },
+  );
+}
+
 export async function GET(_request: Request, { params }: Params) {
   const authed = await getAuthed();
   if (!authed) return unauthorized();
@@ -43,16 +55,8 @@ export async function GET(_request: Request, { params }: Params) {
     });
   } catch (error) {
     console.error("Could not list Pipedream notifications:", error);
-    if (error instanceof TriggerMigrationRequiredError) {
-      return Response.json(
-        {
-          ok: false,
-          migrationRequired: true,
-          error: error.message,
-        },
-        { status: 409 },
-      );
-    }
+    const migrationResponse = migrationRequiredResponse(error);
+    if (migrationResponse) return migrationResponse;
     return Response.json(
       {
         ok: false,
@@ -111,6 +115,8 @@ export async function POST(request: Request, { params }: Params) {
     return Response.json({ ok: true, id: deployed.id });
   } catch (error) {
     console.error("Could not deploy Pipedream notification:", error);
+    const migrationResponse = migrationRequiredResponse(error);
+    if (migrationResponse) return migrationResponse;
     return Response.json(
       {
         ok: false,
@@ -146,6 +152,8 @@ export async function DELETE(request: Request, { params }: Params) {
     return Response.json({ ok: true });
   } catch (error) {
     console.error("Could not delete Pipedream notification:", error);
+    const migrationResponse = migrationRequiredResponse(error);
+    if (migrationResponse) return migrationResponse;
     return Response.json(
       {
         ok: false,
