@@ -815,7 +815,7 @@ export default function ChiefProvider({
                   operation: "extract",
                   attachmentIds,
                   batchIndex,
-                  instruction: options?.plan ? visibleText : "",
+                  instruction: apiText,
                 });
               } catch (error) {
                 lastError = error;
