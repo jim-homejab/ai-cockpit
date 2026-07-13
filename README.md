@@ -94,8 +94,11 @@ gate, resumable chat history and document review, contextual launch actions,
 proposal cards with undo, MCP broker, journaled executor).
 
 Document review splits sources into bounded batches and shows progress as it
-extracts typed projects, tasks, and other product entities. Each batch is an
-independent request that can be retried without rebuilding the whole plan.
+extracts typed projects, tasks, and other product entities. Structured
+Projects/Tasks Markdown, CSV task rows, and plain-text bullet lists are split
+at record boundaries so large backlogs do not overload one extraction request.
+Each batch is an independent request that can be retried without rebuilding the
+whole plan.
 Trusted application code reconciles the extracted entities with the workspace
 and compiles approval cards through the live action registry; the model never
 writes database inserts or supplies executable action payloads.

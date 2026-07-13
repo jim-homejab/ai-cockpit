@@ -1,7 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import {
-  type WriteActionKey,
-} from "@/lib/actions";
+import type { WriteActionKey } from "@/lib/actions";
 
 export const DOCUMENT_ENTITY_TOOL_NAME = "submit_document_entities";
 
@@ -128,89 +126,48 @@ const sourceProperties = {
   },
 };
 
-function objectSchema(
-  kind: DocumentEntityKind,
-  properties: Record<string, unknown>,
-  required: string[],
-): Record<string, unknown> {
-  return {
-    type: "object",
-    additionalProperties: false,
-    properties: {
-      ...sourceProperties,
-      kind: { type: "string", enum: [kind] },
-      ...properties,
-    },
-    required: ["sourceId", "sourceName", "excerpt", "kind", ...required],
-  };
-}
-
-const ENTITY_SCHEMAS = [
-  objectSchema(
-    "project",
-    {
-      name: string,
-      summary: string,
-      status: {
-        type: "string",
-        enum: ["active", "paused", "done", "archived"],
-      },
-      owner: string,
-      currentState: string,
-      nextAction: string,
-      openLoops: string,
-      blockers: string,
-      waitingOn: string,
-      decisions: string,
-      recentChanges: string,
-      confidence: { type: "string", enum: ["low", "medium", "high"] },
-    },
-    ["name"],
-  ),
-  objectSchema(
-    "task",
-    {
-      title: string,
-      notes: string,
-      status: {
-        type: "string",
-        enum: ["not_started", "in_progress", "blocked", "waiting", "done"],
-      },
-      priority: { type: "string", enum: ["P0", "P1", "P2", "P3", "P4"] },
-      impact: { type: "string", enum: ["low", "medium", "high"] },
-      effort: { type: "string", enum: ["s", "m", "l"] },
-      category: string,
-      delegateTo: string,
-      dueAt: string,
-      projectName: string,
-    },
-    ["title"],
-  ),
-  objectSchema(
-    "contact",
-    { name: string, email: string, company: string, notes: string },
-    ["name", "notes"],
-  ),
-  objectSchema(
-    "memory",
-    {
-      title: string,
-      body: string,
-      tags: { type: "array", items: string },
-    },
-    ["title", "body"],
-  ),
-  objectSchema(
-    "instruction",
-    { title: string, body: string },
-    ["title", "body"],
-  ),
-  objectSchema(
-    "note",
-    { title: string, body: string, pinned: { type: "boolean" } },
-    ["title", "body"],
-  ),
-];
+const entityProperties = {
+  ...sourceProperties,
+  kind: { type: "string", enum: DOCUMENT_ENTITY_KINDS },
+  name: string,
+  title: string,
+  summary: string,
+  status: {
+    type: "string",
+    enum: [
+      "active",
+      "paused",
+      "done",
+      "archived",
+      "not_started",
+      "in_progress",
+      "blocked",
+      "waiting",
+    ],
+  },
+  owner: string,
+  currentState: string,
+  nextAction: string,
+  openLoops: string,
+  blockers: string,
+  waitingOn: string,
+  decisions: string,
+  recentChanges: string,
+  confidence: { type: "string", enum: ["low", "medium", "high"] },
+  notes: string,
+  priority: { type: "string", enum: ["P0", "P1", "P2", "P3", "P4"] },
+  impact: { type: "string", enum: ["low", "medium", "high"] },
+  effort: { type: "string", enum: ["s", "m", "l"] },
+  category: string,
+  delegateTo: string,
+  dueAt: string,
+  projectName: string,
+  email: string,
+  company: string,
+  body: string,
+  tags: { type: "array", items: string },
+  pinned: { type: "boolean" },
+};
 
 export function documentEntityTool(): Anthropic.Tool {
   return {
@@ -223,7 +180,14 @@ export function documentEntityTool(): Anthropic.Tool {
       properties: {
         entities: {
           type: "array",
-          items: { oneOf: ENTITY_SCHEMAS },
+          description:
+            "Typed entities. Projects and contacts require name; tasks require title; memory, instruction, and note entities require title and body.",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: entityProperties,
+            required: ["sourceId", "sourceName", "excerpt", "kind"],
+          },
         },
       },
       required: ["entities"],
@@ -253,6 +217,31 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+/** Gateway fallback models occasionally serialize valid tool arguments or use
+ * a records alias despite the forced schema. Normalize only known wrappers;
+ * the validator below still rejects malformed or unsafe entity contents. */
+export function normalizeDocumentEntityInput(raw: unknown): unknown {
+  let normalized = raw;
+  if (typeof normalized === "string") {
+    try {
+      normalized = JSON.parse(normalized);
+    } catch {
+      return raw;
+    }
+  }
+  if (Array.isArray(normalized)) return { entities: normalized };
+  if (!isObject(normalized) || Array.isArray(normalized.entities)) {
+    return normalized;
+  }
+  if (Array.isArray(normalized.records)) {
+    return { ...normalized, entities: normalized.records };
+  }
+  if (isObject(normalized.entity)) {
+    return { ...normalized, entities: [normalized.entity] };
+  }
+  return normalized;
+}
+
 function requiredString(
   value: Record<string, unknown>,
   key: string,
@@ -279,6 +268,7 @@ export function parseDocumentEntities(
   },
 ): { entities?: DocumentEntity[]; errors: string[] } {
   const errors: string[] = [];
+  raw = normalizeDocumentEntityInput(raw);
   if (!isObject(raw) || !Array.isArray(raw.entities)) {
     return { errors: ["The extraction response needs an entities array."] };
   }

@@ -22,7 +22,7 @@ function groupUnits(
   sourceName: string,
   units: SourceUnit[],
   size: number,
-  entityKind: DocumentEntityKind,
+  entityKind?: DocumentEntityKind,
 ): DocumentChunk[] {
   const chunks: DocumentChunk[] = [];
   for (let index = 0; index < units.length; index += size) {
@@ -33,7 +33,7 @@ function groupUnits(
       sourceIds: batch.map((unit) => unit.sourceId),
       sourceIdPrefix: `${sourceName}#`,
       strictCount: true,
-      entityKind,
+      ...(entityKind ? { entityKind } : {}),
       text: batch
         .map(
           (unit) =>
@@ -114,6 +114,105 @@ function projectUnits(sourceName: string, text: string): SourceUnit[] {
   return units;
 }
 
+function csvRows(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (character === '"') {
+      if (quoted && text[index + 1] === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === "," && !quoted) {
+      row.push(cell);
+      cell = "";
+    } else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && text[index + 1] === "\n") index += 1;
+      row.push(cell);
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += character;
+    }
+  }
+  row.push(cell);
+  if (row.some((value) => value.trim())) rows.push(row);
+  return rows;
+}
+
+function csvTaskChunks(sourceName: string, text: string): DocumentChunk[] | null {
+  const rows = csvRows(text);
+  if (rows.length < 2) return null;
+  const headers = rows[0].map((header) => header.trim());
+  const taskIndex = headers.findIndex((header) =>
+    ["task", "task title", "title", "to do", "todo"].includes(
+      header.toLowerCase(),
+    ),
+  );
+  if (taskIndex < 0) return null;
+  const units = rows.slice(1).map((row, index): SourceUnit => {
+    const title = row[taskIndex]?.trim() || `row ${index + 2}`;
+    const fields = headers
+      .map((header, fieldIndex) => {
+        const value = row[fieldIndex]?.trim();
+        return header && value ? `${header}: ${value}` : "";
+      })
+      .filter(Boolean)
+      .join("\n");
+    return {
+      sourceId: `${sourceName}#row-${index + 2}`,
+      label: title,
+      text: fields,
+    };
+  });
+  return groupUnits(sourceName, units, 5, "task");
+}
+
+function plainListChunks(sourceName: string, text: string): DocumentChunk[] | null {
+  const units: SourceUnit[] = [];
+  let section = "Unfiled";
+  let current: { section: string; lines: string[] } | null = null;
+  const flush = () => {
+    if (!current) return;
+    const number = units.length + 1;
+    const item = current.lines[0]
+      .replace(/^\s*[-*]\s+/, "")
+      .trim();
+    units.push({
+      sourceId: `${sourceName}#item-${number}`,
+      label: `${current.section} · ${item.slice(0, 80)}`,
+      text: `Workstream: ${current.section}\n${current.lines.join("\n")}`,
+    });
+    current = null;
+  };
+  for (const line of text.split(/\r?\n/)) {
+    const clean = line.trim();
+    if (
+      clean.endsWith(":") &&
+      clean.length <= 100 &&
+      !/^[-*]\s+/.test(clean)
+    ) {
+      flush();
+      section = clean.slice(0, -1).trim() || "Unfiled";
+      continue;
+    }
+    if (/^\s{0,1}[-*]\s+\S/.test(line)) {
+      flush();
+      current = { section, lines: [line] };
+      continue;
+    }
+    if (current && clean && !/^-{3,}$/.test(clean)) current.lines.push(line);
+  }
+  flush();
+  return units.length >= 2 ? groupUnits(sourceName, units, 5) : null;
+}
+
 function genericTextChunks(sourceName: string, text: string): DocumentChunk[] {
   const maxChars = 12_000;
   const chunks: DocumentChunk[] = [];
@@ -166,6 +265,14 @@ export function buildDocumentChunks(
         3,
         "project",
       );
+    }
+    if (/\.csv$/i.test(attachment.name)) {
+      const csvChunks = csvTaskChunks(attachment.name, attachment.text);
+      if (csvChunks) return csvChunks;
+    }
+    if (/\.txt$/i.test(attachment.name)) {
+      const listChunks = plainListChunks(attachment.name, attachment.text);
+      if (listChunks) return listChunks;
     }
     return genericTextChunks(attachment.name, attachment.text);
   });

@@ -7,8 +7,10 @@ PWA backed by **Supabase** (Postgres + Auth + RLS). Pipedream Connect runs
 directly in the main app with owner-supplied, Vault-backed project credentials.
 
 Standard scripts live in `package.json` (`dev`, `build`, `start`, `typecheck`).
-There is **no ESLint and no test suite** — `npm run typecheck` (`tsc --noEmit`) is
-the only static check. `.env.local` is gitignored; general setup is in `README.md`.
+There is **no ESLint or general test suite** — `npm run typecheck`
+(`tsc --noEmit`) is the main static check. The document importer has a focused
+`npm run test:document-import` regression check. `.env.local` is gitignored;
+general setup is in `README.md`.
 
 ### Release discipline
 

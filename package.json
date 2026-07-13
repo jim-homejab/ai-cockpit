@@ -1,12 +1,13 @@
 {
   "name": "chief",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "test:document-import": "node --no-warnings --experimental-strip-types --test tests/document-import.test.mjs",
     "release:check": "node scripts/check-release.mjs",
     "release:sync-updater": "node scripts/sync-updater-workflow.mjs",
     "release:patch": "npm version patch --no-git-tag-version",
