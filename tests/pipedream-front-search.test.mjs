@@ -5,6 +5,7 @@ import {
   PIPEDREAM_MCP_REGISTRY,
 } from "../lib/pipedream-mcp-config.ts";
 import {
+  buildOpenSearchQuery,
   buildTaggedOpenQuery,
   compactConversation,
   DEFAULT_FRONT_INBOX_ZERO_TAG,
@@ -56,6 +57,25 @@ test("builds an exact tagged-open Front query", () => {
   );
   assert.throws(() => buildTaggedOpenQuery("380024798"), /invalid tag ID/);
   assert.equal(DEFAULT_FRONT_INBOX_ZERO_TAG, "Chief Inbox Zero");
+});
+
+test("builds open Front search queries without requiring a tag", () => {
+  assert.equal(buildOpenSearchQuery({}), "is:open");
+  assert.equal(
+    buildOpenSearchQuery({ tagId: "tag_Chief123" }),
+    "is:open tag:tag_Chief123",
+  );
+  assert.equal(
+    buildOpenSearchQuery({
+      inboxId: "inb_abc",
+      assigneeId: "tea_36301790",
+    }),
+    "is:open inbox:inb_abc assignee:tea_36301790",
+  );
+  assert.throws(
+    () => buildOpenSearchQuery({ inboxId: "380024798" }),
+    /invalid inbox ID/,
+  );
 });
 
 test("extracts Front pagination cursors", () => {
