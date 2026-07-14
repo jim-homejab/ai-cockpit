@@ -146,6 +146,13 @@ connected account to review or change those modes. Expand **Notify** to turn
 Pipedream event triggers on or off; incoming events can queue suggestions, but
 Chief still requires approval before any action.
 
+Chief also uses Pipedream's Connect API Proxy when a prebuilt MCP action is
+missing or too narrow — for example, searching open Front conversations by
+exact tag (`search_front_tagged_conversations`) reuses the same Front OAuth
+grant without storing a Front API token in Chief. Optional owner-published
+private Pipedream actions still appear under that account's **Tools** menu
+alongside the public registry.
+
 Direct remote MCP servers remain available under **Advanced · Direct MCP** for
 owners who prefer to configure a server URL and credential themselves.
 
