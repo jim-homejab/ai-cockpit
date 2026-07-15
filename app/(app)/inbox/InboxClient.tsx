@@ -580,6 +580,8 @@ function FrontTagInbox() {
   }
 
   if ("error" in data && data.error) {
+    const reconnect =
+      /not allowed to read|403|Reconnect Front/i.test(data.error);
     return (
       <section className="flex flex-col gap-2.5 pt-2">
         <h1 className="text-[22px] font-semibold text-ink">Inbox</h1>
@@ -589,6 +591,14 @@ function FrontTagInbox() {
         >
           {data.error}
         </div>
+        {reconnect && (
+          <a
+            href="/config/connections"
+            className="text-[14px] text-ink underline underline-offset-2"
+          >
+            Reconnect Front
+          </a>
+        )}
       </section>
     );
   }

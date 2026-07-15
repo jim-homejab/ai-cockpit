@@ -205,9 +205,11 @@ export async function runChiefReadTool(
   }
 
   if (name === "search_front_conversations") {
+    const tagName = typeof args.tag_name === "string" ? args.tag_name : undefined;
+    const tagId = typeof args.tag_id === "string" ? args.tag_id : undefined;
     const result = await searchFrontConversations({
-      tagName: typeof args.tag_name === "string" ? args.tag_name : undefined,
-      tagId: typeof args.tag_id === "string" ? args.tag_id : undefined,
+      tagName,
+      tagId,
       status: typeof args.status === "string" ? args.status : undefined,
       assignee: typeof args.assignee === "string" ? args.assignee : undefined,
       participant:
@@ -215,6 +217,8 @@ export async function runChiefReadTool(
       teammate: typeof args.teammate === "string" ? args.teammate : undefined,
       limit: typeof args.limit === "number" ? args.limit : undefined,
       cursor: typeof args.cursor === "string" ? args.cursor : undefined,
+      // Never silently under-count a tagged inventory via inbox-scoped Search.
+      allowSearchFallback: !(tagName || tagId),
     });
     return JSON.stringify(result);
   }

@@ -30,14 +30,18 @@ visible instead of a silent under-count). Email is a separate tab
 
 Private/individual tags: name lookup via `/teammates/{id}/tags` is often
 denied through Connect Proxy — set Config **Front — Chief Inbox Zero tag id**
-to skip it. Listing conversations uses
-`GET https://api2.frontapp.com/tags/{id}/conversations` (absolute first):
-relative `/tags/{id}/conversations` has returned **403** through Connect Proxy
-even when the same absolute URL returned the full tagged set (~23) for the
-same grant. That is a proxy-target quirk, not the Front preference / Private
-Resources toggles. See https://help.front.com/en/articles/2516 for real
-private-resource denials (message: "You do not have access to the resources
-of this teammate").
+to skip it. Listing uses `GET /tags/{id}/conversations` (absolute api2 first).
+
+If Front returns **"This agent is not allowed to read the tag"**, that is an
+upstream ACL on the Pipedream Front OAuth app for that tag (often private-tag
+scope) — reconnect Front under Config → Connections, or use a company/shared
+tag. Chief tagged-search tools do **not** fall back to inbox-scoped Search
+(that path under-counts and previously looked like “3 conversations”).
+
+Relative Connect Proxy paths can also 403 while absolute api2 works for the
+same grant; Inbox prefers absolute. Real private-resource preference denials
+use a different Front message — see
+https://help.front.com/en/articles/2516.
 
 `diagnose_pipedream_connect` probes `/me`, company `/tags`, teammate
 `/teammates/{tea}/tags` (when Config teammate id is set), and
