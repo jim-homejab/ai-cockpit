@@ -69,9 +69,7 @@ async function requireUserId(): Promise<string> {
   return user.id;
 }
 
-/** Connect Proxy sometimes 403s the relative tag-list path even when the same
- * absolute api2 URL succeeds for the same Front grant (observed: ~23 via
- * https://api2.frontapp.com/tags/{id}/conversations). */
+/** Front ACL denials on private tags / insufficient OAuth agent scopes. */
 function isFrontTagConversationsPermissionDenied(detail: string): boolean {
   return /403|forbidden|permission denial|do not have access to the resources of this teammate|not allowed to read/i.test(
     detail,
@@ -85,11 +83,19 @@ function formatTagConversationsEmptyError(
 ): Error {
   const joined = errors.join(" ");
   const sample = errors.slice(0, 2).join(" | ") || "no error detail";
+  if (/not allowed to read.*tag/i.test(joined)) {
+    return new Error(
+      `Front denied reading tag ${tagId} ("This agent is not allowed to read the tag"). ` +
+        `That is Front rejecting the Pipedream Front OAuth app's access to this tag — ` +
+        `usually a private/individual tag without Private Resources on the connection. ` +
+        `Reconnect Front under Config → Connections (re-consent), or convert the tag to company/shared. ` +
+        `Do not trust Search fallback counts (inbox-scoped; under-counts). ${sample}`,
+    );
+  }
   if (isFrontTagConversationsPermissionDenied(joined)) {
     return new Error(
       `Connect Proxy returned 403 for /tags/${tagId}/conversations after ${attemptCount} attempt(s) ` +
-        `(relative and absolute). This endpoint previously returned the full tagged set for the same grant — ` +
-        `not a missing Front preference/Private Resources toggle. Retry, or run diagnose_pipedream_connect. ${sample}`,
+        `(relative and absolute). Reconnect Front in Config → Connections, or run diagnose_pipedream_connect. ${sample}`,
     );
   }
   return new Error(
@@ -791,6 +797,7 @@ export async function searchTaggedOpenConversations(input: {
     teammate: input.teammate,
     limit: input.limit,
     cursor: input.cursor,
+    allowSearchFallback: false,
   });
 }
 
