@@ -171,8 +171,11 @@ export function buildTagConversationsPathOptions(
   if (normalized === "assigned" || normalized === "unassigned") {
     return [base({ q: JSON.stringify({ statuses: [normalized] }) })];
   }
+  // status=all (and search-style leftovers): prefer bare path, then statuses,
+  // then ticketing categories. Also try with no limit (Front default page).
   const allStatuses = ["assigned", "unassigned", "archived", "trashed"];
   return [
+    `/tags/${encodeURIComponent(id)}/conversations`,
     base(),
     base({ q: JSON.stringify({ statuses: allStatuses }) }),
     base({

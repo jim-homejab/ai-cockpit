@@ -120,10 +120,10 @@ test("builds tag conversation list paths for open statuses", () => {
     buildTagOpenConversationsPath("tag_Chief123", 10, "next_1"),
     /page_token=next_1/,
   );
-  // status=all prefers bare /tags/{id}/conversations (no q) first.
+  // status=all prefers bare /tags/{id}/conversations (no query) first.
   assert.equal(
     buildTagConversationsPath("tag_6a990e", 25, undefined, "all"),
-    "/tags/tag_6a990e/conversations?limit=25",
+    "/tags/tag_6a990e/conversations",
   );
 });
 
