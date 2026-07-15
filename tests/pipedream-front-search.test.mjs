@@ -114,7 +114,7 @@ test("rejects numeric Front settings URL ids as tag ids", () => {
 test("builds tag conversation list paths for open statuses", () => {
   assert.equal(
     buildTagOpenConversationsPath("tag_Chief123", 25),
-    "/tags/tag_Chief123/conversations?limit=25&q%5Bstatuses%5D%5B%5D=assigned&q%5Bstatuses%5D%5B%5D=unassigned",
+    "/tags/tag_Chief123/conversations?limit=25&q=%7B%22statuses%22%3A%5B%22assigned%22%2C%22unassigned%22%5D%7D",
   );
   assert.match(
     buildTagOpenConversationsPath("tag_Chief123", 10, "next_1"),
@@ -122,7 +122,7 @@ test("builds tag conversation list paths for open statuses", () => {
   );
   assert.equal(
     buildTagConversationsPath("tag_6a990e", 25, undefined, "all"),
-    "/tags/tag_6a990e/conversations?limit=25",
+    "/tags/tag_6a990e/conversations?limit=25&q=%7B%22statuses%22%3A%5B%22assigned%22%2C%22unassigned%22%2C%22archived%22%2C%22trashed%22%5D%7D",
   );
 });
 
