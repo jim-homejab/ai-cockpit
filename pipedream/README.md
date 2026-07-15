@@ -24,7 +24,12 @@ inbox, or assignee. Chief therefore searches with the native read tool
 - returns compact, paginated results for triage
 
 If inventory fails on teammate identity, set **Config → Front — teammate id**
-once (e.g. `tea_36301790`). You do not need to paste it into every chat.
+once (e.g. `tea_lm2n2` for jim@homejab.com). You do not need to paste it into every chat.
+
+Example ask for the tagged queue:
+
+> Search open Front conversations tagged "Chief Inbox Zero" using teammate
+> tea_lm2n2. Follow nextCursor until hasMore is false.
 
 No Front API token is stored in Chief. After inventory, use Front MCP tools to
 read details and propose writes (archive, assign, tag, comment, draft reply).

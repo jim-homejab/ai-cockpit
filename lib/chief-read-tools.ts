@@ -64,7 +64,7 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
   {
     name: "search_front_conversations",
     description:
-      "Search open Front conversations via the owner's Pipedream-connected Front account (Connect API Proxy). Resolves the authorizing Front teammate via /me so private/individual tags (common for admins) are found under /teammates/{id}/tags. With tag_name, lists that tag's open conversations (Front tag view). Without tag_name, searches is:open scoped to the teammate as participant by default (override with assignee/inbox_name or set participant). Optional filters: tag_name, inbox_name, assignee, participant, teammate (tea_ id / email / name). Page with nextCursor until hasMore is false. Read-only. After inventory, propose Front MCP writes on Ask.",
+      "Search open Front conversations via the owner's Pipedream-connected Front account (Connect API Proxy). With tag_name, resolves company or private teammate tags (via Config front.teammate_id / teammate arg / Front /me) and lists that tag's open conversations. Without tag_name, searches is:open across accessible inboxes — pass assignee or participant to narrow (e.g. jim@homejab.com / tea_lm2n2). Page with nextCursor until hasMore is false. Read-only. After inventory, propose Front MCP writes on Ask.",
     input_schema: {
       type: "object",
       properties: {

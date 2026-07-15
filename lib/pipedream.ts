@@ -995,9 +995,11 @@ export type PipedreamProxyRequest = {
   headers?: Record<string, string>;
 };
 
-/** URL-safe Base64 encode a Connect proxy target URL (exported for tests). */
+/** Encode a Connect proxy target the same way @pipedream/sdk does:
+ *  standard Base64 (with padding), then the caller must encodeURIComponent
+ *  it into the path. Do NOT use base64url — Pipedream rejects those targets. */
 export function encodePipedreamProxyTarget(url: string): string {
-  return Buffer.from(url, "utf8").toString("base64url");
+  return Buffer.from(url, "utf8").toString("base64");
 }
 
 /**
@@ -1023,7 +1025,9 @@ export async function pipedreamProxyRequest(
     external_user_id: userId,
     account_id: accountId,
   });
-  const path = `/connect/${encodeURIComponent(config.projectId)}/proxy/${encodedUrl}?${qs}`;
+  // encodeURIComponent on the Base64 blob matches @pipedream/sdk (padding and
+  // "/" in the alphabet must be escaped in the path segment).
+  const path = `/connect/${encodeURIComponent(config.projectId)}/proxy/${encodeURIComponent(encodedUrl)}?${qs}`;
 
   const { token } = await fetchAccessToken(config);
   const headers: Record<string, string> = {
@@ -1055,17 +1059,25 @@ export async function pipedreamProxyRequest(
     const detail = (await response.json().catch(() => ({}))) as {
       error?: unknown;
       message?: unknown;
+      name?: unknown;
     };
-    const reason = clean(detail.error ?? detail.message).slice(0, 180);
+    const reason = clean(detail.error ?? detail.message ?? detail.name).slice(
+      0,
+      180,
+    );
     if (response.status === 401 || response.status === 403) {
       throw new PipedreamRequestError(
-        "Pipedream rejected the stored project credentials.",
+        reason
+          ? `Pipedream rejected the proxy request: ${reason}`
+          : "Pipedream rejected the stored project credentials.",
         response.status,
       );
     }
     if (response.status === 404) {
       throw new PipedreamRequestError(
-        "Pipedream could not find that project or connected account.",
+        reason
+          ? `Pipedream proxy target not found: ${reason}`
+          : "Pipedream could not find that project, account, or proxy target.",
         response.status,
       );
     }

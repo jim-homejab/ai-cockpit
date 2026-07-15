@@ -166,10 +166,10 @@ export const SETTING_DEFS: SettingDef[] = [
     key: "front.teammate_id",
     label: "Front — teammate id",
     description:
-      "Your Front teammate id (tea_…) used to resolve private/individual tags when Pipedream cannot call Front /me. Find it in a Front tag URL (tea:123 → tea_123) or teammate profile. Leave blank to use /me when available.",
+      "Your Front teammate id (tea_…) used to resolve private/individual tags when Pipedream cannot call Front /me. Use the id from Front (e.g. tea_lm2n2 for jim@homejab.com), not a numeric tea: fragment from a tag URL. Leave blank to use /me when available.",
     default: "",
     singleLine: true,
-    placeholder: "tea_36301790",
+    placeholder: "tea_lm2n2",
   },
   // Set once the user completes the one-tap "Enable auto-updates" step
   // (see lib/updater-workflow.ts). Gates the "Get this update" button so it
