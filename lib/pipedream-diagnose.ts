@@ -82,7 +82,7 @@ async function probeProxy(
       ...(tagConversations
         ? {
             expectedGap: true,
-            note: "Private-tag conversation list denied. If the teammate preference for individual API access is already on, the Front OAuth grant behind Pipedream almost certainly lacks Private Resources — use a custom Front OAuth client (or company/shared tag), not the preference toggle.",
+            note: "Relative /tags/{id}/conversations often 403s through Connect Proxy while the absolute api2 URL succeeds for the same grant. Inbox prefers absolute. Not the Front preference/Private Resources toggle when the absolute probe works.",
           }
         : {}),
     };
@@ -116,9 +116,11 @@ function probeTargetsForApp(
     }
     const tagId = (opts?.inboxZeroTagId ?? "").trim();
     if (/^tag_[a-zA-Z0-9]+$/.test(tagId)) {
+      const rel = `/tags/${encodeURIComponent(tagId)}/conversations?limit=1`;
       targets.push(
         `/tags/${encodeURIComponent(tagId)}`,
-        `/tags/${encodeURIComponent(tagId)}/conversations?limit=1`,
+        rel,
+        `https://api2.frontapp.com${rel}`,
       );
     }
     return targets;
@@ -270,16 +272,38 @@ export async function diagnosePipedreamConnect(): Promise<{
       p.appSlug === FRONTAPP_PIPEDREAM_SLUG &&
       isTagConversationsTarget(p.target),
   );
+  const proxyFrontTagConversationsAbsoluteOk = proxyProbes.some(
+    (p) =>
+      p.ok &&
+      p.appSlug === FRONTAPP_PIPEDREAM_SLUG &&
+      isTagConversationsTarget(p.target) &&
+      p.target.startsWith("https://"),
+  );
+  const proxyFrontTagConversationsRelativeOk = proxyProbes.some(
+    (p) =>
+      p.ok &&
+      p.appSlug === FRONTAPP_PIPEDREAM_SLUG &&
+      isTagConversationsTarget(p.target) &&
+      p.target.startsWith("/"),
+  );
+  const tagConversationsRelativeOnlyGap =
+    tagConversationsProbed &&
+    proxyFrontTagConversationsAbsoluteOk &&
+    !proxyFrontTagConversationsRelativeOk;
   const tagConversationsGap =
     tagConversationsProbed &&
     !proxyFrontTagConversationsOk &&
     (proxyFrontCompanyTagsOk || proxyFrontMeOk || proxyFrontSearchOk);
 
   let summary: string;
-  if (tagConversationsGap) {
+  if (tagConversationsRelativeOnlyGap) {
     summary = inboxZeroTagId
-      ? `GET /tags/${inboxZeroTagId}/conversations is denied (403) while other Front proxy paths work. If the individual-resources preference is already on, the Front OAuth grant behind Pipedream lacks Private Resources — add a custom Front OAuth client with that namespace (or use a company/shared tag), then reconnect. Not broken Pipedream project credentials.`
-      : "GET /tags/{id}/conversations is denied while other Front proxy paths work — Private Resources missing on the Front OAuth grant, or set Config front.inbox_zero_tag_id to probe a specific tag.";
+      ? `Relative /tags/${inboxZeroTagId}/conversations 403s but absolute api2 succeeds — Inbox prefers absolute. Not a Front preference/Private Resources problem.`
+      : "Relative /tags/{id}/conversations 403s but absolute api2 succeeds — Inbox prefers absolute.";
+  } else if (tagConversationsGap) {
+    summary = inboxZeroTagId
+      ? `GET /tags/${inboxZeroTagId}/conversations failed on both relative and absolute probes while other Front proxy paths work. Re-check Connect Proxy / Front connection; this endpoint previously returned the full tagged set for the same grant.`
+      : "GET /tags/{id}/conversations failed while other Front proxy paths work — set Config front.inbox_zero_tag_id to probe a specific tag.";
   } else if (teammateTagsGap && !inboxZeroTagId) {
     summary =
       "Known gap: /teammates/{id}/tags is denied through Connect Proxy while other Front proxy paths work — this is NOT broken Pipedream project credentials. Set Config → Front — Chief Inbox Zero tag id (tag_…) so Search can run tag:{id} is:open without that lookup. Get tag_… from a tagged conversation's tags[].id (not the numeric settings URL).";
