@@ -118,7 +118,11 @@ export function buildOpenSearchQuery(filters: {
   return buildFrontSearchQuery({ ...filters, status: filters.status ?? "open" });
 }
 
-/** Path for conversations on a tag; open ≈ assigned+unassigned, all = no status filter. */
+/** Path for conversations on a tag.
+ *  Front expects `q` as a JSON object: {"statuses":["assigned",...]}
+ *  https://dev.frontapp.com/reference/list-tagged-conversations
+ *  Omitting `q` does NOT mean “all” — it returns a tiny default subset.
+ */
 export function buildTagConversationsPath(
   tagId: string,
   limit: number,
@@ -133,16 +137,24 @@ export function buildTagConversationsPath(
   qs.set("limit", String(limit));
   if (cursor) qs.set("page_token", cursor);
   const normalized = normalizeFrontSearchStatus(status);
+  let statuses: string[];
   if (normalized === "open") {
-    // Front's Open tab ≈ assigned + unassigned (excludes archived/trashed/snoozed).
-    qs.append("q[statuses][]", "assigned");
-    qs.append("q[statuses][]", "unassigned");
+    statuses = ["assigned", "unassigned"];
   } else if (normalized === "archived") {
-    qs.append("q[statuses][]", "archived");
+    statuses = ["archived"];
   } else if (normalized === "trashed") {
-    qs.append("q[statuses][]", "deleted");
+    statuses = ["trashed"];
+  } else if (normalized === "all") {
+    // Explicit full set — required for complete tag inventory.
+    statuses = ["assigned", "unassigned", "archived", "trashed"];
+  } else if (normalized === "assigned" || normalized === "unassigned") {
+    statuses = [normalized];
+  } else {
+    // Search-style filters (snoozed, waiting, …) aren't valid on this list
+    // endpoint — fall back to the full set.
+    statuses = ["assigned", "unassigned", "archived", "trashed"];
   }
-  // status "all" (and other is:-only filters): omit q[statuses] so Front returns all.
+  qs.set("q", JSON.stringify({ statuses }));
   return `/tags/${encodeURIComponent(id)}/conversations?${qs}`;
 }
 
