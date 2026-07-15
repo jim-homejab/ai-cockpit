@@ -176,9 +176,7 @@ export const SETTING_DEFS: SettingDef[] = [
     key: "front.inbox_zero_tag_id",
     label: "Front — Chief Inbox Zero tag id",
     description:
-      "Required for the Front inbox. Core API tag id (tag_…) for your triage tag. Private/individual tags need Front → Preferences → \"Allow access to my individual resources via the API\" for the owning teammate, plus Private Resources on the Pipedream Front connection — otherwise /tags/{id}/conversations returns 403.",
-
-
+      "Required for the Front inbox. Core API tag id (tag_…) for your triage tag. Private/individual tags need both (1) the teammate preference \"Allow access to my individual resources via the API\" and (2) Private Resources on the Front OAuth grant Pipedream uses. If the preference is already on and Inbox still 403s, fix the OAuth grant (custom Pipedream Front OAuth client with Private Resources) or use a company/shared tag.",
     default: "",
     singleLine: true,
     placeholder: "tag_…",

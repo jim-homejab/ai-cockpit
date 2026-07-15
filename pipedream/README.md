@@ -29,9 +29,13 @@ visible instead of a silent under-count). Email is a separate tab
 (Gmail/IMAP today; Outlook later via the same source pattern).
 
 Private/individual tags: Front returns **403** on `/tags/{id}/conversations`
-unless the owning teammate enables **Allow access to my individual resources
-via the API** (personal preferences; an admin can enable it for them) and the
-Connect OAuth grant includes Private Resources. See
+when either (1) the owning teammate has **not** enabled **Allow access to my
+individual resources via the API**, or more commonly when that preference is
+already on — (2) the Front OAuth grant behind Pipedream lacks the **Private
+Resources** namespace. Pipedream's default Front OAuth app often only requests
+Shared/Global. Fix with a Front developer OAuth app / API token that includes
+Private Resources, wired as a custom OAuth client in Pipedream, then reconnect
+Front in Chief — or use a company/shared tag. See
 https://help.front.com/en/articles/2516. A 403 here is that grant gap — not
 broken Pipedream project credentials.
 

@@ -71,15 +71,25 @@ async function requireUserId(): Promise<string> {
 
 /** Connect Proxy 403 on private-tag conversation lists is a Front grant gap. */
 function isFrontTagConversationsPermissionDenied(detail: string): boolean {
-  return /403|forbidden|permission denial/i.test(detail);
+  return /403|forbidden|permission denial|do not have access to the resources of this teammate|not allowed to read/i.test(
+    detail,
+  );
 }
 
-function formatTagConversationsPermissionError(tagId: string): Error {
+/**
+ * Preference "Allow access to my individual resources via the API" is necessary
+ * but not sufficient. When that toggle is already on, 403 almost always means
+ * the Front OAuth grant behind Pipedream lacks the Private Resources namespace.
+ */
+export function formatTagConversationsPermissionError(tagId: string): Error {
   return new Error(
     `Front returned 403 for /tags/${tagId}/conversations. ` +
-      `If this is a private/individual tag, open Front → Preferences for the teammate who owns it and enable ` +
-      `"Allow access to my individual resources via the API", then ensure the Pipedream Front connection includes ` +
-      `Private Resources (reconnect if needed). Or use a company/shared tag. ` +
+      `If the teammate preference "Allow access to my individual resources via the API" is already on, ` +
+      `this is almost always the Front OAuth grant behind Pipedream — it needs the Private Resources namespace ` +
+      `(Pipedream's default Front app often only requests Shared/Global). ` +
+      `Fix: Front Developers → OAuth app (or API token) with Private Resources + Tags/Conversations read, ` +
+      `add it as a custom OAuth client in Pipedream for Front, reconnect in Settings → Connections; ` +
+      `or convert the triage tag to a company/shared tag. ` +
       `https://help.front.com/en/articles/2516`,
   );
 }
