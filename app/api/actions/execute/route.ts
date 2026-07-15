@@ -30,6 +30,7 @@ import {
 import { reconcileKbEntry, ReconcileError } from "@/lib/kb/reconcile";
 import { createContact } from "@/lib/contacts";
 import { createNote } from "@/lib/notes";
+import { frontMcpServer } from "@/lib/front-mcp";
 import { gmailMcpServer } from "@/lib/gmail";
 import { getMailProvider } from "@/lib/mail";
 import { recordCommunication } from "@/lib/communications";
@@ -103,7 +104,12 @@ export async function POST(req: Request) {
     // The built-in Gmail connection resolves like any configured server, so an
     // approved Gmail MCP write (e.g. create_draft proposed by Chief) executes
     // through the same default-deny path.
-    let cfg = (await getMcpServers()).find((s) => s.name === server);
+    // The built-in official Front connection wins a same-named manual server,
+    // matching the broker that created the proposal.
+    let cfg =
+      server === "front"
+        ? ((await frontMcpServer().catch(() => null)) ?? undefined)
+        : (await getMcpServers()).find((s) => s.name === server);
     if (!cfg && server === "gmail") {
       cfg = (await gmailMcpServer().catch(() => null)) ?? undefined;
     }
