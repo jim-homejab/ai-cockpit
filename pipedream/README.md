@@ -28,16 +28,16 @@ uses this same tag list with **no Search fallback** (so a Proxy failure is
 visible instead of a silent under-count). Email is a separate tab
 (Gmail/IMAP today; Outlook later via the same source pattern).
 
-Private/individual tags: Front returns **403** on `/tags/{id}/conversations`
-when either (1) the owning teammate has **not** enabled **Allow access to my
-individual resources via the API**, or more commonly when that preference is
-already on — (2) the Front OAuth grant behind Pipedream lacks the **Private
-Resources** namespace. Pipedream's default Front OAuth app often only requests
-Shared/Global. Fix with a Front developer OAuth app / API token that includes
-Private Resources, wired as a custom OAuth client in Pipedream, then reconnect
-Front in Chief — or use a company/shared tag. See
-https://help.front.com/en/articles/2516. A 403 here is that grant gap — not
-broken Pipedream project credentials.
+Private/individual tags: name lookup via `/teammates/{id}/tags` is often
+denied through Connect Proxy — set Config **Front — Chief Inbox Zero tag id**
+to skip it. Listing conversations uses
+`GET https://api2.frontapp.com/tags/{id}/conversations` (absolute first):
+relative `/tags/{id}/conversations` has returned **403** through Connect Proxy
+even when the same absolute URL returned the full tagged set (~23) for the
+same grant. That is a proxy-target quirk, not the Front preference / Private
+Resources toggles. See https://help.front.com/en/articles/2516 for real
+private-resource denials (message: "You do not have access to the resources
+of this teammate").
 
 `diagnose_pipedream_connect` probes `/me`, company `/tags`, teammate
 `/teammates/{tea}/tags` (when Config teammate id is set), and

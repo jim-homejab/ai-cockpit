@@ -69,28 +69,12 @@ async function requireUserId(): Promise<string> {
   return user.id;
 }
 
-/** Connect Proxy 403 on private-tag conversation lists is a Front grant gap. */
+/** Connect Proxy sometimes 403s the relative tag-list path even when the same
+ * absolute api2 URL succeeds for the same Front grant (observed: ~23 via
+ * https://api2.frontapp.com/tags/{id}/conversations). */
 function isFrontTagConversationsPermissionDenied(detail: string): boolean {
   return /403|forbidden|permission denial|do not have access to the resources of this teammate|not allowed to read/i.test(
     detail,
-  );
-}
-
-/**
- * Preference "Allow access to my individual resources via the API" is necessary
- * but not sufficient. When that toggle is already on, 403 almost always means
- * the Front OAuth grant behind Pipedream lacks the Private Resources namespace.
- */
-export function formatTagConversationsPermissionError(tagId: string): Error {
-  return new Error(
-    `Front returned 403 for /tags/${tagId}/conversations. ` +
-      `If the teammate preference "Allow access to my individual resources via the API" is already on, ` +
-      `this is almost always the Front OAuth grant behind Pipedream — it needs the Private Resources namespace ` +
-      `(Pipedream's default Front app often only requests Shared/Global). ` +
-      `Fix: Front Developers → OAuth app (or API token) with Private Resources + Tags/Conversations read, ` +
-      `add it as a custom OAuth client in Pipedream for Front, reconnect in Settings → Connections; ` +
-      `or convert the triage tag to a company/shared tag. ` +
-      `https://help.front.com/en/articles/2516`,
   );
 }
 
@@ -100,13 +84,16 @@ function formatTagConversationsEmptyError(
   errors: string[],
 ): Error {
   const joined = errors.join(" ");
+  const sample = errors.slice(0, 2).join(" | ") || "no error detail";
   if (isFrontTagConversationsPermissionDenied(joined)) {
-    return formatTagConversationsPermissionError(tagId);
+    return new Error(
+      `Connect Proxy returned 403 for /tags/${tagId}/conversations after ${attemptCount} attempt(s) ` +
+        `(relative and absolute). This endpoint previously returned the full tagged set for the same grant — ` +
+        `not a missing Front preference/Private Resources toggle. Retry, or run diagnose_pipedream_connect. ${sample}`,
+    );
   }
   return new Error(
-    `No conversations from /tags/${tagId}/conversations after ${attemptCount} encoding(s). ${
-      errors.slice(0, 3).join(" | ") || "no error detail"
-    }`,
+    `No conversations from /tags/${tagId}/conversations after ${attemptCount} encoding(s). ${sample}`,
   );
 }
 
@@ -114,29 +101,48 @@ async function frontProxyGet(
   userId: string,
   accountId: string,
   pathWithQuery: string,
-  opts?: { absoluteFallback?: boolean },
+  opts?: { absoluteFallback?: boolean; preferAbsolute?: boolean },
 ): Promise<unknown> {
   const path = pathWithQuery.startsWith("/")
     ? pathWithQuery
     : `/${pathWithQuery}`;
-  // Prefer relative paths so Pipedream resolves Front's base_proxy_target_url.
-  // Absolute api2 retries often fail on allowed_domains and double the wait.
-  try {
-    return await pipedreamProxyRequest(userId, {
+  const absolute = `${FRONT_API_BASE}${path}`;
+  const relativeFirst = !opts?.preferAbsolute;
+
+  const tryRelative = () =>
+    pipedreamProxyRequest(userId, {
       accountId,
       method: "GET",
       url: path,
     });
-  } catch (relativeError) {
-    if (opts?.absoluteFallback === false) throw relativeError;
+  const tryAbsolute = () =>
+    pipedreamProxyRequest(userId, {
+      accountId,
+      method: "GET",
+      url: absolute,
+    });
+
+  if (relativeFirst) {
     try {
-      return await pipedreamProxyRequest(userId, {
-        accountId,
-        method: "GET",
-        url: `${FRONT_API_BASE}${path}`,
-      });
+      return await tryRelative();
+    } catch (relativeError) {
+      if (opts?.absoluteFallback === false) throw relativeError;
+      try {
+        return await tryAbsolute();
+      } catch {
+        throw relativeError;
+      }
+    }
+  }
+
+  // Tag conversation lists: absolute api2 first (relative often 403s falsely).
+  try {
+    return await tryAbsolute();
+  } catch (absoluteError) {
+    try {
+      return await tryRelative();
     } catch {
-      throw relativeError;
+      throw absoluteError;
     }
   }
 }
@@ -573,8 +579,9 @@ async function searchFrontConversationsViaProxy(
     filters.tag = tag;
 
     // Prefer GET /tags/{id}/conversations — includes discussions with no inbox.
-    // Try encodings sequentially (relative Proxy only). Merge successful
-    // variants; on permission denial stop immediately with remediation text.
+    // Bare path returned the full ~23 set via absolute api2 while relative
+    // Connect Proxy often 403s the same path. Prefer absolute; try encodings
+    // sequentially; do not fail-fast on the first 403.
     const tagListQuery =
       status === "open"
         ? `tag:${tag.id} statuses:assigned,unassigned`
@@ -601,7 +608,7 @@ async function searchFrontConversationsViaProxy(
             userId,
             connection.accountId,
             path,
-            { absoluteFallback: false },
+            { preferAbsolute: true },
           );
           const envelope = asRecord(response);
           const page = resultsFrom(response).map(compactConversation);
@@ -616,13 +623,12 @@ async function searchFrontConversationsViaProxy(
               reportedTotal = envelope._total;
             }
           }
+          // Bare / richest path already has rows — skip slower alternate encodings.
+          if (byId.size > 0 && path === paths[0]) break;
         } catch (error) {
           const detail =
             error instanceof Error ? error.message : "proxy failed";
           errors.push(`${path}: ${detail}`.slice(0, 180));
-          if (isFrontTagConversationsPermissionDenied(detail)) {
-            throw formatTagConversationsPermissionError(tag.id);
-          }
         }
       }
 
@@ -643,7 +649,7 @@ async function searchFrontConversationsViaProxy(
             userId,
             connection.accountId,
             paginatedPath,
-            { absoluteFallback: false },
+            { preferAbsolute: true },
           );
           const envelope = asRecord(response);
           for (const c of resultsFrom(response).map(compactConversation)) {
