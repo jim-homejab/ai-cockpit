@@ -116,6 +116,7 @@ export async function GET(req: Request) {
         status,
         limit: PAGE_SIZE,
         cursor: nextCursor ?? undefined,
+        allowSearchFallback: false,
       });
       pages += 1;
       source = result.source;

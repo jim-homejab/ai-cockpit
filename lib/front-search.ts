@@ -73,12 +73,13 @@ async function frontProxyGet(
   userId: string,
   accountId: string,
   pathWithQuery: string,
+  opts?: { absoluteFallback?: boolean },
 ): Promise<unknown> {
   const path = pathWithQuery.startsWith("/")
     ? pathWithQuery
     : `/${pathWithQuery}`;
   // Prefer relative paths so Pipedream resolves Front's base_proxy_target_url.
-  // Full api2 URLs fail when allowed_domains don't include api2.frontapp.com.
+  // Absolute api2 retries often fail on allowed_domains and double the wait.
   try {
     return await pipedreamProxyRequest(userId, {
       accountId,
@@ -86,6 +87,7 @@ async function frontProxyGet(
       url: path,
     });
   } catch (relativeError) {
+    if (opts?.absoluteFallback === false) throw relativeError;
     try {
       return await pipedreamProxyRequest(userId, {
         accountId,
@@ -380,6 +382,11 @@ export type FrontSearchInput = {
   teammate?: string;
   limit?: number;
   cursor?: string;
+  /**
+   * When false, do not fall back to inbox-scoped Search / MCP after
+   * /tags/{id}/conversations fails (Inbox page must not silently under-count).
+   */
+  allowSearchFallback?: boolean;
 };
 
 export type FrontSearchResult = {
@@ -416,6 +423,7 @@ export async function searchFrontConversations(
   try {
     return await searchFrontConversationsViaProxy(input);
   } catch (proxyError) {
+    if (input.allowSearchFallback === false) throw proxyError;
     // MCP list is all_inboxes + open — misses no-inbox discussions and
     // non-open statuses. Prefer failing the proxy error in those cases.
     const status = normalizeFrontSearchStatus(input.status);
@@ -524,8 +532,8 @@ async function searchFrontConversationsViaProxy(
     filters.tag = tag;
 
     // Prefer GET /tags/{id}/conversations — includes discussions with no inbox.
-    // Try multiple q encodings (bare / statuses / status_categories); keep the
-    // richest unique set. Search API alone under-counts no-inbox discussions.
+    // Run encodings in parallel (relative Proxy only) so one slow 403 doesn't
+    // serialize into a multi-minute Inbox load.
     const tagListQuery =
       status === "open"
         ? `tag:${tag.id} statuses:assigned,unassigned`
@@ -533,69 +541,81 @@ async function searchFrontConversationsViaProxy(
           ? `tag:${tag.id}`
           : `tag:${tag.id} is:${status}`;
     try {
-      const byId = new Map<string, ReturnType<typeof compactConversation>>();
-      const pathAttempts: string[] = [];
-      let bestPath = "";
-      let nextCursor: string | null = null;
-      let reportedTotal: number | undefined;
-
-      for (const path of buildTagConversationsPathOptions(
+      const paths = buildTagConversationsPathOptions(
         tag.id,
         limit,
         cursor,
         status,
-      )) {
-        try {
-          const response = await frontProxyGet(
-            userId,
-            connection.accountId,
-            path,
+      );
+      const settled = await Promise.all(
+        paths.map(async (path) => {
+          try {
+            const response = await frontProxyGet(
+              userId,
+              connection.accountId,
+              path,
+              { absoluteFallback: false },
+            );
+            return { path, response, error: null as string | null };
+          } catch (error) {
+            return {
+              path,
+              response: null,
+              error: error instanceof Error ? error.message : "proxy failed",
+            };
+          }
+        }),
+      );
+
+      const byId = new Map<string, ReturnType<typeof compactConversation>>();
+      const errors: string[] = [];
+      let bestPath = "";
+      let nextCursor: string | null = null;
+      let reportedTotal: number | undefined;
+      let bestPageCount = -1;
+
+      for (const attempt of settled) {
+        if (attempt.error || !attempt.response) {
+          errors.push(
+            `${attempt.path}: ${attempt.error ?? "empty"}`.slice(0, 180),
           );
-          pathAttempts.push(path.split("?")[0] ?? path);
-          const envelope = asRecord(response);
-          const page = resultsFrom(response).map(compactConversation);
-          for (const c of page) {
-            if (c.id && !byId.has(c.id)) byId.set(c.id, c);
+          continue;
+        }
+        const envelope = asRecord(attempt.response);
+        const page = resultsFrom(attempt.response).map(compactConversation);
+        for (const c of page) {
+          if (c.id && !byId.has(c.id)) byId.set(c.id, c);
+        }
+        if (page.length > bestPageCount) {
+          bestPageCount = page.length;
+          bestPath = attempt.path;
+          nextCursor = pageTokenFromNext(asRecord(envelope._pagination).next);
+          if (typeof envelope._total === "number") {
+            reportedTotal = envelope._total;
           }
-          if (page.length > 0 && !bestPath) {
-            bestPath = path;
-            nextCursor = pageTokenFromNext(
-              asRecord(envelope._pagination).next,
-            );
-            if (typeof envelope._total === "number") {
-              reportedTotal = envelope._total;
-            }
-          } else if (page.length > (reportedTotal ?? 0)) {
-            bestPath = path;
-            nextCursor = pageTokenFromNext(
-              asRecord(envelope._pagination).next,
-            );
-            if (typeof envelope._total === "number") {
-              reportedTotal = envelope._total;
-            }
-          }
-        } catch {
-          // Try the next encoding.
         }
       }
 
       if (byId.size === 0) {
         throw new Error(
-          `No conversations returned from /tags/${tag.id}/conversations (tried ${pathAttempts.length || "0"} encodings).`,
+          `No conversations from /tags/${tag.id}/conversations after ${paths.length} encoding(s). ${errors.slice(0, 3).join(" | ") || "no error detail"}`,
         );
       }
 
-      // Follow pagination on the best-yielding path only.
       let pages = 1;
       while (nextCursor && byId.size < 200 && pages < 10 && bestPath) {
         const paginatedPath = bestPath.includes("page_token=")
-          ? bestPath.replace(/page_token=[^&]+/, `page_token=${encodeURIComponent(nextCursor)}`)
+          ? bestPath.replace(
+              /page_token=[^&]+/,
+              `page_token=${encodeURIComponent(nextCursor)}`,
+            )
           : `${bestPath}${bestPath.includes("?") ? "&" : "?"}page_token=${encodeURIComponent(nextCursor)}`;
         try {
           const response = await frontProxyGet(
             userId,
             connection.accountId,
             paginatedPath,
+            { absoluteFallback: false },
           );
           const envelope = asRecord(response);
           for (const c of resultsFrom(response).map(compactConversation)) {
@@ -621,9 +641,13 @@ async function searchFrontConversationsViaProxy(
         conversations,
         nextCursor,
         hasMore: Boolean(nextCursor),
-        note: `Used GET /tags/{id}/conversations (${conversations.length} unique across ${pathAttempts.length || 1} query encoding(s)${pages > 1 ? `, ${pages} pages` : ""}).`,
+        note: `Used GET /tags/{id}/conversations (${conversations.length} unique; best page had ${bestPageCount}; ${errors.length} encoding(s) failed).`,
       };
     } catch (tagListError) {
+      // Inbox must not silently under-count via Search. Tools may still fall back.
+      if (input.allowSearchFallback === false) {
+        throw tagListError;
+      }
       const query = buildFrontSearchQuery({ tagId: tag.id, status });
       const qs = new URLSearchParams({ limit: String(limit) });
       if (cursor) qs.set("page_token", cursor);
@@ -632,6 +656,7 @@ async function searchFrontConversationsViaProxy(
           userId,
           connection.accountId,
           `/conversations/search/${encodeURIComponent(query)}?${qs}`,
+          { absoluteFallback: false },
         );
         const envelope = asRecord(response);
         const nextCursor = pageTokenFromNext(
