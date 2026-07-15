@@ -176,7 +176,8 @@ export const SETTING_DEFS: SettingDef[] = [
     key: "front.inbox_zero_tag_id",
     label: "Front — Chief Inbox Zero tag id",
     description:
-      "Required for the Front inbox. Front Core API tag id (tag_…) for your triage tag — e.g. Chief Inbox Zero. The Inbox page lists every conversation on this tag via GET /tags/{id}/conversations (includes discussions with no inbox). Not the numeric id from Front's settings URL.",
+      "Required for the Front inbox. Core API tag id (tag_…) for your triage tag. Private/individual tags need Front → Preferences → \"Allow access to my individual resources via the API\" for the owning teammate, plus Private Resources on the Pipedream Front connection — otherwise /tags/{id}/conversations returns 403.",
+
 
     default: "",
     singleLine: true,
