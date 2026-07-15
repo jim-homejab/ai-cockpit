@@ -15,7 +15,9 @@ Pipedream is the default connector path:
    (`front.inbox_zero_tag_id`), or name lookup (company `/tags` then
    teammate `/teammates/{id}/tags` — the teammate path is often rejected for
    private tags even when `/tags` works)
-2. Call **Front Search API** via Proxy: `/conversations/search/tag:…%20is:open`
+2. Call **Front Search API** via Proxy: `/conversations/search/…`
+   (default `is:open tag:…`; pass tool `status=all` for tag-only / all
+   non-trashed statuses)
 3. If Search fails, try `/tags/{id}/conversations`
 4. If Proxy fails entirely, MCP `list-conversations` + client tag filter
    (recent ~100 only; includes `sampleTags` for name matching)

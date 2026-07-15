@@ -16,14 +16,15 @@ import {
 } from "@/lib/pipedream";
 import {
   asRecord,
-  buildOpenSearchQuery,
-  buildTagOpenConversationsPath,
+  buildFrontSearchQuery,
+  buildTagConversationsPath,
   buildTaggedOpenQuery,
   compactConversation,
   DEFAULT_FRONT_INBOX_ZERO_TAG,
   FRONT_API_BASE,
   FRONTAPP_PIPEDREAM_SLUG,
   nameMatchesIgnoreCase,
+  normalizeFrontSearchStatus,
   normalizeFrontTagId,
   normalizeFrontTeammateId,
   pageTokenFromNext,
@@ -34,22 +35,27 @@ import {
   teammateMatches,
   textField,
   type CompactFrontConversation,
+  type FrontSearchStatus,
 } from "@/lib/front-search-helpers";
 
 export {
+  buildFrontSearchQuery,
   buildOpenSearchQuery,
+  buildTagConversationsPath,
   buildTagOpenConversationsPath,
   buildTaggedOpenQuery,
   compactConversation,
   DEFAULT_FRONT_INBOX_ZERO_TAG,
   FRONT_API_BASE,
   FRONTAPP_PIPEDREAM_SLUG,
+  normalizeFrontSearchStatus,
   normalizeFrontTagId,
   normalizeFrontTeammateId,
   pageTokenFromNext,
   resolveExactTag,
   resultsFrom,
   type CompactFrontConversation,
+  type FrontSearchStatus,
 } from "@/lib/front-search-helpers";
 
 async function requireUserId(): Promise<string> {
@@ -370,6 +376,11 @@ export type FrontSearchInput = {
    * `front.inbox_zero_tag_id`) when private-tag listing is blocked.
    */
   tagId?: string;
+  /**
+   * Front Search `is:` status. Default `open`. Pass `all` to omit `is:`
+   * (tag-only / all non-trashed statuses).
+   */
+  status?: FrontSearchStatus | string;
   /** Exact inbox name. Optional. */
   inboxName?: string;
   /** Teammate name, email, or tea_ id for assignee: filter. Optional. */
@@ -394,6 +405,7 @@ export type FrontSearchResult = {
       name: string;
       scope?: "company" | "teammate" | "explicit";
     };
+    status?: FrontSearchStatus;
     inbox?: { id: string; name: string };
     assignee?: { id: string; name: string };
     participant?: { id: string; name: string };
@@ -421,8 +433,13 @@ export async function searchFrontConversations(
   } catch (proxyError) {
     // Inbox-style MCP list works when Connect Proxy does not (same as Calendar).
     // Skip MCP fallback when the caller asked for inbox/assignee filters the
-    // list tool cannot apply accurately.
-    if (textField(input.inboxName) || textField(input.assignee)) {
+    // list tool cannot apply accurately, or for non-open status (MCP list is open-ish).
+    const status = normalizeFrontSearchStatus(input.status);
+    if (
+      textField(input.inboxName) ||
+      textField(input.assignee) ||
+      status !== "open"
+    ) {
       throw proxyError;
     }
     const { searchFrontConversationsViaMcp } = await import(
@@ -489,6 +506,7 @@ async function searchFrontConversationsViaProxy(
 
   const tagName = textField(input.tagName);
   const tagId = textField(input.tagId);
+  const status = normalizeFrontSearchStatus(input.status);
   const inboxName = textField(input.inboxName);
   const assignee = textField(input.assignee);
   const participant = textField(input.participant);
@@ -502,6 +520,7 @@ async function searchFrontConversationsViaProxy(
 
   const filters: FrontSearchResult["filters"] = {
     teammate: owner,
+    status,
   };
 
   const wantsTag = Boolean(tagId) || Boolean(tagName);
@@ -526,8 +545,8 @@ async function searchFrontConversationsViaProxy(
     filters.tag = tag;
 
     // Front Search API: GET /conversations/search/{query}
-    // https://dev.frontapp.com/docs/search-1 — e.g. tag:tag_xxx is:open
-    const query = buildOpenSearchQuery({ tagId: tag.id });
+    // https://dev.frontapp.com/docs/search-1 — e.g. tag:tag_xxx or is:open tag:tag_xxx
+    const query = buildFrontSearchQuery({ tagId: tag.id, status });
     const qs = new URLSearchParams({ limit: String(limit) });
     if (cursor) qs.set("page_token", cursor);
     const searchPath = `/conversations/search/${encodeURIComponent(query)}?${qs}`;
@@ -562,7 +581,7 @@ async function searchFrontConversationsViaProxy(
         const response = await frontProxyGet(
           userId,
           connection.accountId,
-          buildTagOpenConversationsPath(tag.id, limit, cursor),
+          buildTagConversationsPath(tag.id, limit, cursor, status),
         );
         const envelope = asRecord(response);
         const nextCursor = pageTokenFromNext(
@@ -572,7 +591,12 @@ async function searchFrontConversationsViaProxy(
         const total =
           typeof envelope._total === "number" ? envelope._total : undefined;
         return {
-          query: `tag:${tag.id} statuses:assigned,unassigned`,
+          query:
+            status === "open"
+              ? `tag:${tag.id} statuses:assigned,unassigned`
+              : status === "all"
+                ? `tag:${tag.id}`
+                : `tag:${tag.id} is:${status}`,
           source: "tag_conversations",
           filters,
           account: connection.accountName ?? connection.accountId,
@@ -615,11 +639,12 @@ async function searchFrontConversationsViaProxy(
   // No default participant filter: open inventory should return company-visible
   // open conversations. Pass participant/assignee explicitly when scoping to Jim.
 
-  const query = buildOpenSearchQuery({
+  const query = buildFrontSearchQuery({
     tagId: filters.tag?.id,
     inboxId: filters.inbox?.id,
     assigneeId: filters.assignee?.id,
     participantId: filters.participant?.id,
+    status,
   });
   const qs = new URLSearchParams({ limit: String(limit) });
   if (cursor) qs.set("page_token", cursor);
@@ -660,6 +685,7 @@ async function searchFrontConversationsViaProxy(
 export async function searchTaggedOpenConversations(input: {
   tagName?: string;
   tagId?: string;
+  status?: FrontSearchStatus | string;
   teammate?: string;
   limit?: number;
   cursor?: string;
@@ -667,6 +693,7 @@ export async function searchTaggedOpenConversations(input: {
   return searchFrontConversations({
     tagName: textField(input.tagName) || DEFAULT_FRONT_INBOX_ZERO_TAG,
     tagId: input.tagId,
+    status: input.status,
     teammate: input.teammate,
     limit: input.limit,
     cursor: input.cursor,

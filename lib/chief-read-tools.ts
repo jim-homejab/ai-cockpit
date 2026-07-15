@@ -74,7 +74,7 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
   {
     name: "search_front_conversations",
     description:
-      "Search open Front conversations using Front's Core Search API (GET /conversations/search/{query} per https://dev.frontapp.com/docs/search-1), e.g. tag:tag_xxx is:open, via Pipedream Connect Proxy. Prefer tag_id (tag_…) or Config front.inbox_zero_tag_id when private-tag listing fails. If Proxy fails, falls back to Pipedream MCP list-conversations + tag filter (recent ~100 only). For Chief Inbox Zero pass tag_name and/or tag_id; optional teammate tea_lm2n2. Page with nextCursor when hasMore. Read-only.",
+      "Search Front conversations via Front Core Search API (GET /conversations/search/{query}). Default status is open (is:open). Pass status=\"all\" for tag-only / all non-trashed statuses (omit is:). Prefer tag_id (tag_…) or Config front.inbox_zero_tag_id when private-tag listing fails. If Proxy fails on open searches, falls back to MCP list+tag filter. Read-only.",
     input_schema: {
       type: "object",
       properties: {
@@ -86,6 +86,11 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
           type: "string",
           description:
             "Optional Front Core API tag id (tag_…). Skips /tags name lookup. Prefer Config → Front — Chief Inbox Zero tag id for that tag.",
+        },
+        status: {
+          type: "string",
+          description:
+            'Front Search is: filter. Default "open". Use "all" to omit is: (tag-only, includes archived/snoozed; Front still omits trashed). Also: archived, snoozed, trashed, assigned, unassigned, unreplied, waiting, resolved.',
         },
         inbox_name: {
           type: "string",
@@ -118,7 +123,7 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "search_front_tagged_conversations",
-    description: `Convenience alias for search_front_conversations with tag_name defaulting to "${DEFAULT_FRONT_INBOX_ZERO_TAG}". Uses Config front.inbox_zero_tag_id or tag_id when set. Falls back to MCP list+tag filter when Connect Proxy fails.`,
+    description: `Convenience alias for search_front_conversations with tag_name defaulting to "${DEFAULT_FRONT_INBOX_ZERO_TAG}". Uses Config front.inbox_zero_tag_id or tag_id when set. Pass status=\"all\" for tag-only (not open-only). Falls back to MCP list+tag filter when Connect Proxy fails on open searches.`,
     input_schema: {
       type: "object",
       properties: {
@@ -130,6 +135,11 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
           type: "string",
           description:
             "Front Core API tag id (tag_…). Prefer Config → Front — Chief Inbox Zero tag id.",
+        },
+        status: {
+          type: "string",
+          description:
+            'Front Search is: filter. Default "open". Use "all" to search the tag across statuses (omit is:).',
         },
         teammate: {
           type: "string",
@@ -202,6 +212,7 @@ export async function runChiefReadTool(
     const result = await searchFrontConversations({
       tagName: typeof args.tag_name === "string" ? args.tag_name : undefined,
       tagId: typeof args.tag_id === "string" ? args.tag_id : undefined,
+      status: typeof args.status === "string" ? args.status : undefined,
       inboxName: typeof args.inbox_name === "string" ? args.inbox_name : undefined,
       assignee: typeof args.assignee === "string" ? args.assignee : undefined,
       participant:
@@ -217,6 +228,7 @@ export async function runChiefReadTool(
     const result = await searchTaggedOpenConversations({
       tagName: typeof args.tag_name === "string" ? args.tag_name : undefined,
       tagId: typeof args.tag_id === "string" ? args.tag_id : undefined,
+      status: typeof args.status === "string" ? args.status : undefined,
       teammate: typeof args.teammate === "string" ? args.teammate : undefined,
       limit: typeof args.limit === "number" ? args.limit : undefined,
       cursor: typeof args.cursor === "string" ? args.cursor : undefined,
