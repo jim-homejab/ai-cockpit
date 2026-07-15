@@ -151,7 +151,7 @@ missing or too narrow — for example, searching open Front conversations
 (`search_front_conversations`, with optional tag/inbox/assignee filters)
 reuses the same Front OAuth grant without storing a Front API token in Chief.
 If private-tag inventory cannot resolve Front `/me`, set **Config → Front —
-teammate id** once (e.g. `tea_36301790`). Optional owner-published private
+teammate id** once (e.g. `tea_lm2n2` for jim@homejab.com). Optional owner-published private
 Pipedream actions still appear under that account's **Tools** menu alongside
 the public registry.
 

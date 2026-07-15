@@ -151,7 +151,7 @@ async function resolveOwnerTeammate(
   } catch (error) {
     const detail = error instanceof Error ? error.message : "failed";
     throw new Error(
-      `Could not resolve Front teammate identity (${detail}). Set Config → Front — teammate id to your tea_… id (e.g. tea_36301790), or pass teammate in the tool call.`,
+      `Could not resolve Front teammate identity (${detail}). Set Config → Front — teammate id to your tea_… id (e.g. tea_lm2n2 for jim@homejab.com), or pass teammate in the tool call.`,
     );
   }
 }
@@ -392,11 +392,9 @@ export async function searchFrontConversations(
       connection.accountId,
       participant,
     );
-  } else if (!inboxName && !assignee) {
-    // Default open inventory to the authorizing teammate's participation so
-    // admin OAuth still surfaces personal/subscribed work (Jim folder, etc.).
-    filters.participant = owner;
   }
+  // No default participant filter: open inventory should return company-visible
+  // open conversations. Pass participant/assignee explicitly when scoping to Jim.
 
   const query = buildOpenSearchQuery({
     tagId: filters.tag?.id,

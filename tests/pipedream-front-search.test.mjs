@@ -45,11 +45,16 @@ test("requests both public and private Pipedream MCP tools", () => {
   assert.equal(server.trustAnnotations, true);
 });
 
-test("uses Front Core API host for Connect proxy targets", () => {
+test("uses Front Core API host and Pipedream SDK-compatible proxy encoding", () => {
   assert.equal(FRONT_API_BASE, "https://api2.frontapp.com");
   const url = `${FRONT_API_BASE}/tags?limit=100`;
-  // Matches encodePipedreamProxyTarget in lib/pipedream.ts.
-  assert.match(Buffer.from(url, "utf8").toString("base64url"), /^[A-Za-z0-9_-]+$/);
+  // Matches encodePipedreamProxyTarget in lib/pipedream.ts (@pipedream/sdk style).
+  const encoded = Buffer.from(url, "utf8").toString("base64");
+  assert.match(encoded, /=/); // standard Base64 keeps padding
+  assert.equal(
+    encodeURIComponent(encoded),
+    "aHR0cHM6Ly9hcGkyLmZyb250YXBwLmNvbS90YWdzP2xpbWl0PTEwMA%3D%3D",
+  );
 });
 
 test("builds an exact tagged-open Front query", () => {
