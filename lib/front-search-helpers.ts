@@ -29,21 +29,55 @@ export function pageTokenFromNext(next: unknown): string | null {
 }
 
 export function buildTaggedOpenQuery(tagId: string): string {
-  const id = text(tagId);
-  if (!/^tag_[a-zA-Z0-9]+$/.test(id)) {
-    throw new Error("Front returned an invalid tag ID.");
-  }
-  return `tag:${id} is:open`;
+  return buildFrontSearchQuery({ tagId, status: "open" });
 }
 
-/** Build a Front search query from resolved filter IDs. Always scopes to open. */
-export function buildOpenSearchQuery(filters: {
+/** Front Search `is:` values, plus `all` (omit `is:` — Front still omits trashed). */
+export const FRONT_SEARCH_STATUSES = [
+  "open",
+  "all",
+  "archived",
+  "snoozed",
+  "trashed",
+  "assigned",
+  "unassigned",
+  "unreplied",
+  "waiting",
+  "resolved",
+] as const;
+
+export type FrontSearchStatus = (typeof FRONT_SEARCH_STATUSES)[number];
+
+export function normalizeFrontSearchStatus(
+  raw: unknown,
+): FrontSearchStatus {
+  const value = text(raw).toLowerCase();
+  if (!value) return "open";
+  if ((FRONT_SEARCH_STATUSES as readonly string[]).includes(value)) {
+    return value as FrontSearchStatus;
+  }
+  throw new Error(
+    `Front search status must be one of ${FRONT_SEARCH_STATUSES.join(", ")} (got "${String(raw)}").`,
+  );
+}
+
+/**
+ * Build a Front search query from resolved filter IDs.
+ * Defaults to `is:open` for inbox-zero inventory; pass status "all" for tag-only
+ * (no is: filter — see https://dev.frontapp.com/docs/search-1).
+ */
+export function buildFrontSearchQuery(filters: {
   tagId?: string;
   inboxId?: string;
   assigneeId?: string;
   participantId?: string;
+  status?: FrontSearchStatus | string;
 }): string {
-  const parts: string[] = ["is:open"];
+  const status = normalizeFrontSearchStatus(filters.status);
+  const parts: string[] = [];
+  if (status !== "all") {
+    parts.push(`is:${status}`);
+  }
   const tagId = text(filters.tagId);
   const inboxId = text(filters.inboxId);
   const assigneeId = text(filters.assigneeId);
@@ -72,7 +106,61 @@ export function buildOpenSearchQuery(filters: {
     }
     parts.push(`participant:${participantId}`);
   }
+  if (parts.length === 0) {
+    // Bare search with no filters is too broad for Chief inventory.
+    throw new Error(
+      'Front search needs at least one filter (tag, inbox, assignee, participant, or status other than "all").',
+    );
+  }
   return parts.join(" ");
+}
+
+/** @deprecated Prefer buildFrontSearchQuery — kept for call sites / tests. */
+export function buildOpenSearchQuery(filters: {
+  tagId?: string;
+  inboxId?: string;
+  assigneeId?: string;
+  participantId?: string;
+  status?: FrontSearchStatus | string;
+}): string {
+  return buildFrontSearchQuery({ ...filters, status: filters.status ?? "open" });
+}
+
+/** Path for conversations on a tag; open ≈ assigned+unassigned, all = no status filter. */
+export function buildTagConversationsPath(
+  tagId: string,
+  limit: number,
+  cursor?: string,
+  status: FrontSearchStatus = "open",
+): string {
+  const id = text(tagId);
+  if (!/^tag_[a-zA-Z0-9]+$/.test(id)) {
+    throw new Error("Front returned an invalid tag ID.");
+  }
+  const qs = new URLSearchParams();
+  qs.set("limit", String(limit));
+  if (cursor) qs.set("page_token", cursor);
+  const normalized = normalizeFrontSearchStatus(status);
+  if (normalized === "open") {
+    // Front's Open tab ≈ assigned + unassigned (excludes archived/trashed/snoozed).
+    qs.append("q[statuses][]", "assigned");
+    qs.append("q[statuses][]", "unassigned");
+  } else if (normalized === "archived") {
+    qs.append("q[statuses][]", "archived");
+  } else if (normalized === "trashed") {
+    qs.append("q[statuses][]", "deleted");
+  }
+  // status "all" (and other is:-only filters): omit q[statuses] so Front returns all.
+  return `/tags/${encodeURIComponent(id)}/conversations?${qs}`;
+}
+
+/** @deprecated Prefer buildTagConversationsPath. */
+export function buildTagOpenConversationsPath(
+  tagId: string,
+  limit: number,
+  cursor?: string,
+): string {
+  return buildTagConversationsPath(tagId, limit, cursor, "open");
 }
 
 export function resolveExactNamedResource(
@@ -154,25 +242,6 @@ export function normalizeFrontTagId(raw: string): string {
 
 export function nameMatchesIgnoreCase(actual: unknown, requested: string): boolean {
   return text(actual).toLowerCase() === text(requested).toLowerCase();
-}
-
-/** Path for open (assigned+unassigned) conversations on a tag. */
-export function buildTagOpenConversationsPath(
-  tagId: string,
-  limit: number,
-  cursor?: string,
-): string {
-  const id = text(tagId);
-  if (!/^tag_[a-zA-Z0-9]+$/.test(id)) {
-    throw new Error("Front returned an invalid tag ID.");
-  }
-  const qs = new URLSearchParams();
-  qs.set("limit", String(limit));
-  if (cursor) qs.set("page_token", cursor);
-  // Front's Open tab ≈ assigned + unassigned (excludes archived/trashed/snoozed).
-  qs.append("q[statuses][]", "assigned");
-  qs.append("q[statuses][]", "unassigned");
-  return `/tags/${encodeURIComponent(id)}/conversations?${qs}`;
 }
 
 export type CompactFrontConversation = {

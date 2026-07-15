@@ -6,6 +6,7 @@ import {
 } from "../lib/pipedream-mcp-config.ts";
 import {
   buildOpenSearchQuery,
+  buildTagConversationsPath,
   buildTagOpenConversationsPath,
   buildTaggedOpenQuery,
   compactConversation,
@@ -61,7 +62,7 @@ test("uses Front Core API host and Pipedream SDK-compatible proxy encoding", () 
 test("builds an exact tagged-open Front query", () => {
   assert.equal(
     buildTaggedOpenQuery("tag_Chief123"),
-    "tag:tag_Chief123 is:open",
+    "is:open tag:tag_Chief123",
   );
   assert.throws(() => buildTaggedOpenQuery("380024798"), /invalid tag ID/);
   assert.equal(DEFAULT_FRONT_INBOX_ZERO_TAG, "Chief Inbox Zero");
@@ -86,6 +87,21 @@ test("builds open Front search queries without requiring a tag", () => {
   );
 });
 
+test("can omit is:open for tag-only / all-status search", () => {
+  assert.equal(
+    buildOpenSearchQuery({ tagId: "tag_6a990e", status: "all" }),
+    "tag:tag_6a990e",
+  );
+  assert.equal(
+    buildOpenSearchQuery({ tagId: "tag_6a990e", status: "archived" }),
+    "is:archived tag:tag_6a990e",
+  );
+  assert.throws(
+    () => buildOpenSearchQuery({ status: "all" }),
+    /at least one filter/,
+  );
+});
+
 test("normalizes Front teammate ids from UI tea: form", () => {
   assert.equal(normalizeFrontTeammateId("tea:36301790"), "tea_36301790");
   assert.equal(normalizeFrontTeammateId("tea_36301790"), "tea_36301790");
@@ -104,6 +120,10 @@ test("builds tag conversation list paths for open statuses", () => {
   assert.match(
     buildTagOpenConversationsPath("tag_Chief123", 10, "next_1"),
     /page_token=next_1/,
+  );
+  assert.equal(
+    buildTagConversationsPath("tag_6a990e", 25, undefined, "all"),
+    "/tags/tag_6a990e/conversations?limit=25",
   );
 });
 
