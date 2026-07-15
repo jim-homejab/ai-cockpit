@@ -74,7 +74,7 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
   {
     name: "search_front_conversations",
     description:
-      "Search conversations through Front's official MCP server. Uses scope=all_inboxes and exact tag IDs when provided. Default status is open; pass status=\"all\" to omit the status filter. Prefer tag_id / Config front.inbox_zero_tag_id. Read-only.",
+      "Search Front conversations. When a tag_id/tag_name is provided, uses Core REST GET /tags/{id}/conversations for the full tagged inventory (MCP search under-counts no-inbox discussions). Without a tag, uses official MCP search_conversations. Default status is open; pass status=\"all\" for full inventory. Prefer tag_id / Config front.inbox_zero_tag_id. Read-only.",
     input_schema: {
       type: "object",
       properties: {
@@ -90,7 +90,7 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
         status: {
           type: "string",
           description:
-            'Default "open". Front MCP supports "open", "all", "archived", and "trashed".',
+            'Default "open". Use "all" for every non-trashed status on a tagged list.',
         },
         assignee: {
           type: "string",
@@ -98,7 +98,7 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
         },
         limit: {
           type: "number",
-          description: "Requested page size hint; Front MCP controls its page size.",
+          description: "Page size (max 100 for tag lists).",
         },
         cursor: {
           type: "string",
@@ -109,7 +109,7 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "search_front_tagged_conversations",
-    description: `Convenience alias for official Front MCP search_conversations with tag_name defaulting to "${DEFAULT_FRONT_INBOX_ZERO_TAG}". Pass status=\"all\" to omit the status filter.`,
+    description: `List conversations for a Front tag (default "${DEFAULT_FRONT_INBOX_ZERO_TAG}") via Core REST GET /tags/{id}/conversations — the full tag inventory, including no-inbox discussions that MCP search_conversations under-counts. Pass status=\"all\" for every non-trashed status.`,
     input_schema: {
       type: "object",
       properties: {
@@ -129,7 +129,7 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
         },
         limit: {
           type: "number",
-          description: "Requested page size hint; Front MCP controls its page size.",
+          description: "Page size for /tags/{id}/conversations (max 100).",
         },
         cursor: {
           type: "string",

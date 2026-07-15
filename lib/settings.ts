@@ -177,7 +177,7 @@ export const SETTING_DEFS: SettingDef[] = [
     key: "front.inbox_zero_tag_id",
     label: "Front — Chief Inbox Zero tag id",
     description:
-      "Required for the Front Inbox. Front tag id (tag_…) passed directly to official MCP search_conversations filters.tags.",
+      "Required for the Front Inbox. Front tag id (tag_…) for Core REST GET /tags/{id}/conversations (full tagged inventory; MCP search under-counts).",
     default: "",
     singleLine: true,
     placeholder: "tag_…",
