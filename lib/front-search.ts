@@ -68,11 +68,25 @@ async function frontProxyGet(
   const path = pathWithQuery.startsWith("/")
     ? pathWithQuery
     : `/${pathWithQuery}`;
-  return pipedreamProxyRequest(userId, {
-    accountId,
-    method: "GET",
-    url: `${FRONT_API_BASE}${path}`,
-  });
+  // Prefer relative paths so Pipedream resolves Front's base_proxy_target_url.
+  // Full api2 URLs fail when allowed_domains don't include api2.frontapp.com.
+  try {
+    return await pipedreamProxyRequest(userId, {
+      accountId,
+      method: "GET",
+      url: path,
+    });
+  } catch (relativeError) {
+    try {
+      return await pipedreamProxyRequest(userId, {
+        accountId,
+        method: "GET",
+        url: `${FRONT_API_BASE}${path}`,
+      });
+    } catch {
+      throw relativeError;
+    }
+  }
 }
 
 async function paginateCollection(
@@ -283,7 +297,7 @@ export type FrontSearchInput = {
 
 export type FrontSearchResult = {
   query: string;
-  source: "search" | "tag_conversations";
+  source: "search" | "tag_conversations" | "mcp_list_filter";
   filters: {
     tag?: { id: string; name: string; scope?: "company" | "teammate" };
     inbox?: { id: string; name: string };
@@ -297,10 +311,58 @@ export type FrontSearchResult = {
   conversations: CompactFrontConversation[];
   nextCursor: string | null;
   hasMore: boolean;
+  /** Present when MCP fallback was used after Connect Proxy failed. */
+  proxyError?: string;
+  note?: string;
 };
 
 /** One compact page of open Front conversations matching optional filters. */
 export async function searchFrontConversations(
+  input: FrontSearchInput = {},
+): Promise<FrontSearchResult> {
+  try {
+    return await searchFrontConversationsViaProxy(input);
+  } catch (proxyError) {
+    // Inbox-style MCP list works when Connect Proxy does not (same as Calendar).
+    // Skip MCP fallback when the caller asked for inbox/assignee filters the
+    // list tool cannot apply accurately.
+    if (textField(input.inboxName) || textField(input.assignee)) {
+      throw proxyError;
+    }
+    const { searchFrontConversationsViaMcp } = await import(
+      "@/lib/front-search-mcp"
+    );
+    const fallback = await searchFrontConversationsViaMcp({
+      tagName: input.tagName,
+      teammate: input.teammate,
+      proxyError:
+        proxyError instanceof Error
+          ? proxyError.message
+          : "Connect Proxy failed",
+    });
+    return {
+      query: fallback.query,
+      source: fallback.source,
+      filters: {
+        ...(fallback.filters.tag
+          ? { tag: { id: "", name: fallback.filters.tag.name } }
+          : {}),
+        ...(fallback.filters.teammate
+          ? { teammate: fallback.filters.teammate }
+          : {}),
+      },
+      account: fallback.account,
+      count: fallback.count,
+      conversations: fallback.conversations,
+      nextCursor: null,
+      hasMore: false,
+      proxyError: fallback.proxyError,
+      note: fallback.note,
+    };
+  }
+}
+
+async function searchFrontConversationsViaProxy(
   input: FrontSearchInput = {},
 ): Promise<FrontSearchResult> {
   const userId = await requireUserId();
