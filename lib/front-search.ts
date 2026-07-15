@@ -102,6 +102,175 @@ function formatTagConversationsEmptyError(
   );
 }
 
+type FrontGet = (pathWithQuery: string) => Promise<unknown>;
+
+/** Merge unique conversations across Front's finicky /tags/{id}/conversations encodings. */
+async function collectTagConversations(opts: {
+  get: FrontGet;
+  tagId: string;
+  limit: number;
+  cursor?: string;
+  status: FrontSearchStatus;
+}): Promise<{
+  conversations: CompactFrontConversation[];
+  nextCursor: string | null;
+  reportedTotal?: number;
+  bestPageCount: number;
+  errors: string[];
+  bestPath: string;
+}> {
+  const paths = buildTagConversationsPathOptions(
+    opts.tagId,
+    opts.limit,
+    opts.cursor,
+    opts.status,
+  );
+  const byId = new Map<string, CompactFrontConversation>();
+  const errors: string[] = [];
+  let bestPath = "";
+  let nextCursor: string | null = null;
+  let reportedTotal: number | undefined;
+  let bestPageCount = -1;
+
+  for (const path of paths) {
+    try {
+      const response = await opts.get(path);
+      const envelope = asRecord(response);
+      const page = resultsFrom(response).map(compactConversation);
+      for (const c of page) {
+        if (c.id && !byId.has(c.id)) byId.set(c.id, c);
+      }
+      if (page.length > bestPageCount) {
+        bestPageCount = page.length;
+        bestPath = path;
+        nextCursor = pageTokenFromNext(asRecord(envelope._pagination).next);
+        if (typeof envelope._total === "number") {
+          reportedTotal = envelope._total;
+        }
+      }
+      if (byId.size > 0 && path === paths[0]) break;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "request failed";
+      errors.push(`${path}: ${detail}`.slice(0, 180));
+    }
+  }
+
+  if (byId.size === 0) {
+    throw formatTagConversationsEmptyError(opts.tagId, paths.length, errors);
+  }
+
+  let pages = 1;
+  while (nextCursor && byId.size < 200 && pages < 10 && bestPath) {
+    const paginatedPath = bestPath.includes("page_token=")
+      ? bestPath.replace(
+          /page_token=[^&]+/,
+          `page_token=${encodeURIComponent(nextCursor)}`,
+        )
+      : `${bestPath}${bestPath.includes("?") ? "&" : "?"}page_token=${encodeURIComponent(nextCursor)}`;
+    try {
+      const response = await opts.get(paginatedPath);
+      const envelope = asRecord(response);
+      for (const c of resultsFrom(response).map(compactConversation)) {
+        if (c.id && !byId.has(c.id)) byId.set(c.id, c);
+      }
+      nextCursor = pageTokenFromNext(asRecord(envelope._pagination).next);
+      pages += 1;
+    } catch {
+      break;
+    }
+  }
+
+  return {
+    conversations: [...byId.values()],
+    nextCursor,
+    reportedTotal,
+    bestPageCount,
+    errors,
+    bestPath,
+  };
+}
+
+/** Resolve a tag id without calling Front — explicit id or Config inbox-zero id. */
+async function resolveTagIdWithoutProxy(input: {
+  tagId?: string;
+  tagName?: string;
+}): Promise<{ id: string; name: string; scope: "explicit" } | null> {
+  const explicit = textField(input.tagId);
+  const requestedName =
+    textField(input.tagName) || DEFAULT_FRONT_INBOX_ZERO_TAG;
+  if (explicit) {
+    return {
+      id: normalizeFrontTagId(explicit),
+      name: requestedName,
+      scope: "explicit",
+    };
+  }
+  const { getAppSettings } = await import("@/lib/settings");
+  const settings = await getAppSettings().catch(() => null);
+  const fromSettings = textField(settings?.["front.inbox_zero_tag_id"]);
+  if (
+    fromSettings &&
+    requestedName.toLowerCase() === DEFAULT_FRONT_INBOX_ZERO_TAG.toLowerCase()
+  ) {
+    return {
+      id: normalizeFrontTagId(fromSettings),
+      name: requestedName,
+      scope: "explicit",
+    };
+  }
+  return null;
+}
+
+async function searchTaggedViaOfficialCore(
+  input: FrontSearchInput,
+): Promise<FrontSearchResult> {
+  const tag = await resolveTagIdWithoutProxy(input);
+  if (!tag) {
+    throw new Error(
+      "Pass tag_id or set Config front.inbox_zero_tag_id before using Front Core tag listing.",
+    );
+  }
+  const limitRaw =
+    typeof input.limit === "number" && Number.isFinite(input.limit)
+      ? Math.trunc(input.limit)
+      : 25;
+  const limit = Math.min(100, Math.max(1, limitRaw));
+  const status = normalizeFrontSearchStatus(input.status);
+  const { frontCoreGet } = await import("@/lib/front-core-api");
+  const collected = await collectTagConversations({
+    get: frontCoreGet,
+    tagId: tag.id,
+    limit,
+    cursor: textField(input.cursor) || undefined,
+    status,
+  });
+  const tagListQuery =
+    status === "open"
+      ? `tag:${tag.id} statuses:assigned,unassigned`
+      : status === "all"
+        ? `tag:${tag.id}`
+        : `tag:${tag.id} is:${status}`;
+  return {
+    query: tagListQuery,
+    source: "tag_conversations",
+    filters: { tag, status },
+    account: "Front",
+    count: collected.conversations.length,
+    ...(collected.reportedTotal !== undefined
+      ? {
+          total: Math.max(
+            collected.reportedTotal,
+            collected.conversations.length,
+          ),
+        }
+      : { total: collected.conversations.length }),
+    conversations: collected.conversations,
+    nextCursor: collected.nextCursor,
+    hasMore: Boolean(collected.nextCursor),
+    note: `Used official Front OAuth + GET /tags/{id}/conversations (${collected.conversations.length} unique; best page had ${collected.bestPageCount}; ${collected.errors.length} encoding(s) failed).`,
+  };
+}
+
 async function frontProxyGet(
   userId: string,
   accountId: string,
@@ -468,14 +637,62 @@ export type FrontSearchResult = {
   sampleTags?: string[];
 };
 
-/** One compact page of open Front conversations matching optional filters. */
+/** One compact page of Front conversations matching optional filters. */
 export async function searchFrontConversations(
   input: FrontSearchInput = {},
 ): Promise<FrontSearchResult> {
-  const { searchFrontConversationsViaOfficialMcp } = await import(
-    "@/lib/front-mcp-read"
-  );
-  return searchFrontConversationsViaOfficialMcp(input);
+  const wantsTag = Boolean(textField(input.tagId) || textField(input.tagName));
+  if (wantsTag) {
+    // Prefer Core REST GET /tags/{id}/conversations — MCP search_conversations
+    // wraps inbox-scoped Search and under-counts no-inbox discussions.
+    const errors: string[] = [];
+    try {
+      return await searchTaggedViaOfficialCore(input);
+    } catch (error) {
+      errors.push(
+        `official Core: ${error instanceof Error ? error.message : "failed"}`,
+      );
+    }
+    try {
+      return await searchFrontConversationsViaProxy({
+        ...input,
+        allowSearchFallback: false,
+      });
+    } catch (error) {
+      errors.push(
+        `Pipedream proxy: ${error instanceof Error ? error.message : "failed"}`,
+      );
+    }
+    if (input.allowSearchFallback !== false) {
+      const { searchFrontConversationsViaOfficialMcp } = await import(
+        "@/lib/front-mcp-read"
+      );
+      const mcp = await searchFrontConversationsViaOfficialMcp(input);
+      return {
+        ...mcp,
+        note: `${mcp.note ?? "Used Front official MCP search_conversations."} Warning: MCP Search under-counts no-inbox discussions. Tag Core listing failed (${errors.join(" | ")}).`,
+        proxyError: errors.join(" | "),
+      };
+    }
+    throw new Error(
+      `Front tagged inventory needs GET /tags/{id}/conversations (MCP search under-counts). ${errors.join(" | ")}`,
+    );
+  }
+
+  try {
+    const { searchFrontConversationsViaOfficialMcp } = await import(
+      "@/lib/front-mcp-read"
+    );
+    return await searchFrontConversationsViaOfficialMcp(input);
+  } catch (mcpError) {
+    try {
+      return await searchFrontConversationsViaProxy(input);
+    } catch (proxyError) {
+      throw new Error(
+        `Front search failed via official MCP (${mcpError instanceof Error ? mcpError.message : "error"}) and Pipedream proxy (${proxyError instanceof Error ? proxyError.message : "error"}).`,
+      );
+    }
+  }
 }
 
 async function searchFrontConversationsViaProxy(
@@ -549,93 +766,34 @@ async function searchFrontConversationsViaProxy(
           ? `tag:${tag.id}`
           : `tag:${tag.id} is:${status}`;
     try {
-      const paths = buildTagConversationsPathOptions(
-        tag.id,
+      const collected = await collectTagConversations({
+        get: (path) =>
+          frontProxyGet(userId, connection.accountId, path, {
+            preferAbsolute: true,
+          }),
+        tagId: tag.id,
         limit,
         cursor,
         status,
-      );
-      const byId = new Map<string, ReturnType<typeof compactConversation>>();
-      const errors: string[] = [];
-      let bestPath = "";
-      let nextCursor: string | null = null;
-      let reportedTotal: number | undefined;
-      let bestPageCount = -1;
-
-      for (const path of paths) {
-        try {
-          const response = await frontProxyGet(
-            userId,
-            connection.accountId,
-            path,
-            { preferAbsolute: true },
-          );
-          const envelope = asRecord(response);
-          const page = resultsFrom(response).map(compactConversation);
-          for (const c of page) {
-            if (c.id && !byId.has(c.id)) byId.set(c.id, c);
-          }
-          if (page.length > bestPageCount) {
-            bestPageCount = page.length;
-            bestPath = path;
-            nextCursor = pageTokenFromNext(asRecord(envelope._pagination).next);
-            if (typeof envelope._total === "number") {
-              reportedTotal = envelope._total;
-            }
-          }
-          // Bare / richest path already has rows — skip slower alternate encodings.
-          if (byId.size > 0 && path === paths[0]) break;
-        } catch (error) {
-          const detail =
-            error instanceof Error ? error.message : "proxy failed";
-          errors.push(`${path}: ${detail}`.slice(0, 180));
-        }
-      }
-
-      if (byId.size === 0) {
-        throw formatTagConversationsEmptyError(tag.id, paths.length, errors);
-      }
-
-      let pages = 1;
-      while (nextCursor && byId.size < 200 && pages < 10 && bestPath) {
-        const paginatedPath = bestPath.includes("page_token=")
-          ? bestPath.replace(
-              /page_token=[^&]+/,
-              `page_token=${encodeURIComponent(nextCursor)}`,
-            )
-          : `${bestPath}${bestPath.includes("?") ? "&" : "?"}page_token=${encodeURIComponent(nextCursor)}`;
-        try {
-          const response = await frontProxyGet(
-            userId,
-            connection.accountId,
-            paginatedPath,
-            { preferAbsolute: true },
-          );
-          const envelope = asRecord(response);
-          for (const c of resultsFrom(response).map(compactConversation)) {
-            if (c.id && !byId.has(c.id)) byId.set(c.id, c);
-          }
-          nextCursor = pageTokenFromNext(asRecord(envelope._pagination).next);
-          pages += 1;
-        } catch {
-          break;
-        }
-      }
-
-      const conversations = [...byId.values()];
+      });
       return {
         query: tagListQuery,
         source: "tag_conversations",
         filters,
         account: connection.accountName ?? connection.accountId,
-        count: conversations.length,
-        ...(reportedTotal !== undefined
-          ? { total: Math.max(reportedTotal, conversations.length) }
-          : { total: conversations.length }),
-        conversations,
-        nextCursor,
-        hasMore: Boolean(nextCursor),
-        note: `Used GET /tags/{id}/conversations (${conversations.length} unique; best page had ${bestPageCount}; ${errors.length} encoding(s) failed).`,
+        count: collected.conversations.length,
+        ...(collected.reportedTotal !== undefined
+          ? {
+              total: Math.max(
+                collected.reportedTotal,
+                collected.conversations.length,
+              ),
+            }
+          : { total: collected.conversations.length }),
+        conversations: collected.conversations,
+        nextCursor: collected.nextCursor,
+        hasMore: Boolean(collected.nextCursor),
+        note: `Used Pipedream Connect Proxy + GET /tags/{id}/conversations (${collected.conversations.length} unique; best page had ${collected.bestPageCount}; ${collected.errors.length} encoding(s) failed).`,
       };
     } catch (tagListError) {
       // Inbox must not silently under-count via Search. Tools may still fall back.

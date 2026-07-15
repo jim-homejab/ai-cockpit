@@ -1,8 +1,9 @@
 // GET /api/inbox/front — Front-tag inbox list.
 //
 // Requires Config front.inbox_zero_tag_id and the official Front MCP OAuth
-// connection. Uses search_conversations with an exact tag-id filter.
-// Paginates until exhausted (cap 200) so the Inbox shows the full tag set.
+// connection. Tagged inventory uses Core REST GET /tags/{id}/conversations
+// (official token, then Pipedream proxy) — MCP search under-counts no-inbox
+// discussions. Paginates until exhausted (cap 200).
 
 import { getAuthed, unauthorized } from "@/lib/auth";
 import {
@@ -91,7 +92,7 @@ export async function GET(req: Request) {
     const threads: InboxThreadSummary[] = [];
     let nextCursor: string | null = cursor ?? null;
     let hasMore = false;
-    let source = "mcp_search";
+    let source = "tag_conversations";
     let account = "Front";
     let tagName = DEFAULT_FRONT_INBOX_ZERO_TAG;
     let note: string | undefined;

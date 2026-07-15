@@ -987,6 +987,12 @@ stores client credentials and tokens in Vault, requests `feature:mcp`, offers
 an “Apply database update” control when the Front OAuth tables/RPCs are missing,
 and auto-applies pending migrations on save (including the older read/write/send
 RPC). Front app Resource Read/Write/Send do not affect credential save.
+
+**Doc trap #2 (hit live):** Front MCP `search_conversations` with a tag filter
+still under-counts vs Core REST `GET /tags/{id}/conversations` (no-inbox
+discussions missing — same gap as Core Search). Inbox and tagged Chief tools now
+prefer the Core tag endpoint (official OAuth, then Pipedream proxy).
+
 **Future concierge:** screenshot-level Front walkthrough plus a
 preflight that verifies Feature Access, callback URL, and that the live
 `scopes_supported` list matches what Chief will request.

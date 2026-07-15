@@ -128,12 +128,16 @@ Only service-role RPCs called after Chief verifies the signed-in Supabase user
 can decrypt or rotate the Vault value. Credentials are never returned to the
 browser or put in model context.
 
-Inbox and Chief read tools call Front's documented `search_conversations`,
-`read_conversation`, and discovery tools. Front mutations are brokered like
-every other connector: verified reads may run automatically, while write and
-send tools always become approval proposals and are revalidated before the
-executor calls Front. Disconnect is a best-effort token revocation followed by
-deletion of local metadata and the cascading Vault secret.
+Inbox tagged lists and Chief's tagged-search tools use Front Core REST
+`GET /tags/{id}/conversations` (official OAuth, then Pipedream proxy) because
+MCP `search_conversations` under-counts no-inbox discussions. Conversation
+detail and untagged MCP discovery still use Front's documented
+`read_conversation` / `search_conversations` tools. Front mutations are
+brokered like every other connector: verified reads may run automatically,
+while write and send tools always become approval proposals and are
+revalidated before the executor calls Front. Disconnect is a best-effort token
+revocation followed by deletion of local metadata and the cascading Vault
+secret.
 
 ## Pipedream Connect (owner-operated)
 
