@@ -10,6 +10,8 @@ import {
   textField,
   type CompactFrontConversation,
   type FrontSearchStatus,
+  // Node's strip-types runner requires .ts; suppress TS5097 on the specifier.
+  // @ts-expect-error -- intentional explicit extension for direct test imports.
 } from "./front-search-helpers.ts";
 
 export function parseFrontMcpJson(text: string): unknown {

@@ -296,7 +296,13 @@ export async function deleteFrontOAuthConfig(userId: string): Promise<void> {
   if (config?.refreshToken) {
     try {
       const discovered = await discoverFrontOAuth();
-      const endpoint = clean(discovered.metadata?.revocation_endpoint);
+      const endpoint = clean(
+        (
+          discovered.metadata as
+            | (AuthorizationServerMetadata & { revocation_endpoint?: string })
+            | undefined
+        )?.revocation_endpoint,
+      );
       if (endpoint) {
         await fetch(endpoint, {
           method: "POST",
