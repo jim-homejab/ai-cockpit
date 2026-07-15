@@ -4,39 +4,32 @@ Pipedream is the default connector path:
 
 1. **MCP tools** — each connected account exposes that app's prebuilt actions
    through Pipedream's remote MCP. Reads default to Auto; writes stay on Ask.
+   Google Calendar uses this path.
 2. **Connect API Proxy** — when a prebuilt action is missing or too narrow,
    Chief can call the upstream API through Pipedream with the same managed
    OAuth grant (`pipedreamProxyRequest` in `lib/pipedream.ts`).
 
+Calendar working does **not** prove Connect Proxy works — different path.
+
 ## Front conversation inventory
 
-Front's public Pipedream `list-conversations` action cannot filter by tag,
-inbox, or assignee. Chief therefore searches with the native read tool
-`search_front_conversations` (`lib/front-search.ts`), which:
+`search_front_conversations` (`lib/front-search.ts`):
 
-- resolves the Front teammate from, in order: tool `teammate` arg, Config
-  setting `front.teammate_id`, then Front `GET /me` (when the proxy allows it)
-- looks up tags on both `/tags` and `/teammates/{id}/tags`
-- for a tag filter, lists `/tags/{id}/conversations` (same path as Front's tag
-  view) with open statuses
-- without a tag, searches `is:open` scoped to that teammate as participant by
-  default
-- returns compact, paginated results for triage
+1. Tries Connect Proxy with **relative** Front paths first (then full
+   `https://api2.frontapp.com…` as fallback)
+2. If Proxy fails, falls back to Pipedream MCP `list-conversations` and
+   filters by tag name in Chief (same path as Inbox / Calendar MCP)
 
-If inventory fails on teammate identity, set **Config → Front — teammate id**
-once (e.g. `tea_lm2n2` for jim@homejab.com). You do not need to paste it into every chat.
+Use `diagnose_pipedream_connect` to compare MCP vs Proxy for Front and another
+connected app.
 
-Example ask for the tagged queue:
-
-> Search open Front conversations tagged "Chief Inbox Zero" using teammate
-> tea_lm2n2. Follow nextCursor until hasMore is false.
-
-No Front API token is stored in Chief. After inventory, use Front MCP tools to
-read details and propose writes (archive, assign, tag, comment, draft reply).
-Keep those write tools on **Ask** (not Off).
+Private tags on the proxy path still prefer Config **Front — teammate id** =
+`tea_lm2n2` (`jim@homejab.com`).
 
 Example ask:
 
-> Search open Front conversations tagged "Chief Inbox Zero". Follow
-> `nextCursor` until `hasMore` is false. Make no Front changes. Report the
-> final count, then triage the oldest 10.
+> Search open Front conversations tagged "Chief Inbox Zero". Make no Front
+> changes. Report the final count, then triage the oldest 10.
+
+If results include `source: "mcp_list_filter"`, Proxy is still broken but
+inventory came from MCP (recent open page, up to ~100).

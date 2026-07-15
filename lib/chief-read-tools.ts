@@ -21,6 +21,7 @@ import {
   searchFrontConversations,
   searchTaggedOpenConversations,
 } from "@/lib/front-search";
+import { diagnosePipedreamConnect } from "@/lib/pipedream-diagnose";
 
 export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
   {
@@ -62,9 +63,18 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "diagnose_pipedream_connect",
+    description:
+      "Diagnose whether Pipedream Connect Proxy works versus Pipedream MCP for Front (and probes another connected app when possible). Use when Front tag search says credentials were rejected but Calendar/MCP tools still work — those are different paths. Returns a summary plus per-target probe results. Read-only.",
+    input_schema: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
     name: "search_front_conversations",
     description:
-      "Search open Front conversations via the owner's Pipedream-connected Front account (Connect API Proxy). With tag_name, resolves company or private teammate tags (via Config front.teammate_id / teammate arg / Front /me) and lists that tag's open conversations. Without tag_name, searches is:open across accessible inboxes — pass assignee or participant to narrow (e.g. jim@homejab.com / tea_lm2n2). Page with nextCursor until hasMore is false. Read-only. After inventory, propose Front MCP writes on Ask.",
+      "Search open Front conversations. Tries Pipedream Connect Proxy first (exact tag/inbox search); if Proxy fails, falls back to working Pipedream MCP list-conversations and filters by tag name in Chief (recent open page, up to ~100). For Chief Inbox Zero, pass tag_name. Optional teammate tea_lm2n2 / Config front.teammate_id for private tags on the proxy path. Page with nextCursor when hasMore is true. Read-only.",
     input_schema: {
       type: "object",
       properties: {
@@ -74,21 +84,21 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
         },
         inbox_name: {
           type: "string",
-          description: "Optional exact Front inbox name filter.",
+          description: "Optional exact Front inbox name filter (proxy path only).",
         },
         assignee: {
           type: "string",
-          description: "Optional teammate name, email, or tea_ id (assignee filter).",
+          description: "Optional teammate name, email, or tea_ id (assignee filter, proxy path only).",
         },
         participant: {
           type: "string",
           description:
-            "Optional teammate name, email, or tea_ id (participant filter). Defaults to authorizing teammate when no tag/inbox/assignee is set.",
+            "Optional teammate name, email, or tea_ id (participant filter, proxy path only).",
         },
         teammate: {
           type: "string",
           description:
-            "Teammate that owns private tags. Prefer Config → Front — teammate id. Accepts tea_ id, tea: id, email, or name. Used when Front /me is unavailable through Pipedream.",
+            "Teammate that owns private tags. Prefer Config → Front — teammate id (tea_lm2n2). Used when Front /me is unavailable through Pipedream.",
         },
         limit: {
           type: "number",
@@ -103,7 +113,7 @@ export const CHIEF_READ_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "search_front_tagged_conversations",
-    description: `Convenience alias for search_front_conversations with tag_name defaulting to "${DEFAULT_FRONT_INBOX_ZERO_TAG}". Resolves private teammate tags via /me.`,
+    description: `Convenience alias for search_front_conversations with tag_name defaulting to "${DEFAULT_FRONT_INBOX_ZERO_TAG}". Falls back to MCP list+tag filter when Connect Proxy fails.`,
     input_schema: {
       type: "object",
       properties: {
@@ -172,6 +182,10 @@ export async function runChiefReadTool(
     const projects = await listProjectsWithState().catch(() => []);
     const projectNames = new Map(projects.map((p) => [p.id, p.name]));
     return buildTaskDigest(filtered, projectNames);
+  }
+
+  if (name === "diagnose_pipedream_connect") {
+    return JSON.stringify(await diagnosePipedreamConnect());
   }
 
   if (name === "search_front_conversations") {
