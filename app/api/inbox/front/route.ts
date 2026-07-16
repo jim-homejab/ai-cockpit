@@ -14,6 +14,7 @@ import {
   type FrontSearchResult,
 } from "@/lib/front-search";
 import { getFrontOAuthStatus } from "@/lib/front-auth";
+import { getFrontApiStatus } from "@/lib/front-api";
 import type { FrontTagInboxResponse, InboxThreadSummary } from "@/lib/inbox-source";
 import { getAppSettings } from "@/lib/settings";
 
@@ -48,8 +49,13 @@ function toThread(
 export async function GET(req: Request) {
   if (!(await getAuthed())) return unauthorized();
 
-  const connection = await getFrontOAuthStatus().catch(() => null);
-  if (!connection?.connected) {
+  const [oauth, api] = await Promise.all([
+    getFrontOAuthStatus().catch(() => null),
+    getFrontApiStatus().catch(() => null),
+  ]);
+  // Either credential unlocks the tagged Inbox — the Core REST path prefers the
+  // API token, then falls back to the OAuth grant.
+  if (!oauth?.connected && !api?.configured) {
     const body: FrontTagInboxResponse = {
       provider: "front-tag",
       connected: false,
