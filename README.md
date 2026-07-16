@@ -139,11 +139,18 @@ app's Resource permissions. The app secret and user tokens are write-only,
 encrypted in Supabase Vault, and never enter model context.
 
 The Front Inbox requires **Config → Front — Chief Inbox Zero tag id** (`tag_…`).
-Tagged inventory uses the official Front OAuth grant against Front Core REST
-`GET /tags/{id}/conversations` so no-inbox discussions are included — Front's MCP
-`search_conversations` under-counts those. If Core REST can't reach the tag (e.g.
-a private tag outside the OAuth app's namespace access) it falls back to official
-MCP `search_conversations`. Pipedream is no longer used for Front. Conversation
+For the Inbox, the most reliable credential is a **Front API token** (Settings →
+Connections → **Front · API token**): create one in Front under Settings →
+Developers → API tokens with Shared-resources access and paste it in. Chief reads
+tagged inventory with it via Front Core REST `GET /tags/{id}/conversations` —
+full account access (no OAuth expiry/refresh, no namespace 403s), including
+no-inbox discussions that MCP `search_conversations` under-counts. The token is
+stored per user with RLS enabled and no browser policy, so only service-role
+server code reads it; it never enters the browser or model context.
+
+If no API token is set, tagged inventory falls back to the official Front OAuth
+grant against the same Core REST endpoint, then to official MCP
+`search_conversations`. Pipedream is no longer used for Front. Conversation
 detail uses official MCP `read_conversation`. Front write and send tools always
 go through Chief's approval executor.
 

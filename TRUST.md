@@ -128,11 +128,20 @@ Only service-role RPCs called after Chief verifies the signed-in Supabase user
 can decrypt or rotate the Vault value. Credentials are never returned to the
 browser or put in model context.
 
+For the Inbox you may instead set a **Front API token** (Settings → Connections →
+Front · API token) — a long-lived Front Core API credential with full account
+access, which avoids OAuth token expiry/refresh and the developer app's namespace
+limits. It is stored per user in `front_api_config` with row-level security
+enabled and no browser policy, so the authenticated/anon roles are denied every
+row; only service-role server code (scoped to the signed-in user) reads it. The
+token is never returned to the browser or placed in model context, and Remove
+deletes it.
+
 Inbox tagged lists and Chief's tagged-search tools use Front Core REST
-`GET /tags/{id}/conversations` (official OAuth, then Pipedream proxy) because
-MCP `search_conversations` under-counts no-inbox discussions. Conversation
-detail and untagged MCP discovery still use Front's documented
-`read_conversation` / `search_conversations` tools. Front mutations are
+`GET /tags/{id}/conversations` (Front API token if set, else the official OAuth
+grant, then official MCP `search_conversations`) because MCP `search_conversations`
+under-counts no-inbox discussions. Conversation detail and untagged MCP discovery
+still use Front's documented `read_conversation` / `search_conversations` tools. Front mutations are
 brokered like every other connector: verified reads may run automatically,
 while write and send tools always become approval proposals and are
 revalidated before the executor calls Front. Disconnect is a best-effort token

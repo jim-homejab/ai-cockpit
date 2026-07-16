@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useChief } from "@/app/components/ChiefProvider";
 import FrontOfficialConnection from "@/app/(app)/config/FrontOfficialConnection";
+import FrontApiTokenConnection from "@/app/(app)/config/FrontApiTokenConnection";
 import ManualMcpConnections from "@/app/(app)/config/ManualMcpConnections";
 import PipedreamConnections from "@/app/(app)/config/PipedreamConnections";
 import { UPSTREAM_REPO } from "@/lib/version";
@@ -426,6 +427,12 @@ export default function ConfigClient({
             </Link>
           </div>
         </div>
+      </Section>
+      )}
+
+      {section === "connections" && (
+      <Section label="FRONT · API TOKEN">
+        <FrontApiTokenConnection />
       </Section>
       )}
 
