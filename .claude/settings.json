@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm run *)",
+      "Bash(npm install)",
+      "Bash(npm ci)",
+      "Bash(node *)",
+      "Bash(ls *)",
+      "Read",
+      "mcp__github__pull_request_read",
+      "mcp__github__get_job_logs",
+      "mcp__github__actions_list",
+      "mcp__github__list_pull_requests",
+      "mcp__github__search_pull_requests",
+      "mcp__github__get_file_contents"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)"
+    ]
+  }
+}
