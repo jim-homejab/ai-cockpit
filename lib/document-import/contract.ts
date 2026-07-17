@@ -43,12 +43,7 @@ export type ProjectEntity = SourceEvidence & {
   status?: "active" | "paused" | "done" | "archived";
   owner?: string;
   currentState?: string;
-  openLoops?: string;
-  blockers?: string;
   waitingOn?: string;
-  decisions?: string;
-  recentChanges?: string;
-  confidence?: "low" | "medium" | "high";
 };
 
 export type TaskEntity = SourceEvidence & {
@@ -146,12 +141,7 @@ const entityProperties = {
   },
   owner: string,
   currentState: string,
-  openLoops: string,
-  blockers: string,
   waitingOn: string,
-  decisions: string,
-  recentChanges: string,
-  confidence: { type: "string", enum: ["low", "medium", "high"] },
   notes: string,
   priority: { type: "string", enum: ["P0", "P1", "P2", "P3", "P4"] },
   impact: { type: "string", enum: ["low", "medium", "high"] },
@@ -208,7 +198,6 @@ const ENUMS: Record<string, readonly string[]> = {
   priority: ["P0", "P1", "P2", "P3", "P4"],
   impact: ["low", "medium", "high"],
   effort: ["s", "m", "l"],
-  confidence: ["low", "medium", "high"],
 };
 
 function isObject(value: unknown): value is Record<string, unknown> {

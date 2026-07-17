@@ -4,26 +4,38 @@
 // key, no service role.
 //
 // A project carries identity (name, status, one-liner, owner). Its current-state
-// record (open loops, blockers, decisions, what changed, plus a headline
-// `current_state`) lives in a separate 1:1 table so the markdown state fields
-// don't bloat project-list reads. The two are joined in memory by
-// listProjectsWithState for context injection and the UI. The project's next
-// action is NOT stored here — it's computed from the tasks (see
+// record — a headline `current_state`, what it's `waiting_on`, and the
+// `last_verified_at` freshness stamp — lives in a separate 1:1 table so the
+// markdown state fields don't bloat project-list reads. The two are joined in
+// memory by listProjectsWithState for context injection and the UI. The
+// project's next action is NOT stored here — it's computed from the tasks (see
 // lib/tasks.ts#firstOpenTask): the first open task in the project's manual
 // sort order, always, with no separate AI-settable override.
 //
-// DEPRECATED columns: `project_state.next_action` and `next_task_id` still
-// exist in the database (retained for backward compatibility) but are dead —
-// deliberately absent from STATE_COLUMNS, the ProjectState type, and every
-// read/write path. Nothing selects, displays, writes, or feeds them to Chief.
-// Do not reintroduce them: selecting them here would leak stale values back
-// into the project page's Chief snapshot. Next action is the computed first
-// open task, full stop.
+// The effective project model is deliberately small: name, one-line summary,
+// owner (when useful), current state, waiting on, and the verified date.
+// Freshness is the verified date alone — there is no manual confidence label.
+//
+// DEPRECATED columns retained for backward compatibility but dead everywhere in
+// the app — deliberately absent from STATE_COLUMNS, the types, and every
+// read/write path, so nothing selects, displays, writes, or feeds them to
+// Chief. Do not reintroduce them: selecting them here would leak stale values
+// back into the project page's Chief snapshot.
+//   - project_state.next_action / next_task_id (next action is the computed
+//     first open task)
+//   - project_state.open_loops / blockers / decisions / recent_changes
+//     (fold anything that still matters into current_state as prose)
+//   - project_state.confidence (freshness is last_verified_at, not a label)
+//
+// Project `status` (active/paused/done/archived) is kept and still functional —
+// it gates which projects count as current (listProjects / the live-project
+// filter) and hides archived ones from the list — but it is intentionally
+// de-emphasized: no status chips in the primary UI, and it is dropped from
+// Chief's rendered digest and page snapshot.
 
 import { createClient } from "@/lib/supabase/server";
 
 export type ProjectStatus = "active" | "paused" | "done" | "archived";
-export type ProjectConfidence = "low" | "medium" | "high";
 
 export type Project = {
   id: string;
@@ -40,12 +52,7 @@ export type ProjectState = {
   id: string;
   project_id: string;
   current_state: string | null;
-  open_loops: string | null;
-  blockers: string | null;
   waiting_on: string | null;
-  decisions: string | null;
-  recent_changes: string | null;
-  confidence: ProjectConfidence | null;
   last_verified_at: string | null;
   created_at: string;
   updated_at: string;
@@ -56,7 +63,7 @@ export type ProjectWithState = Project & { state: ProjectState | null };
 const PROJECT_COLUMNS =
   "id, name, status, summary, owner, sort, created_at, updated_at";
 const STATE_COLUMNS =
-  "id, project_id, current_state, open_loops, blockers, waiting_on, decisions, recent_changes, confidence, last_verified_at, created_at, updated_at";
+  "id, project_id, current_state, waiting_on, last_verified_at, created_at, updated_at";
 
 // Active projects first, then by the user's sort, then name.
 const STATUS_RANK: Record<ProjectStatus, number> = {
@@ -184,12 +191,7 @@ export async function getProjectState(
 
 export type ProjectStatePatch = {
   current_state?: string | null;
-  open_loops?: string | null;
-  blockers?: string | null;
   waiting_on?: string | null;
-  decisions?: string | null;
-  recent_changes?: string | null;
-  confidence?: ProjectConfidence | null;
   // Stamped to now() on every write so callers don't have to supply it; pass a
   // value only to override.
   last_verified_at?: string | null;
@@ -207,12 +209,10 @@ export async function upsertProjectState(
   const supabase = await createClient();
   const fields: Record<string, unknown> = {};
   if (patch.current_state !== undefined) fields.current_state = patch.current_state;
-  if (patch.open_loops !== undefined) fields.open_loops = patch.open_loops;
-  if (patch.blockers !== undefined) fields.blockers = patch.blockers;
   if (patch.waiting_on !== undefined) fields.waiting_on = patch.waiting_on;
-  if (patch.decisions !== undefined) fields.decisions = patch.decisions;
-  if (patch.recent_changes !== undefined) fields.recent_changes = patch.recent_changes;
-  if (patch.confidence !== undefined) fields.confidence = patch.confidence;
+  // Stamped on every write — when current_state or waiting_on changes, the
+  // verified date advances. This (not a manual confidence label) is the sole
+  // freshness signal behind the "Verified N days ago" strip.
   fields.last_verified_at = patch.last_verified_at ?? verifiedAt;
 
   const existing = await getProjectState(projectId);

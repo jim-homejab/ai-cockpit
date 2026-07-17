@@ -1,10 +1,9 @@
-// Projects — the list. Each row: name, a status chip only when the project
-// isn't active (active is the silent default), and the current-state headline
-// (the living record's first line) in quiet ink.
+// Projects — the list. Each row: name and the current-state headline (the
+// living record's first line) in quiet ink. Status is de-emphasized: no chip
+// (archived projects are simply filtered out below).
 
 import Link from "next/link";
 import NewProject from "@/app/components/NewProject";
-import StatusChip from "@/app/components/StatusChip";
 import { listProjectsWithState } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +37,6 @@ export default async function ProjectsPage() {
                   <span className="truncate text-[16px] font-semibold text-ink">
                     {p.name}
                   </span>
-                  {p.status !== "active" && <StatusChip status={p.status} />}
                 </div>
                 {p.state?.current_state && (
                   <div className="mt-1 truncate text-[14px] text-ink-2">

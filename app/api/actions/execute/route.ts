@@ -57,7 +57,6 @@ import {
   type ProjectStatus,
   type ProjectPatch,
   type ProjectStatePatch,
-  type ProjectConfidence,
 } from "@/lib/projects";
 
 export const runtime = "nodejs";
@@ -581,23 +580,12 @@ export async function POST(req: Request) {
         const beforeState = await getProjectState(projectId);
         const patch: ProjectStatePatch = {};
         const prev: Record<string, unknown> = {};
-        const stateFields = [
-          "current_state",
-          "waiting_on",
-          "open_loops",
-          "blockers",
-          "decisions",
-          "recent_changes",
-        ] as const;
+        const stateFields = ["current_state", "waiting_on"] as const;
         for (const f of stateFields) {
           if (safeArgs[f] !== undefined) {
             patch[f] = opt(safeArgs[f]) ?? null;
             prev[f] = beforeState ? beforeState[f] : null;
           }
-        }
-        if (opt(safeArgs.confidence)) {
-          patch.confidence = opt(safeArgs.confidence) as ProjectConfidence;
-          prev.confidence = beforeState ? beforeState.confidence : null;
         }
 
         if (Object.keys(patch).length === 0) {
