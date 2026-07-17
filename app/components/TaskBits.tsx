@@ -16,7 +16,7 @@ export function TaskCheckbox({
       aria-label={done ? "Mark not done" : "Mark done"}
       onClick={onToggle}
       disabled={disabled}
-      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-chip"
+      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-chip transition-[background-color,border-color,transform] duration-150 ease-out active:scale-90"
       style={
         done
           ? { background: "var(--teal-fill)" }
@@ -24,7 +24,14 @@ export function TaskCheckbox({
       }
     >
       {done && (
-        <svg width="10" height="8" viewBox="0 0 11 9" fill="none" aria-hidden="true">
+        <svg
+          width="10"
+          height="8"
+          viewBox="0 0 11 9"
+          fill="none"
+          aria-hidden="true"
+          className="task-check-pop"
+        >
           <path
             d="M1 4.5L4 7.5 10 1"
             stroke="var(--teal-on-fill)"

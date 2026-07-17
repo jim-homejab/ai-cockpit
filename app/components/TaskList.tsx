@@ -12,12 +12,16 @@ import type { Task } from "@/lib/tasks";
 import { dueLabel, isOverdue } from "@/lib/format";
 import { TaskCheckbox } from "./TaskBits";
 
-async function patchTask(id: string, body: Record<string, unknown>) {
-  await fetch(`/api/tasks/${id}`, {
+async function patchTask(
+  id: string,
+  body: Record<string, unknown>,
+): Promise<boolean> {
+  const res = await fetch(`/api/tasks/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+  return res.ok;
 }
 
 function TaskRowMeta({ task }: { task: Task }) {
@@ -59,6 +63,9 @@ export default function TaskList({
   const [order, setOrder] = useState(() => tasks.map((t) => t.id));
   const [busy, setBusy] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  // Optimistic done-state per task: reflect a check/uncheck instantly, before
+  // the PATCH + server refresh land, so a tap feels like it registered.
+  const [pendingDone, setPendingDone] = useState<Record<string, boolean>>({});
   const listRef = useRef<HTMLDivElement>(null);
 
   // Keep local order in sync when the server list changes identity.
@@ -68,6 +75,8 @@ export default function TaskList({
     knownIds.current = serverIds;
     setOrder(tasks.map((t) => t.id));
     setDragId(null);
+    // Server truth has arrived; drop optimistic overrides.
+    setPendingDone({});
   }
 
   const byId = new Map(tasks.map((t) => [t.id, t]));
@@ -79,11 +88,23 @@ export default function TaskList({
     : null;
 
   async function toggle(task: Task) {
+    const nextDone = task.status !== "done";
+    // Show the new state immediately, then reconcile with the server.
+    setPendingDone((m) => ({ ...m, [task.id]: nextDone }));
     setBusy(task.id);
-    await patchTask(task.id, {
-      status: task.status === "done" ? "open" : "done",
+    const ok = await patchTask(task.id, {
+      status: nextDone ? "done" : "open",
     });
     setBusy(null);
+    if (!ok) {
+      // Revert the optimistic state on failure.
+      setPendingDone((m) => {
+        const next = { ...m };
+        delete next[task.id];
+        return next;
+      });
+      return;
+    }
     router.refresh();
   }
 
@@ -149,7 +170,8 @@ export default function TaskList({
       className="flex flex-col overflow-hidden rounded-card border border-hairline bg-surface"
     >
       {ordered.map((task, i) => {
-        const done = task.status === "done";
+        const done =
+          task.id in pendingDone ? pendingDone[task.id] : task.status === "done";
         const projectName = task.project_id
           ? projectNameById?.[task.project_id]
           : undefined;
