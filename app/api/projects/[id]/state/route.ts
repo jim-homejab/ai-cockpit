@@ -18,12 +18,7 @@ export async function PUT(request: Request, { params }: Params) {
     id,
     {
       current_state: body.current_state,
-      open_loops: body.open_loops,
-      blockers: body.blockers,
       waiting_on: body.waiting_on,
-      decisions: body.decisions,
-      recent_changes: body.recent_changes,
-      confidence: body.confidence,
     },
     new Date().toISOString(),
   );

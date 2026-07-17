@@ -51,11 +51,6 @@ const PROJECT_FIELDS = ["name", "summary", "status", "owner"] as const;
 const STATE_FIELDS = [
   "current_state",
   "waiting_on",
-  "open_loops",
-  "blockers",
-  "decisions",
-  "recent_changes",
-  "confidence",
   "last_verified_at",
 ] as const;
 

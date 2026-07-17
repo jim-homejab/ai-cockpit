@@ -47,7 +47,6 @@ export default async function ProjectDetailPage({
           project: {
             id: project.id,
             name: project.name,
-            status: project.status,
             summary: project.summary,
             owner: project.owner,
           },
@@ -89,7 +88,6 @@ export default async function ProjectDetailPage({
         projectId={project.id}
         name={project.name}
         summary={project.summary}
-        status={project.status}
       />
 
       <StateCard

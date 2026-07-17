@@ -398,7 +398,7 @@ export const WRITE_ACTIONS = [
     tier: "yellow",
     label: "Update project",
     description:
-      "Propose a change to an EXISTING project/workstream's identity — rename, change status (e.g. mark it done/paused), set its owner or summary. This does NOT apply immediately — it shows an Approve/Dismiss card. You MUST pass the project's `id` (shown as `id: …` in the CURRENT STATE: PROJECTS section). Include only the fields you want to change. To edit the project's current state (open loops, blockers, etc.), use update_project_state instead.",
+      "Propose a change to an EXISTING project/workstream's identity — rename, change status (e.g. mark it done/paused), set its owner or summary. This does NOT apply immediately — it shows an Approve/Dismiss card. You MUST pass the project's `id` (shown as `id: …` in the CURRENT STATE: PROJECTS section). Include only the fields you want to change. To edit the project's current state or what it's waiting on, use update_project_state instead.",
     input_schema: {
       type: "object",
       properties: {
@@ -426,7 +426,7 @@ export const WRITE_ACTIONS = [
     tier: "yellow",
     label: "Update current state",
     description:
-      "Propose an updated CURRENT-STATE record for a project/workstream — its current state, what it's waiting on, open loops, blockers, decisions, and recent changes. This does NOT apply immediately — it shows an Approve/Dismiss card. Pass the existing project's `id` as `project_id`. If this state belongs to a NEW create_project proposal in the SAME batch, pass its exact name as `project_name` instead and put create_project first. REPLACE-PER-FIELD: pass only the fields that should change, and for each field you set, write the FULL new text for it (it replaces that field) — carry forward what's still true rather than writing only the delta. Ground every field in the actual tasks, activity, and Memory evidence; don't invent. Next action is NOT a field here — it's always the first open task in the project's manual order, computed automatically. (The approval stamps when the state was last verified automatically.)",
+      "Propose an updated CURRENT-STATE record for a project/workstream — its current state and what it's waiting on. This does NOT apply immediately — it shows an Approve/Dismiss card. Pass the existing project's `id` as `project_id`. If this state belongs to a NEW create_project proposal in the SAME batch, pass its exact name as `project_name` instead and put create_project first. REPLACE-PER-FIELD: pass only the fields that should change, and for each field you set, write the FULL new text for it (it replaces that field) — carry forward what's still true rather than writing only the delta. Fold anything that still matters — a blocker, a decision, a recent change — into the current_state prose; there are no separate fields for those, and no confidence rating (freshness is the verified date, stamped automatically). Next action is NOT a field here — it's always the first open task in the project's manual order, computed automatically. Ground it in the actual tasks, activity, and Memory evidence; don't invent.",
     input_schema: {
       type: "object",
       properties: {
@@ -434,17 +434,10 @@ export const WRITE_ACTIONS = [
         project_name: str(
           "Use ONLY for a NEW project proposed earlier in this same batch; exact create_project name.",
         ),
-        current_state: str("Where this stands right now — the headline. Full new text."),
+        current_state: str(
+          "Where this stands right now — the headline prose, including any blocker/decision/recent-change worth noting. Full new text.",
+        ),
         waiting_on: str("What/who we're waiting on externally. Full new text."),
-        open_loops: str("What's outstanding / in flight. Full new text."),
-        blockers: str("What's stuck on us, and why. Full new text."),
-        decisions: str("Decisions made / direction set. Full new text."),
-        recent_changes: str("What moved recently. Full new text."),
-        confidence: enumStr("How sure you are about this record.", [
-          "low",
-          "medium",
-          "high",
-        ]),
       },
       required: [],
     },
@@ -454,11 +447,6 @@ export const WRITE_ACTIONS = [
       const parts = [
         f("Current state", a.current_state),
         f("Waiting on", a.waiting_on),
-        f("Open loops", a.open_loops),
-        f("Blockers", a.blockers),
-        f("Decisions", a.decisions),
-        f("Recent changes", a.recent_changes),
-        a.confidence ? `Confidence: ${String(a.confidence)}` : "",
       ].filter(Boolean);
       return parts.length
         ? parts.join("\n\n")

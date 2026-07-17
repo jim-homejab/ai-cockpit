@@ -2,24 +2,20 @@
 
 // Project header — the editable identity block. Name (h1) and the one-line
 // summary edit in place (pencil → fields → save), writing through
-// PATCH /api/projects/[id]. The status chip shows only for non-active
-// projects; "active" is the silent default, so the badge stays out of the way.
+// PATCH /api/projects/[id]. Status is de-emphasized: no chip here (the
+// lifecycle still exists, it's just not surfaced in the primary UI).
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ProjectStatus } from "@/lib/projects";
-import StatusChip from "./StatusChip";
 
 export default function ProjectHeader({
   projectId,
   name,
   summary,
-  status,
 }: {
   projectId: string;
   name: string;
   summary: string | null;
-  status: ProjectStatus;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -113,10 +109,11 @@ export default function ProjectHeader({
           </svg>
         </button>
       </div>
-      <div className="flex items-center gap-2">
-        {status !== "active" && <StatusChip status={status} />}
-        {summary && <span className="text-[14px] text-ink-2">{summary}</span>}
-      </div>
+      {summary && (
+        <div className="flex items-center gap-2">
+          <span className="text-[14px] text-ink-2">{summary}</span>
+        </div>
+      )}
     </div>
   );
 }

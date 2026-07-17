@@ -82,7 +82,7 @@ export function resolveChiefIntent(intent: ChiefIntent): ResolvedChiefIntent {
         displayText: "Refresh this project's current state",
         apiText: [
           "Review the project, current state, and open tasks in the page context.",
-          "Ask only for information that is genuinely missing, then propose a concise update to the project's current state, next action, waiting-on item, and blockers where appropriate.",
+          "Ask only for information that is genuinely missing, then propose a concise update to the project's current state and what it's waiting on, folding any blocker, decision, or recent change into the current-state prose. The next action is simply the first open task, so reorder or add tasks rather than writing it into the state.",
           `The project id is ${intent.projectId}.`,
         ].join(" "),
         title: "Refresh project state",
@@ -91,7 +91,7 @@ export function resolveChiefIntent(intent: ChiefIntent): ResolvedChiefIntent {
       return {
         displayText: `Plan the next steps for ${intent.projectName}`,
         apiText: [
-          "Review this project's goal, status, current state, and open tasks from the page context.",
+          "Review this project's goal, current state, and open tasks from the page context.",
           "Turn its current position into a practical short plan: identify the next one to three actions, important dependencies or blockers, and any missing decisions.",
           "Preserve useful existing work and avoid duplicate tasks.",
           "Propose only the concrete task or project-state changes that would improve the plan. Do not execute anything.",
