@@ -275,3 +275,29 @@
     text-align: left;
   }
 }
+
+/* The checkmark's little pop when a task is marked done — quick confirmation
+   that the tap landed. Suppressed for reduced-motion users. */
+@keyframes task-check-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.task-check-pop {
+  animation: task-check-pop 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-check-pop {
+    animation: none;
+  }
+}
