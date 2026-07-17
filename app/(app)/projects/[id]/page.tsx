@@ -14,7 +14,7 @@ import TaskList from "@/app/components/TaskList";
 import WaitingOnCard from "@/app/components/WaitingOnCard";
 import { getProject, getProjectState } from "@/lib/projects";
 import { getNumericSetting } from "@/lib/settings";
-import { listTasks } from "@/lib/tasks";
+import { listTasks, sortByManualOrder } from "@/lib/tasks";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +33,9 @@ export default async function ProjectDetailPage({
     getNumericSetting("waiting.aging_days"),
   ]);
 
-  const openTasks = tasks.filter((t) => t.status !== "done");
+  // Pure `sort` order (not listTasks()'s status-banded order) — the next
+  // action is simply the first row here, so this list IS that order.
+  const openTasks = sortByManualOrder(tasks.filter((t) => t.status !== "done"));
 
   return (
     <div className="flex flex-col gap-4 pt-2">

@@ -43,7 +43,6 @@ export type ProjectEntity = SourceEvidence & {
   status?: "active" | "paused" | "done" | "archived";
   owner?: string;
   currentState?: string;
-  nextAction?: string;
   openLoops?: string;
   blockers?: string;
   waitingOn?: string;
@@ -147,7 +146,6 @@ const entityProperties = {
   },
   owner: string,
   currentState: string,
-  nextAction: string,
   openLoops: string,
   blockers: string,
   waitingOn: string,

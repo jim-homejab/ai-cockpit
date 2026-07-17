@@ -583,8 +583,6 @@ export async function POST(req: Request) {
         const prev: Record<string, unknown> = {};
         const stateFields = [
           "current_state",
-          "next_action",
-          "next_task_id",
           "waiting_on",
           "open_loops",
           "blockers",

@@ -50,8 +50,6 @@ const TASK_FIELDS = [
 const PROJECT_FIELDS = ["name", "summary", "status", "owner"] as const;
 const STATE_FIELDS = [
   "current_state",
-  "next_action",
-  "next_task_id",
   "waiting_on",
   "open_loops",
   "blockers",

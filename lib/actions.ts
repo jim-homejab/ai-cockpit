@@ -426,7 +426,7 @@ export const WRITE_ACTIONS = [
     tier: "yellow",
     label: "Update current state",
     description:
-      "Propose an updated CURRENT-STATE record for a project/workstream — its current state, next action, what it's waiting on, open loops, blockers, decisions, and recent changes. This does NOT apply immediately — it shows an Approve/Dismiss card. Pass the existing project's `id` as `project_id`. If this state belongs to a NEW create_project proposal in the SAME batch, pass its exact name as `project_name` instead and put create_project first. REPLACE-PER-FIELD: pass only the fields that should change, and for each field you set, write the FULL new text for it (it replaces that field) — carry forward what's still true rather than writing only the delta. Ground every field in the actual tasks, activity, and Memory evidence; don't invent. (The approval stamps when the state was last verified automatically.)",
+      "Propose an updated CURRENT-STATE record for a project/workstream — its current state, what it's waiting on, open loops, blockers, decisions, and recent changes. This does NOT apply immediately — it shows an Approve/Dismiss card. Pass the existing project's `id` as `project_id`. If this state belongs to a NEW create_project proposal in the SAME batch, pass its exact name as `project_name` instead and put create_project first. REPLACE-PER-FIELD: pass only the fields that should change, and for each field you set, write the FULL new text for it (it replaces that field) — carry forward what's still true rather than writing only the delta. Ground every field in the actual tasks, activity, and Memory evidence; don't invent. Next action is NOT a field here — it's always the first open task in the project's manual order, computed automatically. (The approval stamps when the state was last verified automatically.)",
     input_schema: {
       type: "object",
       properties: {
@@ -435,12 +435,6 @@ export const WRITE_ACTIONS = [
           "Use ONLY for a NEW project proposed earlier in this same batch; exact create_project name.",
         ),
         current_state: str("Where this stands right now — the headline. Full new text."),
-        next_action: str(
-          "The single most important next move, as free text. Prefer linking an actual task via next_task_id; use this for the fallback wording or when no task exists yet.",
-        ),
-        next_task_id: str(
-          "Optional: the id of the OPEN task (from the task list) that is this project's primary next action. Link it when a matching task exists; if none does, leave this out and propose create_task instead.",
-        ),
         waiting_on: str("What/who we're waiting on externally. Full new text."),
         open_loops: str("What's outstanding / in flight. Full new text."),
         blockers: str("What's stuck on us, and why. Full new text."),
@@ -459,8 +453,6 @@ export const WRITE_ACTIONS = [
         v && String(v).trim() ? `${label}:\n${String(v).trim()}` : "";
       const parts = [
         f("Current state", a.current_state),
-        f("Next action", a.next_action),
-        a.next_task_id ? "Links next action to an existing task" : "",
         f("Waiting on", a.waiting_on),
         f("Open loops", a.open_loops),
         f("Blockers", a.blockers),

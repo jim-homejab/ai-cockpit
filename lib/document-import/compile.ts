@@ -63,7 +63,6 @@ function projectStateArgs(
 ): Record<string, unknown> {
   const args: Record<string, unknown> = {};
   changedText(args, "current_state", entity.currentState, existing?.state?.current_state);
-  changedText(args, "next_action", entity.nextAction, existing?.state?.next_action);
   changedText(args, "open_loops", entity.openLoops, existing?.state?.open_loops);
   changedText(args, "blockers", entity.blockers, existing?.state?.blockers);
   changedText(args, "waiting_on", entity.waitingOn, existing?.state?.waiting_on);
