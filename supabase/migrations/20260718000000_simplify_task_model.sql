@@ -15,13 +15,17 @@
 
 -- 1. Collapse the five-value status set to three: open / waiting / done.
 --    not_started, in_progress → open ; blocked → waiting ; waiting, done stay.
---    Remap the data BEFORE swapping the constraint so no row violates it.
+--    Drop the OLD constraint FIRST: the remap writes 'open', which the old
+--    check (not_started/in_progress/blocked/waiting/done) forbids, so remapping
+--    while it's still enforced fails on any existing task. Order matters —
+--    drop, then remap, then add the new constraint (which now validates clean).
+alter table public.tasks drop constraint if exists tasks_status_check;
+
 update public.tasks set status = 'open'
   where status in ('not_started', 'in_progress');
 update public.tasks set status = 'waiting'
   where status = 'blocked';
 
-alter table public.tasks drop constraint if exists tasks_status_check;
 alter table public.tasks add constraint tasks_status_check
   check (status in ('open', 'waiting', 'done'));
 alter table public.tasks alter column status set default 'open';
