@@ -1,6 +1,7 @@
 // Tasks — the full list. Open work first (status-ranked), recently completed
-// below. Rows follow the design's task-row vocabulary; adding is direct, and
-// everything else (ranking narrative, proposals) arrives with later phases.
+// below. Rows follow the design's task-row vocabulary; adding is direct. The
+// open list is reorderable across every project: dragging sets one global
+// manual order (persisted to each task's `sort`), applied within a status band.
 
 import AddTask from "@/app/components/AddTask";
 import ChiefPageSnapshot from "@/app/components/ChiefPageSnapshot";
@@ -32,13 +33,20 @@ export default async function TasksPage() {
         }}
       />
       <div className="flex items-center justify-between">
-        <div className="text-micro text-ink-3">TASKS · {open.length}</div>
+        <div className="flex items-center gap-2.5">
+          <div className="text-micro text-ink-3">TASKS · {open.length}</div>
+          {open.length > 1 && (
+            <div className="font-mono text-[10px] text-ink-3">
+              HOLD ⋮⋮ TO REORDER
+            </div>
+          )}
+        </div>
         {open.length > 0 && <TasksChiefAction />}
       </div>
 
       <AddTask />
 
-      <TaskList tasks={open} emptyLabel="No open tasks. Enjoy it." />
+      <TaskList tasks={open} reorderable emptyLabel="No open tasks. Enjoy it." />
 
       {done.length > 0 && (
         <div className="flex flex-col gap-2.5">
