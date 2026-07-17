@@ -81,10 +81,9 @@ export async function runChiefReadTool(
       return includeDone
         ? "The user has no projects/workstreams."
         : "No active or paused projects/workstreams (try include_done to see done/archived ones).";
-    // Resolve each project's "primary next task" link for the digest.
+    // Resolve each project's computed next action for the digest.
     const tasks = await listTasks().catch(() => [] as Task[]);
-    const tasksById = new Map(tasks.map((t) => [t.id, t]));
-    return buildProjectDigest(filtered, tasksById);
+    return buildProjectDigest(filtered, tasks);
   }
 
   if (name === "list_tasks") {

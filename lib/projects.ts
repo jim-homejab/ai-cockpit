@@ -5,9 +5,12 @@
 //
 // A project carries identity (name, status, one-liner, owner). Its current-state
 // record (open loops, blockers, decisions, what changed, plus a headline
-// `current_state` and the single `next_action`) lives in a separate 1:1 table so
-// the markdown state fields don't bloat project-list reads. The two are joined
-// in memory by listProjectsWithState for context injection and the UI.
+// `current_state`) lives in a separate 1:1 table so the markdown state fields
+// don't bloat project-list reads. The two are joined in memory by
+// listProjectsWithState for context injection and the UI. The project's next
+// action is NOT stored here — it's computed from the tasks (see
+// lib/tasks.ts#firstOpenTask): the first open task in the project's manual
+// sort order, always, with no separate AI-settable override.
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,8 +32,6 @@ export type ProjectState = {
   id: string;
   project_id: string;
   current_state: string | null;
-  next_action: string | null;
-  next_task_id: string | null;
   open_loops: string | null;
   blockers: string | null;
   waiting_on: string | null;
@@ -47,7 +48,7 @@ export type ProjectWithState = Project & { state: ProjectState | null };
 const PROJECT_COLUMNS =
   "id, name, status, summary, owner, sort, created_at, updated_at";
 const STATE_COLUMNS =
-  "id, project_id, current_state, next_action, next_task_id, open_loops, blockers, waiting_on, decisions, recent_changes, confidence, last_verified_at, created_at, updated_at";
+  "id, project_id, current_state, open_loops, blockers, waiting_on, decisions, recent_changes, confidence, last_verified_at, created_at, updated_at";
 
 // Active projects first, then by the user's sort, then name.
 const STATUS_RANK: Record<ProjectStatus, number> = {
@@ -175,8 +176,6 @@ export async function getProjectState(
 
 export type ProjectStatePatch = {
   current_state?: string | null;
-  next_action?: string | null;
-  next_task_id?: string | null;
   open_loops?: string | null;
   blockers?: string | null;
   waiting_on?: string | null;
@@ -200,8 +199,6 @@ export async function upsertProjectState(
   const supabase = await createClient();
   const fields: Record<string, unknown> = {};
   if (patch.current_state !== undefined) fields.current_state = patch.current_state;
-  if (patch.next_action !== undefined) fields.next_action = patch.next_action;
-  if (patch.next_task_id !== undefined) fields.next_task_id = patch.next_task_id;
   if (patch.open_loops !== undefined) fields.open_loops = patch.open_loops;
   if (patch.blockers !== undefined) fields.blockers = patch.blockers;
   if (patch.waiting_on !== undefined) fields.waiting_on = patch.waiting_on;

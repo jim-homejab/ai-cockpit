@@ -53,6 +53,32 @@ export function isOpen(task: Task): boolean {
   return task.status !== "done";
 }
 
+// Pure manual order: `sort` ascending, no status grouping. This is the
+// project detail screen's drag order and the source of truth for "what's
+// next" — unlike listTasks()'s STATUS_RANK-first ordering (used for the
+// cross-project /tasks view), it never lets status bump a task out of the
+// position the user dragged it to.
+function compareByManualOrder(a: Task, b: Task): number {
+  return (
+    a.sort - b.sort ||
+    (a.priority ?? "P9").localeCompare(b.priority ?? "P9") ||
+    b.created_at.localeCompare(a.created_at)
+  );
+}
+
+export function sortByManualOrder(tasks: Task[]): Task[] {
+  return [...tasks].sort(compareByManualOrder);
+}
+
+/** The canonical next action: the first open (non-done) task in manual sort
+ * order. Reordering rewrites `sort` (see reorderTasks below), so this always
+ * reflects the current drag order immediately — it is never a separate
+ * ranking computed or cached on read. */
+export function firstOpenTask(tasks: Task[]): Task | null {
+  const open = sortByManualOrder(tasks.filter(isOpen));
+  return open[0] ?? null;
+}
+
 export async function listTasks(
   opts: { projectId?: string } = {},
 ): Promise<Task[]> {

@@ -18,8 +18,6 @@ export async function PUT(request: Request, { params }: Params) {
     id,
     {
       current_state: body.current_state,
-      next_action: body.next_action,
-      next_task_id: body.next_task_id,
       open_loops: body.open_loops,
       blockers: body.blockers,
       waiting_on: body.waiting_on,
