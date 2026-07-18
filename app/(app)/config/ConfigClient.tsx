@@ -37,7 +37,13 @@ type Status = {
     instructions: number;
     contacts: number;
   };
-  ai?: { provider: string; ready: boolean };
+  ai?: {
+    provider: string;
+    ready: boolean;
+    model?: string | null;
+    modelsChecked?: boolean;
+    models?: { id: string; role: "primary" | "fallback"; ok: boolean }[];
+  };
   front?: { configured: boolean; connected: boolean };
   pipedream?: { configured: boolean };
   updates?: {
@@ -634,6 +640,42 @@ export default function ConfigClient({
           )}
         </div>
       </Section>
+
+      {/* Model health: are the ids Chief will actually use live on the gateway?
+          Catches a bogus/deprecated model id here instead of mid-chat. */}
+      {status?.ai?.modelsChecked && (status.ai.models?.length ?? 0) > 0 && (
+        <Section label="MODEL HEALTH">
+          <div className={card} style={cardStyle}>
+            {(() => {
+              const models = status.ai!.models!;
+              const missing = models.filter((m) => !m.ok);
+              return (
+                <>
+                  {missing.length > 0 && (
+                    <p className="text-[12.5px] leading-relaxed text-ink-2">
+                      {missing.some((m) => m.role === "primary")
+                        ? "Chief's configured model isn't served by the gateway — pick a different one in the model picker above."
+                        : "A free-tier fallback model isn't served by the gateway. Chief still works, but that safety-net entry is dead."}
+                    </p>
+                  )}
+                  {models.map((m) => (
+                    <div key={m.id} className="flex items-center gap-2">
+                      <Dot ok={m.ok} />
+                      <span className="font-mono text-[13px] text-ink">
+                        {m.id}
+                      </span>
+                      <span className="text-[12px] text-ink-3">
+                        {m.role}
+                        {m.ok ? "" : " · not on gateway"}
+                      </span>
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
+          </div>
+        </Section>
+      )}
 
       {/* Software updates */}
       <Section label="SOFTWARE UPDATES">
