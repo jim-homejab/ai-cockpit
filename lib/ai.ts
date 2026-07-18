@@ -25,7 +25,14 @@ const DEFAULT_MODEL = "claude-sonnet-5";
 // Chief answering — degraded, not dead — instead of the RestrictedModelsError
 // a stranger hits on a carded-but-not-topped-up account (dogfood #2). Pinned
 // to a capable free agentic model; overridable is a future setting.
-const FREE_FALLBACK_MODEL = "moonshotai/kimi-k2.7";
+//
+// Must be a model id the gateway actually serves — a bogus id makes the
+// fallback itself 404 (`model_not_found`), which is worse than no fallback
+// because it fails every request that routes to it. `moonshotai/kimi-k2` is
+// the canonical Kimi K2 Instruct id ("no other provider accounts required"),
+// so it stays reachable; newer variants (kimi-k2.5, kimi-k2.6) can be swapped
+// in once confirmed free-tier eligible.
+const FREE_FALLBACK_MODEL = "moonshotai/kimi-k2";
 
 export type AiProvider = "anthropic" | "gateway";
 

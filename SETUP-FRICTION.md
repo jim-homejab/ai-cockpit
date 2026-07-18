@@ -567,7 +567,7 @@ Responses shipped this session:
   requirement.)
 - **Default-model decision (pending Jim's live test):** keep Opus (premium,
   needs credits/BYOK — best tool-use) vs. default to a free agentic model
-  (`moonshotai/kimi-k2.7`, $0 first-run) — decided by testing whether a free
+  (`moonshotai/kimi-k2`, $0 first-run) — decided by testing whether a free
   model handles Chief's approval-card/tool protocol acceptably.
 
 Still owed (next): per-turn cost display + a Config → Usage panel (token usage
