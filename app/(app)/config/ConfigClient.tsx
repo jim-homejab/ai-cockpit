@@ -13,6 +13,10 @@ import FrontOfficialConnection from "@/app/(app)/config/FrontOfficialConnection"
 import ManualMcpConnections from "@/app/(app)/config/ManualMcpConnections";
 import PipedreamConnections from "@/app/(app)/config/PipedreamConnections";
 import { UPSTREAM_REPO } from "@/lib/version";
+import {
+  filesToChatAttachments,
+  MAX_CHAT_FILES,
+} from "@/lib/chat-attachment-client";
 
 type SettingDef = {
   key: string;
@@ -257,7 +261,16 @@ export default function ConfigClient({
 }: {
   section?: ConfigSection;
 }) {
-  const { runIntent } = useChief();
+  const { runIntent, uploadDocuments } = useChief();
+  const reviewInputRef = useRef<HTMLInputElement>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const startReview = async (files: FileList | null) => {
+    setReviewError(null);
+    if (!files || files.length === 0) return;
+    const result = await filesToChatAttachments(files, MAX_CHAT_FILES);
+    if (result.error) setReviewError(result.error);
+    if (result.attachments.length) await uploadDocuments(result.attachments);
+  };
   const [status, setStatus] = useState<Status | null>(null);
   const [defs, setDefs] = useState<SettingDef[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
@@ -540,6 +553,45 @@ export default function ConfigClient({
               {saving ? "Saving…" : savedFlash ? "Saved" : "Save"}
             </button>
           </div>
+        </div>
+      </Section>
+      )}
+
+      {section === "chief" && (
+      <Section label="SETUP CHIEF">
+        <div className={card} style={cardStyle}>
+          <div className="text-[12.5px] leading-snug text-ink-3">
+            Chief&apos;s focused modes. <span className="text-ink">Update this
+            app</span> (edit the app&apos;s own code) is a quick action inside any
+            Chief chat. <span className="text-ink">Build a review plan</span> takes
+            a document — a ticket, a spec, meeting notes — and turns it into
+            projects, tasks, contacts, and memory as one approval plan you review.
+            Attaching a file in chat with the clip does NOT do this; it just lets
+            Chief read the file.
+          </div>
+          <button
+            type="button"
+            onClick={() => reviewInputRef.current?.click()}
+            className="flex h-12 items-center justify-center gap-2 rounded-control border text-[15px] font-semibold text-ink"
+            style={{ borderColor: "var(--teal-border)", background: "var(--surface)" }}
+          >
+            <span className="font-serif text-[17px] italic text-teal">C</span>
+            Build a review plan from a document
+          </button>
+          <input
+            ref={reviewInputRef}
+            type="file"
+            multiple
+            accept="application/pdf,image/png,image/jpeg,image/gif,image/webp,text/plain,text/markdown,text/csv,.md,.csv"
+            className="hidden"
+            onChange={(e) => {
+              void startReview(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          {reviewError && (
+            <div className="text-[12px] text-copper">{reviewError}</div>
+          )}
         </div>
       </Section>
       )}
