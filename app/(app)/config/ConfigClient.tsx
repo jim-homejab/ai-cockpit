@@ -61,6 +61,10 @@ type Status = {
 
 type KbDoc = { id: string; title: string; updated_at: string };
 
+// Warn below this gateway-credit balance (USD). Enough runway to top up before
+// premium models get restricted at ~$0.
+const LOW_CREDIT_THRESHOLD_USD = 5;
+
 const card =
   "flex flex-col gap-3 rounded-card border p-4";
 const cardStyle = {
@@ -277,6 +281,32 @@ export default function ConfigClient({
   } | null>(null);
   const updatesEnabled = settings["updates.enabled"] === "on";
 
+  // Low-credit warning: on the gateway, premium models get restricted once
+  // credit runs dry (the drain that surfaced the kimi-k2.7 outage). Warn while
+  // there's still runway to top up — UNLESS the user has told us auto-recharge
+  // is on, in which case the balance can't hit zero and the nag is noise. The
+  // gateway REST API exposes no auto-recharge field, so that's a user
+  // declaration (the toggle below), not something we can detect.
+  const autoRefillEnabled = settings["ai.auto_refill_enabled"] === "on";
+  const creditBalance =
+    usage?.available && usage.balance != null ? Number(usage.balance) : null;
+  const lowCredit =
+    creditBalance != null &&
+    Number.isFinite(creditBalance) &&
+    creditBalance < LOW_CREDIT_THRESHOLD_USD;
+  const showLowCreditWarning = lowCredit && !autoRefillEnabled;
+
+  // Optimistic, isolated write (like markUpdatesEnabled) — the user confirms
+  // auto-recharge is set up, and the warning goes away for good.
+  const markAutoRefillEnabled = async () => {
+    setSettings((s) => ({ ...s, "ai.auto_refill_enabled": "on" }));
+    await fetch("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings: { "ai.auto_refill_enabled": "on" } }),
+    }).catch(() => {});
+  };
+
   const refresh = useCallback(async () => {
     const [s, st, ins, mem, up, us] = await Promise.all([
       fetch("/api/settings").then((r) => r.json()).catch(() => null),
@@ -472,6 +502,7 @@ export default function ConfigClient({
             .filter(
               (d) =>
                 d.key !== "updates.enabled" &&
+                d.key !== "ai.auto_refill_enabled" &&
                 d.key !== "mcp.servers" &&
                 d.key !== "mcp.tool_overrides",
             )
@@ -604,6 +635,42 @@ export default function ConfigClient({
         <div className={card} style={cardStyle}>
           {usage?.available ? (
             <>
+              {showLowCreditWarning && (
+                <div
+                  className="flex flex-col gap-2 rounded-control border p-3"
+                  style={{ borderColor: "var(--copper-border, var(--hairline))", background: "var(--copper-dim, var(--raised))" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Dot ok={false} />
+                    <span className="text-[14px] font-medium text-ink">
+                      Credit running low (${creditBalance!.toFixed(2)})
+                    </span>
+                  </div>
+                  <p className="text-[12.5px] leading-relaxed text-ink-2">
+                    When gateway credit runs out, premium models (like{" "}
+                    <span className="text-ink">claude-sonnet-5</span>) get
+                    restricted and Chief silently drops to a free fallback model.
+                    Top up to keep Chief on its best model — or turn on Vercel&apos;s
+                    auto-recharge so the balance never hits zero.
+                  </p>
+                  <a
+                    href="https://vercel.com/dashboard"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-10 items-center justify-center rounded-control px-4 text-[14px] font-medium"
+                    style={{ background: "var(--teal-fill)", color: "var(--teal-on-fill)" }}
+                  >
+                    Buy credits / set up auto-recharge →
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => void markAutoRefillEnabled()}
+                    className="w-fit text-left text-[11.5px] leading-relaxed text-ink-3 underline"
+                  >
+                    I&apos;ve turned on auto-recharge — stop warning me
+                  </button>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-[14px] text-ink-2">Credit balance</span>
                 <span className="font-mono text-[14px] text-ink">
