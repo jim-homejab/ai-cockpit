@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { after } from "next/server";
 import { getAuthed } from "@/lib/auth";
 import { getAppSettings } from "@/lib/settings";
-import { resolveAi } from "@/lib/ai";
+import { resolveAi, describeAiError, isRetryableAiError } from "@/lib/ai";
 import { buildChiefSystemPrompt, type ChiefPageContext } from "@/lib/chief";
 import { getMcpServers, type McpServerConfig } from "@/lib/mcp";
 import { listMcpTools, callMcpTool, type McpToolDef } from "@/lib/mcp-broker";
@@ -36,6 +36,12 @@ export const dynamic = "force-dynamic";
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 const MAX_TURNS = 6;
+
+// Transient gateway/provider errors (429/5xx/overloaded) are retried with
+// exponential backoff — but only before any text has streamed for the turn,
+// since we can't un-send bytes already on the wire.
+const MAX_AI_RETRIES = 2;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // POST /api/chief -> stream Chief's reply over the user's whole workspace,
 // grounded in what they're currently looking at (the page context).
@@ -297,24 +303,45 @@ export async function POST(req: Request) {
       let assistantText = "";
       try {
         for (let turn = 0; turn < MAX_TURNS; turn++) {
-          const stream = client.messages.stream({
-            model,
-            max_tokens: 4096,
-            ...(thinking ? { thinking } : {}),
-            system: systemBlocks,
-            ...(cachedClientTools.length ? { tools: cachedClientTools } : {}),
-            messages: convo,
-            // Gateway routing (free-model fallback + BYOK) when in gateway mode.
-            // `providerOptions` is a gateway extension the SDK types don't know.
-            ...(ai.providerOptions
-              ? { providerOptions: ai.providerOptions }
-              : {}),
-          } as unknown as Anthropic.MessageStreamParams);
-          stream.on("text", (delta: string) => {
-            assistantText += delta;
-            controller.enqueue(encoder.encode(delta));
-          });
-          const final = await stream.finalMessage();
+          // Retry transient failures — but only while nothing has streamed for
+          // this attempt, so a retry never duplicates already-sent text.
+          const textAtTurnStart = assistantText;
+          let final: Anthropic.Message | undefined;
+          for (let attempt = 0; ; attempt++) {
+            const stream = client.messages.stream({
+              model,
+              max_tokens: 4096,
+              ...(thinking ? { thinking } : {}),
+              system: systemBlocks,
+              ...(cachedClientTools.length ? { tools: cachedClientTools } : {}),
+              messages: convo,
+              // Gateway routing (free-model fallback + BYOK) when in gateway
+              // mode. `providerOptions` is a gateway extension the SDK types
+              // don't know.
+              ...(ai.providerOptions
+                ? { providerOptions: ai.providerOptions }
+                : {}),
+            } as unknown as Anthropic.MessageStreamParams);
+            stream.on("text", (delta: string) => {
+              assistantText += delta;
+              controller.enqueue(encoder.encode(delta));
+            });
+            try {
+              final = await stream.finalMessage();
+              break;
+            } catch (streamErr) {
+              const emitted = assistantText !== textAtTurnStart;
+              if (
+                emitted ||
+                attempt >= MAX_AI_RETRIES ||
+                !isRetryableAiError(streamErr)
+              ) {
+                throw streamErr;
+              }
+              await sleep(500 * 2 ** attempt);
+            }
+          }
+          if (!final) break;
 
           const content = final.content as Anthropic.ContentBlock[];
           const toolUses = content.filter(
@@ -514,7 +541,9 @@ export async function POST(req: Request) {
         controller.close();
       } catch (err) {
         console.error("chief: stream failed:", err);
-        const detail = err instanceof Error ? err.message : String(err);
+        // Translate opaque provider/gateway errors into an actionable sentence
+        // instead of dumping the raw JSON blob into the chat.
+        const detail = describeAiError(err);
         try {
           controller.enqueue(
             encoder.encode(`\n\n⚠️ Something went wrong: ${detail}`),

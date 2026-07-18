@@ -16,16 +16,21 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { getAppSettings, type AppSettings } from "@/lib/settings";
+import { FREE_FALLBACK_MODELS } from "@/lib/ai-errors";
+
+// Re-exported so call sites keep a single import surface ("@/lib/ai"). The
+// definitions live in the dependency-free lib/ai-errors.ts so they stay
+// unit-testable. See that file for the rationale on the fallback CHAIN.
+export {
+  FREE_FALLBACK_MODELS,
+  classifyAiError,
+  isRetryableAiError,
+  describeAiError,
+  type AiErrorKind,
+} from "@/lib/ai-errors";
 
 export const AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh";
 const DEFAULT_MODEL = "claude-sonnet-5";
-
-// A free-tier gateway model Chief falls back to when the chosen premium model
-// is unavailable to this account (e.g. no paid credits, no BYOK key). Keeps
-// Chief answering — degraded, not dead — instead of the RestrictedModelsError
-// a stranger hits on a carded-but-not-topped-up account (dogfood #2). Pinned
-// to a capable free agentic model; overridable is a future setting.
-const FREE_FALLBACK_MODEL = "moonshotai/kimi-k2.7";
 
 export type AiProvider = "anthropic" | "gateway";
 
@@ -121,12 +126,14 @@ export async function resolveAi(opts?: {
     // A bare id is assumed to be an Anthropic model.
     if (!model.includes("/")) model = `anthropic/${model}`;
 
-    // Gateway routing options. A free-model fallback so a premium model the
-    // account can't reach degrades to a working one instead of erroring; and
-    // BYOK so a pasted Anthropic key runs premium models on the user's own
-    // Anthropic billing (no Vercel paid credits needed).
+    // Gateway routing options. A free-model fallback CHAIN so a premium model
+    // the account can't reach degrades to a working one instead of erroring
+    // (and so one dead fallback id can't take the net down with it); and BYOK
+    // so a pasted Anthropic key runs premium models on the user's own Anthropic
+    // billing (no Vercel paid credits needed).
     const gateway: Record<string, unknown> = {};
-    if (model !== FREE_FALLBACK_MODEL) gateway.models = [FREE_FALLBACK_MODEL];
+    const fallbacks = FREE_FALLBACK_MODELS.filter((m) => m !== model);
+    if (fallbacks.length) gateway.models = fallbacks;
     const byok = settings?.["ai.byok_anthropic_key"]?.trim();
     if (byok) gateway.byok = { anthropic: [{ apiKey: byok }] };
 
@@ -141,4 +148,78 @@ export async function resolveAi(opts?: {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
   return { client: new Anthropic({ apiKey }), model, provider };
+}
+
+// ---------------------------------------------------------------------------
+// Model preflight (diagnostics)
+//
+// Verify that the model ids Chief is about to use actually exist in the
+// gateway catalog — the check that would have caught the `kimi-k2.7` bug at
+// setup instead of mid-conversation. Existence is NOT entitlement: a listed
+// premium model may still be unusable without credits, which surfaces at call
+// time via describeAiError. This only catches bogus/deprecated ids.
+// ---------------------------------------------------------------------------
+
+/** Fetch the set of model ids the gateway currently serves. Best-effort:
+ *  returns null when there's no gateway credential or the catalog can't be
+ *  read (offline, non-Vercel, etc.). The gateway is OpenAI-compatible, so
+ *  `/v1/models` returns `{ data: [{ id }, …] }`. */
+export async function fetchGatewayModelIds(
+  settings?: Partial<AppSettings>,
+): Promise<Set<string> | null> {
+  const apiKey = await resolveGatewayKey(settings);
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(`${AI_GATEWAY_BASE_URL}/v1/models`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { data?: Array<{ id?: string }> };
+    const ids = (body.data ?? [])
+      .map((m) => m?.id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
+    return ids.length ? new Set(ids) : null;
+  } catch {
+    return null;
+  }
+}
+
+export type ModelHealthEntry = {
+  id: string;
+  role: "primary" | "fallback";
+  /** Present in the gateway catalog. Only meaningful when `checked` is true. */
+  ok: boolean;
+};
+
+export type ModelHealth = {
+  /** Whether we could actually read the catalog to verify. False in
+   *  direct-Anthropic mode, with no credential, or on a network hiccup. */
+  checked: boolean;
+  models: ModelHealthEntry[];
+};
+
+/** Check the resolved primary model and its gateway fallbacks against the live
+ *  catalog. Never throws — degrades to `checked: false`. */
+export async function checkModelHealth(
+  ai: ResolvedAi,
+  settings?: Partial<AppSettings>,
+): Promise<ModelHealth> {
+  const gw = (ai.providerOptions?.gateway ?? {}) as { models?: string[] };
+  const entries: ModelHealthEntry[] = [
+    { id: ai.model, role: "primary", ok: false },
+    ...(gw.models ?? []).map(
+      (id): ModelHealthEntry => ({ id, role: "fallback", ok: false }),
+    ),
+  ];
+
+  // Only the gateway has a catalog to check against; direct Anthropic mode is
+  // pinned to Anthropic's own ids, so treat it as unverifiable-but-fine.
+  if (ai.provider !== "gateway") return { checked: false, models: entries };
+
+  const catalog = await fetchGatewayModelIds(settings);
+  if (!catalog) return { checked: false, models: entries };
+  return {
+    checked: true,
+    models: entries.map((e) => ({ ...e, ok: catalog.has(e.id) })),
+  };
 }

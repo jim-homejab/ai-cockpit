@@ -13,7 +13,8 @@ import { listTasks } from "@/lib/tasks";
 import { listKbDocuments, listInstructions } from "@/lib/kb/store";
 import { listContacts } from "@/lib/contacts";
 import { getUpdatesInfo } from "@/lib/updater-workflow";
-import { resolveAi, resolveProvider } from "@/lib/ai";
+import { resolveAi, resolveProvider, checkModelHealth } from "@/lib/ai";
+import { getAppSettings } from "@/lib/settings";
 import { getPipedreamConfigStatus } from "@/lib/pipedream";
 
 export const runtime = "nodejs";
@@ -22,6 +23,10 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const authed = await getAuthed();
   if (!authed) return unauthorized();
+
+  // Loaded once so the AI readiness probe and the model-health preflight below
+  // share the same settings (a pasted gateway key must reach both).
+  const settings = await getAppSettings().catch(() => undefined);
 
   const [
     mail,
@@ -46,8 +51,8 @@ export async function GET() {
       listContacts().catch(() => []),
       // AI readiness is provider-aware: gateway (OIDC/key) OR a direct
       // Anthropic key both count. resolveAi returns null when neither exists.
-      resolveAi().catch(() => null),
-      resolveProvider().catch(() => "gateway" as const),
+      resolveAi({ settings }).catch(() => null),
+      resolveProvider(settings).catch(() => "gateway" as const),
       getFrontOAuthStatus().catch(() => ({
         configured: false,
         connected: false,
@@ -62,6 +67,13 @@ export async function GET() {
     ]);
 
   const email = (await authed.supabase.auth.getUser()).data.user?.email ?? null;
+
+  // Preflight: verify the model ids Chief will actually use exist in the
+  // gateway catalog, so a bogus/deprecated id (the kimi-k2.7 class of bug)
+  // shows up here instead of failing mid-conversation. Best-effort.
+  const modelHealth = ai
+    ? await checkModelHealth(ai, settings).catch(() => null)
+    : null;
 
   return Response.json({
     account: email,
@@ -82,7 +94,13 @@ export async function GET() {
       instructions: instructions.length,
       contacts: contacts.length,
     },
-    ai: { provider, ready: Boolean(ai) },
+    ai: {
+      provider,
+      ready: Boolean(ai),
+      model: ai?.model ?? null,
+      modelsChecked: modelHealth?.checked ?? false,
+      models: modelHealth?.models ?? [],
+    },
     front: { configured: front.configured, connected: front.connected },
     pipedream: { configured: pipedream.configured },
     updates: getUpdatesInfo(),
