@@ -33,6 +33,7 @@ export default function ChiefConversation() {
     messages,
     streaming,
     send,
+    runIntent,
     revisePlan,
     approve,
     dismiss,
@@ -113,13 +114,17 @@ export default function ChiefConversation() {
               </p>
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => void runIntent({ id: "app.update" })}
                 className="flex items-center gap-2 self-start rounded-control border px-3 py-2 text-left text-[13px] text-ink-2"
-                style={{ borderColor: "var(--hairline)" }}
+                style={{ borderColor: "var(--teal-border)" }}
               >
-                <span aria-hidden="true">＋</span>
-                Upload documents to build a review plan
+                <span className="font-serif text-[15px] italic text-teal">C</span>
+                Update this app
               </button>
+              <p className="text-[12px] leading-snug text-ink-3">
+                Attach a file with the clip to have me read it. To build a
+                project/task plan from a document, use Config → Setup Chief.
+              </p>
             </div>
           </div>
         ) : (

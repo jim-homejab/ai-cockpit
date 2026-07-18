@@ -89,6 +89,11 @@ type SendOptions = {
   apiText?: string;
   plan?: ProposalPlan;
   showAttachments?: boolean;
+  /** True only for the deliberate "build a review plan from a document" flow
+   *  (uploadDocuments). When false, attachments ride along as a normal
+   *  attach-and-discuss turn — Chief reads the image/PDF and answers — instead
+   *  of being force-fed to the bounded document importer. */
+  review?: boolean;
 };
 
 type ChiefContextValue = {
@@ -666,7 +671,11 @@ export default function ChiefProvider({
       setStreamingValue(true);
 
       const activeSessionId = await ensureSession(trimmed, atts);
+      // Only the deliberate document-review flow rewrites a bare upload into the
+      // importer instruction. A plain paperclip upload keeps the user's text (or
+      // none) and just attaches the file.
       const documentOnly =
+        !!options?.review &&
         !trimmed &&
         atts.length > 0 &&
         !suppliedApiText;
@@ -676,8 +685,11 @@ export default function ChiefProvider({
       const apiText =
         suppliedApiText ||
         (documentOnly ? DOCUMENT_REVIEW_INTENT.apiText : trimmed);
+      // Persist source files to Storage ONLY for the importer (it re-reads them
+      // server-side by id). Plain attach-and-discuss uploads ride inline on the
+      // request and need no storage step.
       let sourceAttachmentIds: string[] = [];
-      if (!options?.plan && atts.length > 0) {
+      if (options?.review && !options?.plan && atts.length > 0) {
         if (!activeSessionId) {
           updateMessages((current) => [
             ...current,
@@ -733,9 +745,13 @@ export default function ChiefProvider({
           return false;
         }
       }
+      // A "plan" routes the turn through the bounded document importer. Build one
+      // ONLY for the explicit review flow (or a revise of an existing plan) —
+      // never just because a file is attached, so ordinary uploads stay
+      // attach-and-discuss.
       const plan: ProposalPlan | undefined =
         options?.plan ??
-        (atts.length > 0
+        (options?.review && atts.length > 0
           ? {
               version: 1,
               sourceNames: atts.map((attachment) => attachment.name),
@@ -1157,6 +1173,7 @@ export default function ChiefProvider({
       setOpen(true);
       await send(DOCUMENT_REVIEW_INTENT.displayText, attachments, {
         apiText: DOCUMENT_REVIEW_INTENT.apiText,
+        review: true,
       });
     },
     [newChat, send],
