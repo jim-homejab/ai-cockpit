@@ -16,6 +16,7 @@ export type SettingKey =
   | "ai.provider"
   | "ai.gateway_key"
   | "ai.byok_anthropic_key"
+  | "ai.auto_refill_enabled"
   | "mcp.chat_enabled"
   | "actions.enabled"
   | "web.fetch_enabled"
@@ -104,6 +105,21 @@ export const SETTING_DEFS: SettingDef[] = [
     default: "",
     singleLine: true,
     placeholder: "sk-ant-… (optional)",
+  },
+  // Set once the user confirms they've enabled auto-recharge on the Vercel AI
+  // Gateway. The gateway REST API exposes only balance + total_used
+  // (/v1/credits) — there is NO field reporting auto-recharge status — so it
+  // cannot be detected; this flag is the user's own declaration. When "on" it
+  // suppresses the low-credit warning card (the balance can't run dry, so the
+  // nag is noise). Not a free-text knob — filtered out of the auto-rendered
+  // Chief settings list in ConfigClient and toggled from the warning card.
+  {
+    key: "ai.auto_refill_enabled",
+    label: "AI — auto-recharge enabled",
+    description: "Internal flag; managed by the low-credit warning card.",
+    default: "off",
+    singleLine: true,
+    placeholder: "off",
   },
   // --- Chief loop switches (Phase 3) --------------------------------------
   // Two kill switches, both must be on for a write to execute: the master
