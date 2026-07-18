@@ -17,6 +17,7 @@ import {
   filesToChatAttachments,
   MAX_CHAT_FILES,
 } from "@/lib/chat-attachment-client";
+import { capturePageAttachment } from "@/lib/capture-page";
 
 // A small icon per attachment kind for the chip/bubble display.
 function AttachmentGlyph({ kind }: { kind: ChatAttachment["kind"] }) {
@@ -44,6 +45,7 @@ export default function ChiefConversation() {
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState<ChatAttachment[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -90,6 +92,28 @@ export default function ChiefConversation() {
 
   const removePending = (index: number) =>
     setPending((p) => p.filter((_, i) => i !== index));
+
+  // Capture the page underneath the Chief sheet (the app screen the user is
+  // looking at) and attach it. Targets <main>, so the sheet overlay is excluded.
+  const capturePage = async () => {
+    if (capturing) return;
+    setAttachError(null);
+    if (pending.length >= MAX_CHAT_FILES) {
+      setAttachError(`You can attach up to ${MAX_CHAT_FILES} files.`);
+      return;
+    }
+    setCapturing(true);
+    try {
+      const attachment = await capturePageAttachment();
+      setPending((current) => [...current, attachment]);
+    } catch (error) {
+      setAttachError(
+        error instanceof Error ? error.message : "Couldn't capture the page.",
+      );
+    } finally {
+      setCapturing(false);
+    }
+  };
 
   const handlers = {
     onApprove: (uid: string, mergeTargetId?: string) =>
@@ -237,6 +261,35 @@ export default function ChiefConversation() {
         {attachError && (
           <div className="mb-2 text-[12px] text-copper">{attachError}</div>
         )}
+        <div className="mb-2 flex">
+          <button
+            type="button"
+            onClick={() => void capturePage()}
+            disabled={capturing || streaming}
+            className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] text-ink-2 disabled:opacity-50"
+            style={{ borderColor: "var(--hairline)" }}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect
+                x="1.5"
+                y="4"
+                width="13"
+                height="9.5"
+                rx="1.6"
+                stroke="var(--ink-2)"
+                strokeWidth="1.3"
+              />
+              <circle cx="8" cy="8.75" r="2.5" stroke="var(--ink-2)" strokeWidth="1.3" />
+              <path
+                d="M5.5 4l1-1.5h3L10.5 4"
+                stroke="var(--ink-2)"
+                strokeWidth="1.3"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {capturing ? "Capturing…" : "Capture page"}
+          </button>
+        </div>
         <div className="flex items-end gap-2">
           <input
             ref={fileInputRef}
