@@ -160,6 +160,34 @@ without approval.
 Direct remote MCP servers remain available under **Advanced · Direct MCP** for
 owners who prefer to configure another server URL and credential themselves.
 
+### GitHub + Vercel — letting Chief help update the app
+
+Chief can drive a review-gated dev loop on its own repo: propose a branch and
+commits, open a pull request, then read back the Vercel preview's health — you
+review and merge. Nothing deploys without your merge; see `DEVLOOP-PLAN.md` for
+the full design and roadmap.
+
+Connect both as first-party MCP servers under **Settings → Connections →
+Advanced · Direct MCP** (the same direct-MCP path Front uses):
+
+- **GitHub** — add GitHub's official remote MCP server and set the connection's
+  **App** field to `github`. That turns on Chief's curated approval cards for
+  the write steps — **Create branch**, **Commit file**, **Push files**, and
+  **Open pull request** — each showing the repo, branch, and change before you
+  approve. Read tools (list commits, read files, PR/CI status) auto-run.
+- **Vercel** — add Vercel's official remote MCP server. Its deployment-status,
+  build-log, and runtime-error reads auto-run so Chief can report on a preview.
+
+The loop: Chief proposes the branch/commits/PR (each a gated card) → you merge
+the PR → Vercel deploys. Opening a PR and pushing to a feature branch are
+reversible (standard cards); the production deploy is your merge on GitHub, never
+a Chief tool call.
+
+**Protected previews:** if Deployment Protection is on, Chief's route checks and
+(later) browser inspection need Vercel's **automation bypass secret** to reach
+the preview. That secret belongs in Supabase Vault alongside your other
+connector credentials — not in the repo. See `DEVLOOP-PLAN.md` §7.
+
 ## For Claude Code
 
 Read `BUILD-BRIEF.md` in full, read `handoff/HANDOFF.md`, then execute the next

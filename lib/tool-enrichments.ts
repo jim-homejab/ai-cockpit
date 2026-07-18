@@ -34,7 +34,89 @@ export type ToolEnrichment = {
   preview?: (args: Record<string, unknown>) => string;
 };
 
-const ENRICHMENTS: ToolEnrichment[] = [];
+// Clip a long value so a card preview stays legible.
+const clip = (v: unknown, n = 200): string => {
+  const s = typeof v === "string" ? v : JSON.stringify(v ?? "");
+  return s.length > n ? `${s.slice(0, n)}…` : s;
+};
+
+const repoRef = (a: Record<string, unknown>): string =>
+  a.owner && a.repo ? `${String(a.owner)}/${String(a.repo)}` : String(a.repo ?? "");
+
+// Curated cards for GitHub's official remote MCP write tools — the branch/commit/
+// PR steps of Chief's push → preview → verify loop. These apply when GitHub is
+// connected under Advanced · Direct MCP with the connection's App field set to
+// `github` (so server.app === "github"); otherwise the tools fall through to the
+// generic broker card. Every one still runs through the same approve-first gate
+// and the read/write classification is re-derived live — enrichment is editorial
+// only. Opening a PR / pushing to a feature branch is reversible (yellow); the
+// deploy-to-production step is a human merge on GitHub, never a Chief tool call.
+const GITHUB_ENRICHMENTS: ToolEnrichment[] = [
+  {
+    app: "github",
+    tool: "create_branch",
+    label: "Create branch",
+    tier: "yellow",
+    preview: (a) => {
+      const from = a.from_branch ? ` from ${String(a.from_branch)}` : "";
+      return `New branch ${String(a.branch ?? "")}${from} in ${repoRef(a)} (reversible).`;
+    },
+  },
+  {
+    app: "github",
+    tool: "create_or_update_file",
+    label: "Commit file",
+    tier: "yellow",
+    preview: (a) =>
+      [
+        `Commit ${String(a.path ?? "")} on ${String(a.branch ?? "")} in ${repoRef(a)}`,
+        a.message ? `\nmessage: ${clip(a.message, 120)}` : "",
+      ]
+        .filter(Boolean)
+        .join(""),
+  },
+  {
+    app: "github",
+    tool: "push_files",
+    label: "Push files",
+    tier: "yellow",
+    preview: (a) => {
+      const files = Array.isArray(a.files)
+        ? (a.files as { path?: unknown }[]).map((f) => String(f?.path ?? "")).filter(Boolean)
+        : [];
+      const list = files.length
+        ? `\n${files.slice(0, 8).join("\n")}${files.length > 8 ? `\n…(+${files.length - 8} more)` : ""}`
+        : "";
+      return [
+        `Push ${files.length || "?"} file(s) to ${String(a.branch ?? "")} in ${repoRef(a)}`,
+        a.message ? `\nmessage: ${clip(a.message, 120)}` : "",
+        list,
+      ]
+        .filter(Boolean)
+        .join("");
+    },
+  },
+  {
+    app: "github",
+    tool: "create_pull_request",
+    label: "Open pull request",
+    tier: "yellow",
+    preview: (a) => {
+      const flow =
+        a.head && a.base ? `${String(a.head)} → ${String(a.base)}` : "";
+      return [
+        `Open PR in ${repoRef(a)}${a.draft ? " (draft)" : ""}`,
+        a.title ? `\n${String(a.title)}` : "",
+        flow ? `\n${flow}` : "",
+        a.body ? `\n\n${clip(a.body, 240)}` : "",
+      ]
+        .filter(Boolean)
+        .join("");
+    },
+  },
+];
+
+const ENRICHMENTS: ToolEnrichment[] = [...GITHUB_ENRICHMENTS];
 
 /** Look up the curated enrichment for a server's tool, if one exists. */
 export function findEnrichment(
