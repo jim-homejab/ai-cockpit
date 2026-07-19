@@ -30,6 +30,7 @@ import { listProjects } from "@/lib/projects";
 import { applyAttachments, type ChatAttachment } from "@/lib/chat-attachments";
 import { loadChiefAttachments } from "@/lib/chief-attachments";
 import { getDeployTarget } from "@/lib/deploy-target";
+import { getMailAccount } from "@/lib/mail";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -270,7 +271,20 @@ export async function POST(req: Request) {
   // — the only writes are the gated GitHub connector tools. Keep just
   // check_routes from the native read tools (deploy sanity check); drop the
   // task/project read-backs and KB tools.
-  const writeTools = actionsEnabled && !devMode ? writeActionTools() : [];
+  // Email actions (archive_email/reply_email) run against a connected IMAP
+  // account — without one they fail with "No mail account is connected". Don't
+  // offer them when no mail is connected, so Chief can't propose an archive/reply
+  // that's doomed to error.
+  const mailConnected = !devMode
+    ? Boolean(await getMailAccount().catch(() => null))
+    : false;
+  const emailActions = new Set(["archive_email", "reply_email"]);
+  const writeTools =
+    actionsEnabled && !devMode
+      ? writeActionTools().filter(
+          (t) => mailConnected || !emailActions.has(t.name),
+        )
+      : [];
   const nativeReadTools = devMode
     ? CHIEF_READ_TOOLS.filter((t) => t.name === "check_routes")
     : CHIEF_READ_TOOLS;
