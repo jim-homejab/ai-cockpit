@@ -48,7 +48,11 @@ export const maxDuration = 60;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
+// The chief-of-staff loop settles in a few turns. Dev mode is heavier — it
+// reads several repo files AND then plans a multi-file write in the same loop —
+// so it gets more round-trips before it must reach the PR proposal.
 const MAX_TURNS = 6;
+const MAX_TURNS_DEV = 12;
 
 // Transient gateway/provider errors (429/5xx/overloaded) are retried with
 // exponential backoff — but only before any text has streamed for the turn,
@@ -102,6 +106,12 @@ export async function POST(req: Request) {
   // Dev mode: the "Update this app" entry. Loads the engineer persona and
   // narrows the toolset to the app-editing apps (GitHub/Vercel/Supabase).
   const devMode = mode === "dev";
+  // Dev-mode turns pack multi-file reads plus a multi-file write plan into one
+  // turn, so they need a bigger response budget and more loop turns than the
+  // snappy chief-of-staff chat — otherwise the model runs out of tokens
+  // mid-narration ("Let me write it.") before it emits its write tool calls.
+  const maxTurns = devMode ? MAX_TURNS_DEV : MAX_TURNS;
+  const maxTokensPerTurn = devMode ? 8192 : 4096;
   let resolvedAttachments = Array.isArray(attachments) ? attachments : [];
   if (Array.isArray(attachmentIds) && attachmentIds.length > 0) {
     try {
@@ -369,7 +379,7 @@ export async function POST(req: Request) {
       // Everything Chief says this exchange, for the communications log.
       let assistantText = "";
       try {
-        for (let turn = 0; turn < MAX_TURNS; turn++) {
+        for (let turn = 0; turn < maxTurns; turn++) {
           // Retry transient failures — but only while nothing has streamed for
           // this attempt, so a retry never duplicates already-sent text.
           const textAtTurnStart = assistantText;
@@ -377,7 +387,7 @@ export async function POST(req: Request) {
           for (let attempt = 0; ; attempt++) {
             const stream = client.messages.stream({
               model,
-              max_tokens: 4096,
+              max_tokens: maxTokensPerTurn,
               ...(thinking ? { thinking } : {}),
               system: systemBlocks,
               ...(cachedClientTools.length ? { tools: cachedClientTools } : {}),
@@ -419,14 +429,23 @@ export async function POST(req: Request) {
             content: content as unknown as Anthropic.MessageParam["content"],
           });
 
-          if (
-            final.stop_reason === "max_tokens" &&
-            toolUses.length === 0 &&
-            !assistantText.trim()
-          ) {
-            throw new Error(
-              "Chief exhausted its response budget before producing a visible answer. Please retry.",
-            );
+          // Hit the per-turn token ceiling with no tool call. If NOTHING was
+          // produced it's a hard failure — surface it. Otherwise the model
+          // streamed a partial turn and was cut off before finishing —
+          // classically, narration like "Let me write it." right before the
+          // write tool calls it never got to emit. The partial assistant content
+          // is already on `convo`, so continue the loop (same mechanism as
+          // pause_turn below) to let the API resume the turn and produce the
+          // pending tool_use / rest of the answer, instead of silently
+          // dead-ending on the cliffhanger. Bounded by the turn cap, so it
+          // can't spin forever.
+          if (final.stop_reason === "max_tokens" && toolUses.length === 0) {
+            if (!assistantText.trim()) {
+              throw new Error(
+                "Chief exhausted its response budget before producing a visible answer. Please retry.",
+              );
+            }
+            continue;
           }
 
           // Server-side tools (e.g. web_fetch) can pause mid-run; re-send the
