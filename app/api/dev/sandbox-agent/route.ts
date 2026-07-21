@@ -76,7 +76,11 @@ export async function POST(req: Request) {
     return Response.json({ error: "A `task` is required." }, { status: 400 });
   }
 
-  const githubToken = body.token?.trim() || process.env.GITHUB_TOKEN?.trim() || "";
+  const githubToken =
+    body.token?.trim() ||
+    (await getSetting("devmode.github_token").catch(() => "")).trim() ||
+    process.env.GITHUB_TOKEN?.trim() ||
+    "";
   if (!githubToken) {
     return Response.json(
       {
