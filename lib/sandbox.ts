@@ -177,3 +177,280 @@ export async function provisionAndCheck(opts: {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Phase 2 — launch Claude Code (headless) inside the sandbox as the engineer.
+//
+// This is the orchestrator flow from SANDBOX-PLAN.md: Chief hands a task to
+// Claude Code running in a throwaway VM; Claude Code reads/edits the checkout;
+// we run the git plumbing and open ONE PR. Because the VM is ephemeral and
+// isolated, the agent's edits/commands are NOT production writes and run under
+// `--dangerously-skip-permissions` (the isolation is what makes that safe — the
+// same reasoning as the plan's throwaway-VM allowlist). The ONLY thing that
+// reaches your repo is the pull request, and the ONLY path to production stays
+// your merge.
+// ---------------------------------------------------------------------------
+
+const AGENT_VCPUS = 4;
+// The agent run is much longer than the Phase-1 spike; give the VM room. NOTE:
+// the calling serverless function has its own (shorter) max-duration ceiling —
+// a full run can exceed it, which is why the route documents that long runs
+// must be backgrounded. This timeout only bounds the VM itself.
+const AGENT_SANDBOX_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const AGENT_MAX_TURNS = 30;
+
+export type AgentRunResult = {
+  ok: boolean;
+  /** The branch Claude Code's work was pushed to, if we got that far. */
+  branch: string | null;
+  prUrl: string | null;
+  prNumber: number | null;
+  /** Claude Code's captured (clipped) output. */
+  agentOutput: string;
+  /** Per-command trace, for debugging a failed run. */
+  steps: SandboxStepResult[];
+  error?: string;
+};
+
+function slugify(s: string): string {
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "change"
+  );
+}
+
+/** Open a PR via the GitHub REST API (app-side, with the same token used to
+ *  push). Kept out of the VM so PR text stays in our control. */
+async function openPullRequest(opts: {
+  slug: string;
+  token: string;
+  head: string;
+  base: string;
+  title: string;
+  body: string;
+}): Promise<{ url: string; number: number } | { error: string }> {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${opts.slug}/pulls`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${opts.token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: opts.title,
+        head: opts.head,
+        base: opts.base,
+        body: opts.body,
+        draft: true,
+      }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return { error: `GitHub PR create failed (${res.status}): ${text.slice(0, 300)}` };
+    }
+    const json = (await res.json()) as { html_url?: string; number?: number };
+    if (!json.html_url || typeof json.number !== "number") {
+      return { error: "GitHub PR create returned an unexpected response." };
+    }
+    return { url: json.html_url, number: json.number };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "GitHub PR create failed." };
+  }
+}
+
+/** Run a coding task end to end in a fresh sandbox: clone → install Claude Code
+ *  → let it edit on a new branch → commit + push → open a draft PR. Always tears
+ *  the VM down. Returns the PR link (or a precise failure). Both credentials are
+ *  used only inside the VM / for the PR call and are never returned.
+ *
+ *  `anthropicKey` authenticates Claude Code; `githubToken` clones, pushes, and
+ *  opens the PR (needs Contents + Pull Requests write on the repo). */
+export async function runCodingAgent(opts: {
+  target: DeployTarget;
+  task: string;
+  githubToken: string;
+  anthropicKey: string;
+  maxTurns?: number;
+  branchPrefix?: string;
+}): Promise<AgentRunResult> {
+  const { target } = opts;
+  const task = opts.task?.trim();
+  const empty: AgentRunResult = {
+    ok: false,
+    branch: null,
+    prUrl: null,
+    prNumber: null,
+    agentOutput: "",
+    steps: [],
+  };
+  if (!target.slug) {
+    return { ...empty, error: "No target repo resolved." };
+  }
+  if (!task) {
+    return { ...empty, error: "No task provided." };
+  }
+  if (!opts.githubToken?.trim()) {
+    return { ...empty, error: "A GitHub token is required to clone, push, and open the PR." };
+  }
+  if (!opts.anthropicKey?.trim()) {
+    return { ...empty, error: "An Anthropic API key is required to run Claude Code." };
+  }
+
+  const slug = target.slug;
+  const token = opts.githubToken.trim();
+  const base = target.defaultBranch;
+  const branch = `chief/${slugify(task)}-${Date.now().toString(36)}`;
+  const authUrl = `https://x-access-token:${token}@github.com/${slug}.git`;
+  const maxTurns = opts.maxTurns ?? AGENT_MAX_TURNS;
+
+  const steps: SandboxStepResult[] = [];
+  let sandbox: Sandbox | undefined;
+
+  // Local helper: run a command, record the step, and return the finished cmd.
+  const run = async (
+    label: string,
+    cmd: string,
+    args: string[],
+    runOpts?: { env?: Record<string, string>; sudo?: boolean },
+  ) => {
+    const finished = await sandbox!.runCommand({ cmd, args, ...runOpts });
+    const [stdout, stderr] = await Promise.all([finished.stdout(), finished.stderr()]);
+    steps.push({
+      label,
+      command: `${cmd} ${args.join(" ")}`.trim(),
+      exitCode: finished.exitCode,
+      stdout: clip(stdout),
+      stderr: clip(stderr),
+    });
+    return finished;
+  };
+
+  try {
+    sandbox = await Sandbox.create({
+      source: {
+        type: "git",
+        url: `https://github.com/${slug}.git`,
+        username: "x-access-token",
+        password: token,
+        revision: base,
+        depth: 1,
+      },
+      resources: { vcpus: AGENT_VCPUS },
+      timeout: AGENT_SANDBOX_TIMEOUT_MS,
+      runtime: SANDBOX_RUNTIME,
+    });
+
+    // Install the Claude Code CLI (global, needs root).
+    const install = await run(
+      "install claude code",
+      "npm",
+      ["install", "-g", "@anthropic-ai/claude-code"],
+      { sudo: true },
+    );
+    if (install.exitCode !== 0) {
+      return { ...empty, branch: null, steps, error: "Failed to install Claude Code in the sandbox." };
+    }
+
+    // Git identity + push auth + a fresh working branch.
+    await run("git identity (email)", "git", ["config", "user.email", "chief@users.noreply.github.com"]);
+    await run("git identity (name)", "git", ["config", "user.name", "Chief (sandbox)"]);
+    await run("set push remote", "git", ["remote", "set-url", "origin", authUrl]);
+    const checkout = await run("create branch", "git", ["checkout", "-b", branch]);
+    if (checkout.exitCode !== 0) {
+      return { ...empty, branch: null, steps, error: "Failed to create a working branch." };
+    }
+
+    // Hand the task to Claude Code. It runs headless in the isolated VM; edits
+    // auto-apply (skip-permissions is safe because the VM is a throwaway clone),
+    // bounded by a turn cap. We capture its final JSON result.
+    const agent = await run(
+      "claude code",
+      "claude",
+      [
+        "-p",
+        task,
+        "--dangerously-skip-permissions",
+        "--max-turns",
+        String(maxTurns),
+        "--output-format",
+        "json",
+      ],
+      { env: { ANTHROPIC_API_KEY: opts.anthropicKey.trim() } },
+    );
+    const agentOutput = steps[steps.length - 1]?.stdout ?? "";
+    if (agent.exitCode !== 0) {
+      return { ...empty, branch, agentOutput, steps, error: "Claude Code exited with an error." };
+    }
+
+    // Did it actually change anything?
+    const status = await run("check for changes", "git", ["status", "--porcelain"]);
+    if (!(await status.stdout()).trim()) {
+      return {
+        ...empty,
+        branch,
+        agentOutput,
+        steps,
+        error: "Claude Code made no file changes, so there is nothing to open a PR for.",
+      };
+    }
+
+    // Commit + push the branch.
+    await run("stage changes", "git", ["add", "-A"]);
+    const title = task.split("\n")[0].slice(0, 72);
+    const commit = await run("commit", "git", [
+      "commit",
+      "-m",
+      title,
+      "-m",
+      "Authored by Claude Code in a Vercel Sandbox, on request from Chief.",
+    ]);
+    if (commit.exitCode !== 0) {
+      return { ...empty, branch, agentOutput, steps, error: "Failed to commit the changes." };
+    }
+    const push = await run("push", "git", ["push", "origin", branch]);
+    if (push.exitCode !== 0) {
+      return { ...empty, branch, agentOutput, steps, error: "Failed to push the branch." };
+    }
+
+    // Open the PR (draft) from the app side, using the same token.
+    const pr = await openPullRequest({
+      slug,
+      token,
+      head: branch,
+      base,
+      title,
+      body: [
+        `Requested via Chief's sandbox dev loop:`,
+        "",
+        "> " + task.replace(/\n/g, "\n> "),
+        "",
+        "Authored by Claude Code in an ephemeral Vercel Sandbox. Review and merge — nothing deploys until you do.",
+      ].join("\n"),
+    });
+    if ("error" in pr) {
+      return { ...empty, branch, agentOutput, steps, error: `Pushed ${branch}, but ${pr.error}` };
+    }
+
+    return { ok: true, branch, prUrl: pr.url, prNumber: pr.number, agentOutput, steps };
+  } catch (error) {
+    return {
+      ...empty,
+      branch,
+      steps,
+      error: error instanceof Error ? error.message : "Coding-agent run failed.",
+    };
+  } finally {
+    if (sandbox) {
+      try {
+        await sandbox.stop();
+      } catch {
+        /* best-effort teardown */
+      }
+    }
+  }
+}
