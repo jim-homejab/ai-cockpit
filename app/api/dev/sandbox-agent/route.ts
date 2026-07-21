@@ -45,10 +45,11 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// The background work (via `after`) runs up to this ceiling; the platform caps
-// it to the plan's limit. Long runs want Fluid compute. The client doesn't wait
-// on it regardless — it polls GET.
-export const maxDuration = 800;
+// The background work (via `after`) runs up to this ceiling. 300s is the max
+// Vercel allows on the Hobby plan — a higher value is REJECTED at build time,
+// not silently capped. Long runs need Fluid/Pro to raise this. The client
+// doesn't wait on it regardless — it polls GET, so a run can outlive the page.
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const authed = await getAuthed();
