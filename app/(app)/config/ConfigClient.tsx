@@ -621,12 +621,13 @@ export default function ConfigClient({
           {settings["devmode.sandbox_enabled"] === "on" && (
             <div className="flex flex-col gap-1.5">
               <div className="text-[14px] font-medium text-ink">
-                GitHub token (for the sandbox)
+                GitHub token (for the sandbox) — optional
               </div>
               <div className="text-[12.5px] leading-snug text-ink-3">
-                A fine-grained token scoped to this repo (Contents + Pull
-                Requests: write). The sandbox uses it to clone, push, and open the
-                PR. Claude Code uses your Anthropic key from AI settings.
+                Leave blank to reuse the GitHub you already connected above. Only
+                paste a token here if you haven&apos;t connected GitHub, or want a
+                different one (fine-grained, this repo, Contents + Pull Requests:
+                write). Claude Code uses your Anthropic key from AI settings.
               </div>
               <input
                 type="password"

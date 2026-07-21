@@ -17,6 +17,7 @@ import { getAuthed } from "@/lib/auth";
 import { getSetting } from "@/lib/settings";
 import { getDeployTarget } from "@/lib/deploy-target";
 import {
+  getConnectedGithubToken,
   isSandboxConfigured,
   isSandboxEnabled,
   provisionAndCheck,
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
   const token =
     body.token?.trim() ||
     (await getSetting("devmode.github_token").catch(() => "")).trim() ||
+    (await getConnectedGithubToken()) ||
     process.env.GITHUB_TOKEN?.trim() ||
     null;
 
