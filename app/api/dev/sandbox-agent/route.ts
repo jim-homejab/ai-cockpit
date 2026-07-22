@@ -84,12 +84,23 @@ export async function POST(req: Request) {
     token?: string;
     anthropicKey?: string;
     maxTurns?: number;
+    images?: { kind?: string; name?: string; mediaType?: string; data?: string }[];
   };
 
   const task = body.task?.trim();
   if (!task) {
     return Response.json({ error: "A `task` is required." }, { status: 400 });
   }
+
+  // Reference screenshots the user attached (base64 images only).
+  const refImages = (Array.isArray(body.images) ? body.images : [])
+    .filter((a) => a?.kind === "image" && a.data && a.mediaType)
+    .slice(0, 4)
+    .map((a) => ({
+      name: a.name ?? "reference",
+      mediaType: a.mediaType as string,
+      data: a.data as string,
+    }));
 
   const githubToken =
     body.token?.trim() ||
@@ -169,6 +180,7 @@ export async function POST(req: Request) {
       agentEnv,
       vercelOidcToken,
       snapshotId,
+      refImages,
       maxTurns,
     });
     try {

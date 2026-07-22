@@ -9,14 +9,41 @@
 // job; GET polls it for the PR link. The current page context is folded into the
 // task so Claude Code knows which screen the request is about.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useChief } from "./ChiefProvider";
+import type { ChatAttachment } from "@/lib/chat-attachments";
+import {
+  filesToChatAttachments,
+  MAX_CHAT_FILES,
+} from "@/lib/chat-attachment-client";
+
+type RefImage = { name: string; mediaType: string; data: string };
 
 export default function SandboxUpdatePanel() {
   const { page } = useChief();
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [images, setImages] = useState<RefImage[]>([]);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const pickImages = async (files: FileList | null) => {
+    setAttachError(null);
+    if (!files || files.length === 0) return;
+    const { attachments, error } = await filesToChatAttachments(
+      files,
+      MAX_CHAT_FILES,
+    );
+    if (error) setAttachError(error);
+    const imgs = (attachments as ChatAttachment[])
+      .filter((a): a is Extract<ChatAttachment, { kind: "image" }> => a.kind === "image")
+      .map((a) => ({ name: a.name, mediaType: a.mediaType, data: a.data }));
+    if (!imgs.length && !error) {
+      setAttachError("Only image files can be used as a reference here.");
+    }
+    setImages((prev) => [...prev, ...imgs].slice(0, 4));
+  };
 
   const pageLabel = page?.label ?? "this app";
 
@@ -37,7 +64,10 @@ export default function SandboxUpdatePanel() {
       const res = await fetch("/api/dev/sandbox-agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task }),
+        body: JSON.stringify({
+          task,
+          images: images.map((i) => ({ kind: "image", ...i })),
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         jobId?: string;
@@ -123,6 +153,51 @@ export default function SandboxUpdatePanel() {
         className="mt-3 w-full rounded-control border bg-transparent px-3 py-2.5 text-[16px] text-ink outline-none placeholder:text-ink-2 disabled:opacity-60"
         style={{ borderColor: "var(--hairline)" }}
       />
+
+      {/* Reference screenshots */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          void pickImages(e.target.files);
+          e.target.value = "";
+        }}
+      />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={busy}
+          className="flex items-center gap-1.5 rounded-control border px-3 py-2 text-[13px] text-ink-2 disabled:opacity-50"
+          style={{ borderColor: "var(--hairline)" }}
+        >
+          <span aria-hidden="true">📎</span> Attach screenshot
+        </button>
+        {images.map((img, i) => (
+          <span
+            key={i}
+            className="flex items-center gap-1.5 rounded-control border px-2 py-1.5 text-[12px] text-ink"
+            style={{ borderColor: "var(--hairline)" }}
+          >
+            <span className="max-w-[120px] truncate">{img.name}</span>
+            <button
+              type="button"
+              aria-label={`Remove ${img.name}`}
+              onClick={() => setImages((prev) => prev.filter((_, j) => j !== i))}
+              disabled={busy}
+              className="text-ink-3"
+            >
+              ✕
+            </button>
+          </span>
+        ))}
+      </div>
+      {attachError && (
+        <div className="mt-1 text-[12px] text-copper">{attachError}</div>
+      )}
 
       <button
         type="button"

@@ -261,6 +261,19 @@ export type AgentRunResult = {
   error?: string;
 };
 
+function extForMedia(mediaType: string, name: string): string {
+  const byType: Record<string, string> = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+  };
+  if (byType[mediaType]) return byType[mediaType];
+  const m = name.match(/\.[a-z0-9]{2,5}$/i);
+  return m ? m[0].toLowerCase() : ".png";
+}
+
 function slugify(s: string): string {
   return (
     s
@@ -333,6 +346,10 @@ export async function runCodingAgent(opts: {
    *  install. Optional; any failure falls back to a fresh install, so this is a
    *  pure optimization that can't break the run. */
   snapshotId?: string | null;
+  /** Reference screenshots (base64) the user attached; written into the VM
+   *  outside the checkout and pointed at in the prompt so Claude Code can read
+   *  them as visual reference. */
+  refImages?: { name: string; mediaType: string; data: string }[];
   maxTurns?: number;
   branchPrefix?: string;
 }): Promise<AgentRunResult> {
@@ -467,6 +484,42 @@ export async function runCodingAgent(opts: {
       return { ...empty, branch: null, steps, error: "Failed to create a working branch." };
     }
 
+    // Reference screenshots (if any): write them OUTSIDE the checkout so they're
+    // never committed, and point Claude Code at their absolute paths. Best
+    // effort — a write failure just proceeds without them.
+    let effectiveTask = task;
+    const refImages = (opts.refImages ?? []).filter((i) => i?.data).slice(0, 4);
+    if (refImages.length > 0) {
+      await run("reference images dir", "mkdir", ["-p", "/tmp/chief-ref"]);
+      const paths: string[] = [];
+      const files = refImages.map((img, i) => {
+        const path = `/tmp/chief-ref/ref-${i + 1}${extForMedia(img.mediaType, img.name)}`;
+        paths.push(path);
+        return { path, content: Buffer.from(img.data, "base64") };
+      });
+      try {
+        await sandbox.writeFiles(files);
+        effectiveTask =
+          `${task}\n\nReference screenshot(s) the user attached are saved at: ${paths.join(", ")}. ` +
+          "Read them with your Read tool (it supports images) and use them as visual reference for this change.";
+        steps.push({
+          label: "wrote reference images",
+          command: `writeFiles (${paths.length})`,
+          exitCode: 0,
+          stdout: paths.join("\n"),
+          stderr: "",
+        });
+      } catch (e) {
+        steps.push({
+          label: "wrote reference images",
+          command: "writeFiles",
+          exitCode: 1,
+          stdout: "",
+          stderr: e instanceof Error ? e.message : "failed",
+        });
+      }
+    }
+
     // Hand the task to Claude Code. It runs headless in the isolated VM; edits
     // auto-apply (skip-permissions is safe because the VM is a throwaway clone),
     // bounded by a turn cap. We capture its final JSON result.
@@ -475,7 +528,7 @@ export async function runCodingAgent(opts: {
       "claude",
       [
         "-p",
-        task,
+        effectiveTask,
         "--dangerously-skip-permissions",
         "--max-turns",
         String(maxTurns),
