@@ -30,6 +30,15 @@ function InboxIcon({ stroke }: IconProps) {
     </svg>
   );
 }
+function AgentMailIcon({ stroke }: IconProps) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 6.5h16v11H4z" stroke={stroke} strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M4.5 7l7.5 5.5L19.5 7" stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="18.5" cy="6" r="2.5" fill={stroke} stroke="var(--surface)" strokeWidth="1.2" />
+    </svg>
+  );
+}
 function ProjectsIcon({ stroke }: IconProps) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -72,6 +81,7 @@ function UploadIcon({ stroke }: IconProps) {
 const NAV = [
   { href: "/", label: "Home", Icon: HomeIcon },
   { href: "/inbox", label: "Inbox", Icon: InboxIcon },
+  { href: "/agentmail", label: "AgentMail", Icon: AgentMailIcon },
   { href: "/projects", label: "Projects", Icon: ProjectsIcon },
   { href: "/tasks", label: "Tasks", Icon: TasksIcon },
   { href: "/notes", label: "Notes", Icon: NotesIcon },
